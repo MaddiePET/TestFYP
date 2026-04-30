@@ -8,6 +8,8 @@ import ChevronLeftIcon from "@/icons/chevron-left.svg";
 
 export default function PersonalMalaysianInfo() {
   const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const [formData, setFormData] = useState({
     fullName: "Jane Doe",
@@ -27,8 +29,6 @@ export default function PersonalMalaysianInfo() {
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  const handleNavigation = () => router.push('/personal/malaysian/email');
 
  // Handle form submission for personal info page
  // Purpose:
