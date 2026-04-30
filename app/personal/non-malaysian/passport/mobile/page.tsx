@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
-import Link from "next/link";
+import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function PersonalNonMalaysianMobilePassportCapture() {
   const router = useRouter();
@@ -14,7 +14,6 @@ export default function PersonalNonMalaysianMobilePassportCapture() {
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
   const [failCount, setFailCount] = useState(0);
 
   const MAX_ATTEMPTS = 3;
@@ -22,14 +21,35 @@ export default function PersonalNonMalaysianMobilePassportCapture() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!journeyId) {
-      alert("Invalid link. Please scan the QR code again from your desktop.");
-    }
+    const checkInitialStatus = async () => {
+      if (!journeyId) return;
+
+      try {
+        const res = await fetch(`/api/ekyc/status?journeyId=${journeyId}`);
+        const data = await res.json();
+
+        if (data.status === "failed") {
+          setFailCount(MAX_ATTEMPTS);
+
+          setErrorMessage(
+            "Too many failed attempts. Please refer to your desktop screen."
+          );
+        } else if (data.status === "verified") {
+          setSuccess(true);
+        }
+      } catch (e) {
+        console.error("Status check failed", e);
+      }
+    };
+
+    checkInitialStatus();
   }, [journeyId]);
 
   const handleCapture = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
+    if (failCount >= MAX_ATTEMPTS) return;
+
     const file = event.target.files?.[0];
 
     if (!file || !journeyId) return;
@@ -52,7 +72,9 @@ export default function PersonalNonMalaysianMobilePassportCapture() {
 
       const okayidResponse = await fetch("/api/ekyc/okayid", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           journeyId,
           base64ImageString: base64String,
@@ -67,7 +89,9 @@ export default function PersonalNonMalaysianMobilePassportCapture() {
 
       const okaydocResponse = await fetch("/api/ekyc/okaydoc", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           journeyId,
           type: "passport",
@@ -85,7 +109,9 @@ export default function PersonalNonMalaysianMobilePassportCapture() {
 
       await fetch("/api/ekyc/status", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           journeyId,
           status: "verified",
@@ -99,22 +125,30 @@ export default function PersonalNonMalaysianMobilePassportCapture() {
       setFailCount(newFailCount);
 
       const remaining = MAX_ATTEMPTS - newFailCount;
+
       const reason = error.message.toLowerCase();
 
       if (remaining > 0) {
         setErrorMessage(
-          `Your image is an ${reason}. Please try again. You have ${remaining} attempt${
+          `Your image is ${reason}. Please try again. You have ${remaining} attempt${
             remaining > 1 ? "s" : ""
           } remaining.`
         );
       } else {
         setErrorMessage(
-          `Your image is an ${reason}. Too many failed attempts. Redirecting you to restart the process...`
+          "Too many failed attempts. Please refer to your desktop screen."
         );
 
-        setTimeout(() => {
-          router.push("/personal/nationality_selection");
-        }, 3000);
+        await fetch("/api/ekyc/status", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            journeyId,
+            status: "failed",
+          }),
+        });
       }
 
       if (fileInputRef.current) {
@@ -137,12 +171,12 @@ export default function PersonalNonMalaysianMobilePassportCapture() {
           <path
             className="fill-[#3D405B]/80"
             d="M0,192L48,197.3C96,203,192,213,288,192C384,171,480,117,576,117.3C672,117,768,171,864,192C960,213,1056,203,1152,176C1248,149,1344,107,1392,85.3L1440,64L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"
-          ></path>
+          />
 
           <path
             className="fill-[#3D405B]"
             d="M0,128L48,138.7C96,149,192,171,288,176C384,181,480,171,576,144C672,117,768,75,864,69.3C960,64,1056,96,1152,112C1248,128,1344,128,1392,128L1440,128L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"
-          ></path>
+          />
         </svg>
       </div>
 
@@ -156,7 +190,7 @@ export default function PersonalNonMalaysianMobilePassportCapture() {
           <path
             className="fill-[#F0CA8E]"
             d="M0,224L34.3,192C68.6,160,137,96,206,90.7C274.3,85,343,139,411,144C480,149,549,107,617,122.7C685.7,139,754,213,823,240C891.4,267,960,245,1029,224C1097.1,203,1166,181,1234,160C1302.9,139,1371,117,1406,106.7L1440,96L1440,320L1405.7,320C1371.4,320,1303,320,1234,320C1165.7,320,1097,320,1029,320C960,320,891,320,823,320C754.3,320,686,320,617,320C548.6,320,480,320,411,320C342.9,320,274,320,206,320C137.1,320,69,320,34,320L0,320Z"
-          ></path>
+          />
         </svg>
       </div>
 
@@ -191,7 +225,7 @@ export default function PersonalNonMalaysianMobilePassportCapture() {
                   strokeLinejoin="round"
                   strokeWidth="3"
                   d="M5 13l4 4L19 7"
-                ></path>
+                />
               </svg>
             </div>
 
@@ -207,7 +241,8 @@ export default function PersonalNonMalaysianMobilePassportCapture() {
 
             <div className="w-full max-w-xs py-3 px-4 rounded-xl border backdrop-blur-sm bg-white/60 dark:bg-gray-800/40 border-gray-300 dark:border-gray-600">
               <p className="font-semibold text-sm text-center text-gray-900 dark:text-gray-100">
-                You may now close this window and return to your desktop screen to continue.
+                You may now close this window and return to your desktop screen
+                to continue.
               </p>
             </div>
           </div>
