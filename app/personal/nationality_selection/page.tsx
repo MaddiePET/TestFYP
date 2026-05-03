@@ -12,6 +12,7 @@ export default function PersonalNationalitySelection() {
   const [selectedNationality, setSelectedNationality] = useState<string>("");
 
   const handleNext = () => {
+    // Route to appropriate page (journeyId already created when user selected 'new')
     if (selectedNationality === "Malaysian") {
       router.push("/personal/malaysian/mykad");
     } else if (selectedNationality === "Non-Malaysian") {

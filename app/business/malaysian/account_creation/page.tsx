@@ -8,6 +8,7 @@ import ChevronLeftIcon from "@/icons/chevron-left.svg";
 import Label from "@/components/form/Label";
 import EyeIcon from "@/icons/eye.svg";
 import EyeCloseIcon from "@/icons/eye-close.svg";
+import { useFormData } from "@/context/FormContext";
 
 type Step = "profile" | "password" | "pending";
 
@@ -18,12 +19,15 @@ export default function BusinessMalaysianAccountCreation() {
 
   const [username, setUsername] = useState("");
   const [profilePreview, setProfilePreview] = useState<string | null>(null);
+  const [profileFile, setProfileFile] = useState<File | null>(null);
   const [securityPhrase, setSecurityPhrase] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { formData, setFormData } = useFormData();
 
   useEffect(() => {
     setMounted(true);
@@ -64,6 +68,46 @@ export default function BusinessMalaysianAccountCreation() {
     else if (step === "pending") setStep("password");
     else router.push("/business/malaysian/supporting_documents");
   };
+
+  const handleSubmit = async () => {
+  try {
+    // combine latest input with global formData
+    const finalData = {
+      ...formData,
+      account: {
+        ...formData.account,
+        username,
+        password,
+        securityPhrase,
+        profilePreview,
+      },
+    };
+
+    const res = await fetch("/api/application/msian_current_account", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(finalData),
+    });
+
+    if (!res.ok) {
+      throw new Error("Failed to create account");
+    }
+
+    const data = await res.json();
+
+    // update context
+    setFormData(finalData);
+
+    // move to success screen
+    setStep("pending");
+
+  } catch (err) {
+    console.error(err);
+    alert("Something went wrong. Please try again.");
+  }
+};
 
   if (!mounted) return null;
 
@@ -266,7 +310,7 @@ export default function BusinessMalaysianAccountCreation() {
 
               <button 
                 type="button"
-                onClick={handleNext} 
+                onClick={handleSubmit} 
                 disabled={!password || !securityPhrase || password !== confirmPassword} 
                 className="inline-flex items-center justify-center w-full px-4 py-3 text-sm font-bold text-white transition rounded-lg bg-[#3D405B] shadow-theme-xs hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d] disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed dark:disabled:bg-gray-800 dark:disabled:text-gray-600"
               >

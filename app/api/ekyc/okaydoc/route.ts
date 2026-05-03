@@ -10,7 +10,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing journeyId, type, or image data" }, { status: 400 });
     }
 
-    const okaydocUrl = `${process.env.INNOV8TIF_API_BASE_URL}/okaydoc`;
+    const okaydocUrl = `${process.env.INNOVA8TIF_API_URL}/okaydoc`;
     let okaydocBody: Record<string, unknown>;
 
     if (type === "passport") {

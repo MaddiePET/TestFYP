@@ -9,6 +9,34 @@ import ChevronLeftIcon from "@/icons/chevron-left.svg";
 export default function BusinessUserVerification() {
   const router = useRouter();
   const [selectedOption, setSelectedOption] = useState<'existing' | 'new' | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSelectNew = async () => {
+    setIsLoading(true);
+    try {
+      // Create a journey ID immediately when user selects 'new'
+      const journeyRes = await fetch("/api/ekyc/journey", {
+        method: "POST",
+      });
+      
+      const journeyData = await journeyRes.json();
+      
+      if (!journeyRes.ok || !journeyData.journeyId) {
+        alert("Failed to create journey. Please try again.");
+        setIsLoading(false);
+        return;
+      }
+      
+      // Store journeyId in localStorage
+      localStorage.setItem("journeyId", journeyData.journeyId);
+      setSelectedOption('new');
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Error creating journey:", error);
+      alert("Error creating journey. Please try again.");
+      setIsLoading(false);
+    }
+  };
 
   const handleNext = () => {
     if (selectedOption === 'existing') {
@@ -88,7 +116,7 @@ export default function BusinessUserVerification() {
           </div>
 
           <div
-            onClick={() => setSelectedOption('new')}
+            onClick={() => handleSelectNew()}
             className={`relative cursor-pointer p-8 rounded-2xl border-2 transition-all duration-300 flex flex-col items-center text-center group backdrop-blur-sm ${
               selectedOption === 'new'
                 ? 'border-[#F0CA8E] bg-white shadow-lg ring-4 ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#F0CA8E] dark:ring-[#3D405B]/40'

@@ -9,7 +9,7 @@ export async function POST(req: Request) {
     }
 
     console.log("Calling Innov8tif /okayid for OCR extraction - journeyId:", journeyId);
-    const okayidUrl = `${process.env.INNOV8TIF_API_BASE_URL}/okayid`;
+    const okayidUrl = `${process.env.INNOVA8TIF_API_URL}/okayid`;
     const okayidBody = {
       journeyId,
       base64ImageString: base64ImageString,
