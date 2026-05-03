@@ -11,14 +11,11 @@ export default function PersonalMalaysianMyKadQRCode() {
   const router = useRouter();
 
   const [mobileUrl, setMobileUrl] = useState<string>("");
-  const [journeyId, setJourneyId] = useState<string | null>(null);
   const [isVerified, setIsVerified] = useState<boolean>(false);
   const [hostWarning, setHostWarning] = useState<string | null>(null);
 
   useEffect(() => {
     const jId = localStorage.getItem("journeyId") || `TEST-${Date.now()}`;
-
-    setJourneyId(jId);
 
     if (!localStorage.getItem("journeyId")) {
       localStorage.setItem("journeyId", jId);

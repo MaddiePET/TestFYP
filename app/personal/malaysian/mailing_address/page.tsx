@@ -19,6 +19,9 @@ export default function PersonalMalaysianMailingAddress() {
     country: "Malaysia",
   });
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
   useEffect(() => {
     setMounted(true);
   }, []);

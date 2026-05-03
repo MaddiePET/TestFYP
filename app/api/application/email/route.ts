@@ -1,4 +1,4 @@
-/*import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 
 // Update customer's email in the Customer table
@@ -46,4 +46,4 @@ export async function PUT(req: NextRequest): Promise<NextResponse> {
       { status: 500 }
     );
   }
-}*/
+}

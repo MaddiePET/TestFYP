@@ -62,7 +62,7 @@ export default function PersonalMalaysianApplication() {
   const [step, setStep] = useState(1);
 
   const [formData, setFormData] = useState({
-    occupation: "",getSelection,
+    occupation: "",
     incomeRange: "",
     employmentType: "",
     sourceOfIncome: "",
