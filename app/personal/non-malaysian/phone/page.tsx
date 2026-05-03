@@ -126,6 +126,7 @@ export default function PersonalNonMalaysianPhone() {
           className="inline-flex items-center text-sm text-gray-600 dark:text-white/80 transition-colors hover:text-gray-900 dark:hover:text-white"
         >
           <ChevronLeftIcon className="w-5 h-5" />
+
           Back
         </button>
 
@@ -220,6 +221,7 @@ export default function PersonalNonMalaysianPhone() {
                 <span className="font-bold text-gray-900 dark:text-white">
                   +60 {phoneNumber}
                 </span>
+                
                 . Please provide the code to proceed with the registration.
               </p>
             </div>
@@ -247,8 +249,8 @@ export default function PersonalNonMalaysianPhone() {
                 disabled={otp.join("").length < 6 || isLoading} 
                 className={`inline-flex items-center justify-center w-full px-4 py-3 text-sm font-bold transition rounded-lg shadow-theme-xs ${
                   otp.join("").length === 6 
-                  ? 'bg-[#3D405B] text-white hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d]' 
-                  : 'bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600'
+                    ? 'bg-[#3D405B] text-white hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d]' 
+                    : 'bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600'
                 }`}
               >
                 {isLoading ? "Verifying..." : "Verify"}
@@ -309,10 +311,12 @@ export default function PersonalNonMalaysianPhone() {
             <span className="font-bold text-blue-700 dark:text-blue-300">
               secure account registration
             </span> 
+            
             and 
             <span className="font-bold text-blue-700 dark:text-blue-300">
               identity verification
             </span>
+            
             .
           </p>
         </div>

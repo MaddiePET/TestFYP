@@ -208,6 +208,7 @@ export default function PersonalNonMalaysianApplication() {
           className="inline-flex items-center text-sm text-gray-600 dark:text-white/80 transition-colors hover:text-gray-900 dark:hover:text-white"
         >
           <ChevronLeftIcon className="w-5 h-5" /> 
+          
           Back
         </button>
 
@@ -293,6 +294,7 @@ export default function PersonalNonMalaysianApplication() {
                         checked={formData.isOfAge === true} 
                         onChange={() => setFormData({...formData, isOfAge: true})}
                       /> 
+                      
                       Yes
                     </label>
                     
@@ -304,6 +306,7 @@ export default function PersonalNonMalaysianApplication() {
                         checked={formData.isOfAge === false} 
                         onChange={() => setFormData({...formData, isOfAge: false})}
                       /> 
+                      
                       No
                     </label>
                 </div>
@@ -466,10 +469,7 @@ export default function PersonalNonMalaysianApplication() {
                               : 'text-gray-500'
                           }`}
                         >
-                          {draggingId === doc.id 
-                            ? 'Drop here' 
-                            : 'Click or drag to upload (PDF, DOC)'
-                          }
+                          {draggingId === doc.id ? 'Drop here' : 'Click or drag to upload (PDF, DOC)'}
                         </span>
                       </div>
                     )}
@@ -566,10 +566,7 @@ export default function PersonalNonMalaysianApplication() {
                     disabled={isLocating} 
                     className="text-sm font-bold text-blue-700 hover:text-blue-800 dark:text-blue-400"
                   >
-                    {isLocating 
-                      ? "Locating..." 
-                      : "Use My Current Location"
-                    }
+                    {isLocating ? "Locating..." : "Use My Current Location"}
                   </button>
                 </div>
               ) : (

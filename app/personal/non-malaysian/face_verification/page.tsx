@@ -162,8 +162,10 @@ export default function PersonalNonMalaysianFaceVerification() {
           className="inline-flex items-center text-sm text-gray-600 dark:text-white/80 transition-colors hover:text-gray-900 dark:hover:text-white"
         >
           <ChevronLeftIcon className="w-5 h-5" />
+
           Back
         </button>
+
         <div className="flex items-center gap-2">
           <Image 
             src="/images/logo/logo-light.svg" 
@@ -182,10 +184,9 @@ export default function PersonalNonMalaysianFaceVerification() {
       <div className="relative w-full max-w-md animate-in fade-in duration-500 z-10">
         <div className="mb-8 text-center">
           <h1 className="mb-3 font-bold text-gray-800 text-title-sm dark:text-white sm:text-title-md whitespace-nowrap">
-            {status === "success" 
-              ? "Verification Successful" 
-              : "Verify Your Face"}
+            {status === "success" ? "Verification Successful" : "Verify Your Face"}
           </h1>
+
           <p className="text-sm text-gray-500 dark:text-gray-400">
             {status === "success" 
               ? "Verification complete! You can now proceed." 
@@ -242,6 +243,7 @@ export default function PersonalNonMalaysianFaceVerification() {
                   fill="transparent"
                   className="text-white/20"
                 />
+
                 <circle
                   cx="50%"
                   cy="50%"
@@ -357,51 +359,52 @@ export default function PersonalNonMalaysianFaceVerification() {
         </div>
 
         <div className="mt-8 space-y-4">
-            <div className="p-4 rounded-xl flex gap-3 border transition-all bg-amber-50/80 backdrop-blur-sm border-amber-200 dark:bg-amber-900/20 dark:border-amber-500/40">
-                <svg 
-                  className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth="2" 
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" 
-                  />
-                </svg>
+          <div className="p-4 rounded-xl flex gap-3 border transition-all bg-amber-50/80 backdrop-blur-sm border-amber-200 dark:bg-amber-900/20 dark:border-amber-500/40">
+            <svg 
+              className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                strokeWidth="2" 
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" 
+              />
+            </svg>
 
-                <div className="text-xs leading-relaxed text-amber-900 dark:text-amber-100">
-                  <p className="font-bold mb-1 text-amber-800 dark:text-amber-300">
-                    Important Notice:
-                  </p>
+            <div className="text-xs leading-relaxed text-amber-900 dark:text-amber-100">
+              <p className="font-bold mb-1 text-amber-800 dark:text-amber-300">
+                Important Notice:
+              </p>
                   
-                  <p>Ensure you are not wearing a hat, glasses, or a mask for the best accuracy.</p>
-                </div>
+              <p>Ensure you are not wearing a hat, glasses, or a mask for the best accuracy.</p>
             </div>
+          </div>
 
-            <div className="p-4 rounded-xl flex gap-3 border transition-all bg-blue-50/80 backdrop-blur-sm border-blue-200 dark:bg-blue-900/30 dark:border-blue-500/50">
-                <svg 
-                  className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" 
-                  fill="currentColor" 
-                  viewBox="0 0 20 20"
-                >
-                  <path 
-                    fillRule="evenodd" 
-                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" 
-                    clipRule="evenodd"
-                  />
-                </svg>
+          <div className="p-4 rounded-xl flex gap-3 border transition-all bg-blue-50/80 backdrop-blur-sm border-blue-200 dark:bg-blue-900/30 dark:border-blue-500/50">
+            <svg 
+              className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" 
+              fill="currentColor" 
+              viewBox="0 0 20 20"
+            >
+              <path 
+                fillRule="evenodd" 
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" 
+                clipRule="evenodd"
+              />
+            </svg>
 
-                <p className="text-xs leading-relaxed text-blue-900 dark:text-blue-100">
-                  Your biometric data is encrypted and processed securely for 
-                  <span className="font-bold text-blue-700 dark:text-blue-300">
-                    identity verification
-                  </span> 
-                  only.
-                </p>
-            </div>
+            <p className="text-xs leading-relaxed text-blue-900 dark:text-blue-100">
+              Your biometric data is encrypted and processed securely for 
+              <span className="font-bold text-blue-700 dark:text-blue-300">
+                identity verification
+              </span> 
+                
+              only.
+            </p>
+          </div>
         </div>
       </div>
 

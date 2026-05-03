@@ -31,7 +31,7 @@ export default function PersonalNonMalaysianPassportQRCode() {
 
     if (origin.includes("localhost") || origin.includes("127.0.0.1")) {
       setHostWarning(
-        "This app is loaded from localhost, which may not be reachable from your phone. Open the app from your laptop IP or tunnel URL and refresh."
+        "This app is loaded from localhost, which is not be reachable from your phone. Open the app from your laptop IP or tunnel URL and refresh."
       );
     }
 
@@ -172,7 +172,7 @@ export default function PersonalNonMalaysianPassportQRCode() {
         </div>
 
         {hostWarning && (
-          <div className="mb-6 rounded-2xl bg-yellow-50 border border-yellow-200 p-4 text-sm text-yellow-900 dark:bg-yellow-900/20 dark:border-yellow-700 dark:text-yellow-200">
+          <div className="mb-6 w-full max-w-md mx-auto p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-xs text-center font-medium shadow-sm dark:bg-red-900/20 dark:border-red-800 dark:text-red-400 whitespace-pre-line">            
             {hostWarning}
           </div>
         )}
@@ -231,7 +231,6 @@ export default function PersonalNonMalaysianPassportQRCode() {
               <div className="mt-8 flex items-center justify-center gap-3 text-sm text-gray-500 dark:text-gray-400">
                 <span className="relative flex h-3 w-3">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#F0CA8E] opacity-75" />
-
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-[#F0CA8E]" />
                 </span>
 

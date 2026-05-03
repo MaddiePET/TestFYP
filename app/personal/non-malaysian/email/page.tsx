@@ -121,6 +121,7 @@ export default function PersonalNonMalaysianEmail() {
           className="inline-flex items-center text-sm text-gray-600 dark:text-white/80 transition-colors hover:text-gray-900 dark:hover:text-white"
         >
           <ChevronLeftIcon className="w-5 h-5" />
+
           Back
         </button>
 
@@ -183,10 +184,7 @@ export default function PersonalNonMalaysianEmail() {
                     : 'bg-[#3D405B] text-white hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d]'
                 }`}
               >
-                {isLoading 
-                  ? "Processing..." 
-                  : "Continue"
-                }
+                {isLoading ? "Processing..." : "Continue"}
               </button>
             </form>
           </div>
@@ -204,6 +202,7 @@ export default function PersonalNonMalaysianEmail() {
                 <span className="font-bold text-gray-900 dark:text-white">
                   {email}
                 </span>
+                
                 . Please provide the code to proceed with the registration.
               </p>
             </div>
@@ -235,10 +234,7 @@ export default function PersonalNonMalaysianEmail() {
                     : 'bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600'
                 }`}
               >
-                {isLoading 
-                  ? "Verifying..." 
-                  : "Verify"
-                }
+                {isLoading ? "Verifying..." : "Verify"}
               </button>
             </div>
 
@@ -295,10 +291,12 @@ export default function PersonalNonMalaysianEmail() {
             <span className="font-bold text-blue-700 dark:text-blue-300">
               secure account registration
             </span> 
+            
             and 
             <span className="font-bold text-blue-700 dark:text-blue-300">
               identity verification
             </span>
+            
             .
           </p>
         </div>

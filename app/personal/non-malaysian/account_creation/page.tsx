@@ -8,7 +8,6 @@ import ChevronLeftIcon from "@/icons/chevron-left.svg";
 import Label from "@/components/form/Label";
 import EyeIcon from "@/icons/eye.svg";
 import EyeCloseIcon from "@/icons/eye-close.svg";
-import path from "path/win32";
 
 type Step = "profile" | "password" | "pending";
 
@@ -54,7 +53,6 @@ export default function PersonalNonMalaysianAccountCreation() {
       const reader = new FileReader();
       reader.onloadend = () => {
         const dataUrl = reader.result as string;
-        // Extract base64 string from data URL (remove "data:image/jpeg;base64," prefix)
         const base64String = dataUrl.split(',')[1];
         setProfilePreview(base64String);
       };
@@ -117,6 +115,7 @@ export default function PersonalNonMalaysianAccountCreation() {
           className="inline-flex items-center text-sm text-gray-600 dark:text-white/80 transition-colors hover:text-gray-900 dark:hover:text-white"
         >
           <ChevronLeftIcon className="w-5 h-5" />
+          
           Back
         </button>
 
@@ -413,6 +412,7 @@ export default function PersonalNonMalaysianAccountCreation() {
                   <span className="font-bold">
                     24 hours
                   </span>
+                  
                   . Any additional documents needed will be informed via email.
                 </p>
             </div>
