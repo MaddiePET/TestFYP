@@ -366,8 +366,7 @@ export default function PersonalNonMalaysianAddress() {
           </h1>
 
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Please provide your current and permanent residential addresses to
-            proceed with the registration.
+            Please provide your current and permanent residential addresses to proceed with the registration.
           </p>
         </div>
 
@@ -389,8 +388,7 @@ export default function PersonalNonMalaysianAddress() {
 
         <div className="mt-16 flex flex-col items-center max-w-xl mx-auto">
           <p className="mb-6 text-xs text-gray-500 dark:text-gray-400 text-center">
-            By clicking continue, you confirm that the information provided is
-            accurate and belongs to you.
+            By clicking continue, you confirm that the information provided is accurate and belongs to you.
           </p>
 
           <button
@@ -408,9 +406,6 @@ export default function PersonalNonMalaysianAddress() {
           <div className="mt-5 text-center">
             <p className="text-sm">
               <span className="text-gray-500 dark:text-gray-400">Having trouble? </span>
-              <span className="text-gray-500 dark:text-gray-400">
-                Having trouble?{" "}
-              </span>
 
               <Link
                 href="/support"
@@ -424,8 +419,7 @@ export default function PersonalNonMalaysianAddress() {
       </div>
 
       <footer className="relative mt-8 text-xs text-gray-400 dark:text-gray-200 z-10 text-center">
-        &copy; {new Date().getFullYear()} DTCOB Banking Services. All rights
-        reserved.
+        &copy; {new Date().getFullYear()} DTCOB Banking Services. All rights reserved.
       </footer>
     </div>
   );

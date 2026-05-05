@@ -10,6 +10,7 @@ type ScanStatus = "idle" | "scanning" | "success" | "error";
 
 export default function BusinessMalaysianFaceVerification() {
   const router = useRouter();
+  
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const isMountedRef = useRef(true);
@@ -116,7 +117,7 @@ export default function BusinessMalaysianFaceVerification() {
   const handleBack = () => {
     if (scanIntervalRef.current) clearInterval(scanIntervalRef.current);
     stopCamera();
-    router.push("/business/malaysian/contact");
+    router.push("/business/malaysian/mykad");
   };
 
   return (
@@ -252,7 +253,7 @@ export default function BusinessMalaysianFaceVerification() {
 
           {status === "success" && (
             <>
-              <button onClick={() => router.push("/business/malaysian/supporting_documents")} className="inline-flex items-center justify-center w-full px-4 py-3 text-sm font-bold transition rounded-lg shadow-theme-xs relative z-10 bg-[#3D405B] text-white hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d]">
+              <button onClick={() => router.push("/business/malaysian/phone")} className="inline-flex items-center justify-center w-full px-4 py-3 text-sm font-bold transition rounded-lg shadow-theme-xs relative z-10 bg-[#3D405B] text-white hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d]">
                 Continue
               </button>
               <button onClick={handleRetake} className="inline-flex items-center justify-center w-full px-4 py-3 text-sm font-bold transition bg-transparent border-2 rounded-lg text-gray-700 border-gray-200 hover:bg-gray-50 dark:text-gray-300 dark:border-gray-800 dark:hover:bg-gray-900">

@@ -22,6 +22,7 @@ const linked_businesses: Business[] = [
 
 export default function BusinessMalaysianBusinessParticulars() {
   const router = useRouter();
+  
   const [mounted, setMounted] = useState<boolean>(false);
   const [step, setStep] = useState<number>(1);
   const [selectedBusinessId, setSelectedBusinessId] = useState<string>("");
@@ -60,7 +61,7 @@ export default function BusinessMalaysianBusinessParticulars() {
 
   const handleBack = () => {
     if (step === 1) {
-      router.push("/business/malaysian/email");
+      router.push("/business/malaysian/info");
     } else {
       setStep(1);
     }
@@ -94,15 +95,35 @@ export default function BusinessMalaysianBusinessParticulars() {
   return (
     <div className="relative flex flex-col items-center justify-center min-h-screen px-4 py-20 bg-[#F9FAFB] dark:bg-gray-950 overflow-hidden">
       <div className="absolute top-0 left-0 w-full leading-none z-0 pointer-events-none opacity-20">
-        <svg className="relative block w-full h-24 sm:h-32 md:h-48 lg:h-64" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320">
-          <path className="fill-[#3D405B]/80" d="M0,192L48,197.3C96,203,192,213,288,192C384,171,480,117,576,117.3C672,117,768,171,864,192C960,213,1056,203,1152,176C1248,149,1344,107,1392,85.3L1440,64L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"></path>
-          <path className="fill-[#3D405B]" d="M0,128L48,138.7C96,149,192,171,288,176C384,181,480,171,576,144C672,117,768,75,864,69.3C960,64,1056,96,1152,112C1248,128,1344,128,1392,128L1440,128L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"></path>
+        <svg 
+          className="relative block w-full h-24 sm:h-32 md:h-48 lg:h-64" 
+          preserveAspectRatio="none" 
+          xmlns="http://www.w3.org/2000/svg" 
+          viewBox="0 0 1440 320"
+        >
+          <path 
+            className="fill-[#3D405B]/80" 
+            d="M0,192L48,197.3C96,203,192,213,288,192C384,171,480,117,576,117.3C672,117,768,171,864,192C960,213,1056,203,1152,176C1248,149,1344,107,1392,85.3L1440,64L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"
+          />
+
+          <path 
+            className="fill-[#3D405B]" 
+            d="M0,128L48,138.7C96,149,192,171,288,176C384,181,480,171,576,144C672,117,768,75,864,69.3C960,64,1056,96,1152,112C1248,128,1344,128,1392,128L1440,128L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"
+          />
         </svg>
       </div>
-
+      
       <div className="absolute bottom-0 left-0 w-full leading-none z-0 pointer-events-none opacity-20">
-        <svg className="relative block w-full h-24 sm:h-32 md:h-48 lg:h-64" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320">
-          <path className="fill-[#F0CA8E]" d="M0,224L34.3,192C68.6,160,137,96,206,90.7C274.3,85,343,139,411,144C480,149,549,107,617,122.7C685.7,139,754,213,823,240C891.4,267,960,245,1029,224C1097.1,203,1166,181,1234,160C1302.9,139,1371,117,1406,106.7L1440,96L1440,320L1405.7,320C1371.4,320,1303,320,1234,320C1165.7,320,1097,320,1029,320C960,320,891,320,823,320C754.3,320,686,320,617,320C548.6,320,480,320,411,320C342.9,320,274,320,206,320C137.1,320,69,320,34,320L0,320Z"></path>
+        <svg 
+          className="relative block w-full h-24 sm:h-32 md:h-48 lg:h-64" 
+          preserveAspectRatio="none" 
+          xmlns="http://www.w3.org/2000/svg" 
+          viewBox="0 0 1440 320"
+        >
+          <path 
+            className="fill-[#F0CA8E]" 
+            d="M0,224L34.3,192C68.6,160,137,96,206,90.7C274.3,85,343,139,411,144C480,149,549,107,617,122.7C685.7,139,754,213,823,240C891.4,267,960,245,1029,224C1097.1,203,1166,181,1234,160C1302.9,139,1371,117,1406,106.7L1440,96L1440,320L1405.7,320C1371.4,320,1303,320,1234,320C1165.7,320,1097,320,1029,320C960,320,891,320,823,320C754.3,320,686,320,617,320C548.6,320,480,320,411,320C342.9,320,274,320,206,320C137.1,320,69,320,34,320L0,320Z"
+          />
         </svg>
       </div>
 
@@ -113,11 +134,22 @@ export default function BusinessMalaysianBusinessParticulars() {
           className="inline-flex items-center text-sm text-gray-600 dark:text-white/80 transition-colors hover:text-gray-900 dark:hover:text-white"
         >
           <ChevronLeftIcon className="w-5 h-5" />
+          
           Back
         </button>
+
         <div className="flex items-center gap-2">
-          <Image src="/images/logo/logo-light.svg" alt="Logo" width={40} height={40} className="block dark:invert-0 invert" />
-          <h1 className="text-2xl font-bold uppercase tracking-tight text-gray-800 dark:text-white">DTCOB</h1>
+          <Image 
+            src="/images/logo/logo-light.svg" 
+            alt="Logo" 
+            width={40} 
+            height={40} 
+            className="block dark:invert-0 invert" 
+          />
+
+          <h1 className="text-2xl font-bold uppercase tracking-tight text-gray-800 dark:text-white">
+            DTCOB
+          </h1>
         </div>
       </div>
 
@@ -128,6 +160,7 @@ export default function BusinessMalaysianBusinessParticulars() {
               <h1 className="mb-3 font-bold text-gray-800 text-title-sm dark:text-white sm:text-title-md">
                 Select Your Registered Business
               </h1>
+
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 Which of the following business would you like to register an account for?
               </p>
@@ -155,9 +188,15 @@ export default function BusinessMalaysianBusinessParticulars() {
                     >
                       {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
                     </div>
+
                     <div className="flex-1">
-                      <h3 className="text-sm font-bold text-gray-800 dark:text-white">{business.name}</h3>
-                      <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mt-0.5">BRN: {business.brn}</p>
+                      <h3 className="text-sm font-bold text-gray-800 dark:text-white">
+                        {business.name}
+                      </h3>
+
+                      <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mt-0.5">
+                        BRN: {business.brn}
+                      </p>
                     </div>
                   </div>
                 );
@@ -173,9 +212,11 @@ export default function BusinessMalaysianBusinessParticulars() {
               >
                 Continue
               </button>
+
               <div className="mt-5 text-center">
                 <p className="text-sm">
                   <span className="text-gray-500 dark:text-gray-400">Having trouble? </span>
+
                   <Link
                     href="/support"
                     className="font-semibold text-blue-700 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
@@ -194,6 +235,7 @@ export default function BusinessMalaysianBusinessParticulars() {
               <h1 className="mb-3 font-bold text-gray-800 text-title-sm dark:text-white sm:text-title-md">
                 Verify Your Business Particulars
               </h1>
+
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 If your business particulars are different from the registered business on your MyKad below, please update it.
               </p>
@@ -203,8 +245,9 @@ export default function BusinessMalaysianBusinessParticulars() {
               <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                 <div className="md:col-span-2">
                   <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-                    Business Name <span className="text-red-500">*</span>
+                    Business Name<span className="text-red-500">*</span>
                   </label>
+
                   <input
                     type="text"
                     className={inputClasses}
@@ -215,15 +258,22 @@ export default function BusinessMalaysianBusinessParticulars() {
 
                 <div className="md:col-span-2">
                   <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-                    Business Registration Number (BRN) <span className="text-red-500">*</span>
+                    Business Registration Number (BRN)<span className="text-red-500">*</span>
                   </label>
-                  <input type="text" className={readOnlyClasses} value={formData.brn} readOnly />
+
+                  <input 
+                    type="text" 
+                    className={readOnlyClasses} 
+                    value={formData.brn} 
+                    readOnly 
+                  />
                 </div>
 
                 <div className="md:col-span-2">
                   <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-                    Operation Start Date <span className="text-red-500">*</span>
+                    Operation Start Date<span className="text-red-500">*</span>
                   </label>
+
                   <div className="grid grid-cols-3 gap-3">
                     <input
                       type="number"
@@ -232,12 +282,7 @@ export default function BusinessMalaysianBusinessParticulars() {
                       placeholder="DD"
                       className={inputClasses}
                       value={formData.day}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          day: e.target.value.replace(/[^0-9]/g, "").slice(0, 2),
-                        })
-                      }
+                      onChange={(e) => setFormData({...formData, day: e.target.value.replace(/[^0-9]/g, "").slice(0, 2),})}
                     />
 
                     <input
@@ -247,12 +292,7 @@ export default function BusinessMalaysianBusinessParticulars() {
                       placeholder="MM"
                       className={inputClasses}
                       value={formData.month}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          month: e.target.value.replace(/[^0-9]/g, "").slice(0, 2),
-                        })
-                      }
+                      onChange={(e) => setFormData({...formData, month: e.target.value.replace(/[^0-9]/g, "").slice(0, 2),})}
                     />
 
                     <input
@@ -262,41 +302,55 @@ export default function BusinessMalaysianBusinessParticulars() {
                       placeholder="YYYY"
                       className={inputClasses}
                       value={formData.year}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          year: e.target.value.replace(/[^0-9]/g, "").slice(0, 4),
-                        })
-                      }
+                      onChange={(e) => setFormData({...formData, year: e.target.value.replace(/[^0-9]/g, "").slice(0, 4),})}
                     />
                   </div>
                 </div>
 
                 <div className="md:col-span-2">
                   <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-                    Business Type <span className="text-red-500">*</span>
+                    Business Type<span className="text-red-500">*</span>
                   </label>
+
                   <div className="relative">
                     <select
                       value={formData.businessType}
                       onChange={(e) => setFormData({ ...formData, businessType: e.target.value })}
                       className={inputClasses}
                     >
-                      <option value="" disabled>Select Type</option>
+                      <option 
+                        value="" 
+                        disabled
+                      >
+                        Select Type
+                      </option>
                       {[
                         "Sole Proprietorship",
                         "Partnership",
                         "Private Limited (Sdn Bhd)",
                         "Limited Liability Partnership (LLP)",
                       ].map((type) => (
-                        <option key={type} value={type}>
+                        <option 
+                          key={type} 
+                          value={type}
+                        >
                           {type}
                         </option>
                       ))}
                     </select>
                     <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
-                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                      <svg 
+                        className="w-4 h-4 text-gray-400" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round" 
+                          strokeWidth="2" 
+                          d="M19 9l-7 7-7-7" 
+                        />
                       </svg>
                     </div>
                   </div>
@@ -328,6 +382,7 @@ export default function BusinessMalaysianBusinessParticulars() {
                 <div className="mt-5 text-center">
                   <p className="text-sm">
                     <span className="text-gray-500 dark:text-gray-400">Having trouble? </span>
+
                     <Link
                       href="/support"
                       className="font-semibold text-blue-700 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
@@ -342,9 +397,9 @@ export default function BusinessMalaysianBusinessParticulars() {
         )}
       </div>
 
-      <p className="relative mt-8 text-xs text-gray-400 dark:text-gray-200 text-center z-10">
+      <footer className="relative mt-8 text-xs text-gray-400 dark:text-gray-200 text-center z-10">
         &copy; {new Date().getFullYear()} DTCOB Banking Services. All rights reserved.
-      </p>
+      </footer>
     </div>
   );
 }

@@ -36,6 +36,7 @@ const BRANCHES: Branch[] = [
 
 export default function BusinessMalaysianBusinessAddress() {
   const router = useRouter();
+  
   const [step, setStep] = useState<number>(1);
   const [mounted, setMounted] = useState<boolean>(false);
 
@@ -174,15 +175,35 @@ export default function BusinessMalaysianBusinessAddress() {
   return (
     <div className="relative flex flex-col items-center justify-center min-h-screen px-4 py-20 bg-[#F9FAFB] dark:bg-gray-950 overflow-hidden">
       <div className="absolute top-0 left-0 w-full leading-none z-0 pointer-events-none opacity-20">
-        <svg className="relative block w-full h-24 sm:h-32 md:h-48 lg:h-64" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320">
-          <path className="fill-[#3D405B]/80" d="M0,192L48,197.3C96,203,192,213,288,192C384,171,480,117,576,117.3C672,117,768,171,864,192C960,213,1056,203,1152,176C1248,149,1344,107,1392,85.3L1440,64L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"></path>
-          <path className="fill-[#3D405B]" d="M0,128L48,138.7C96,149,192,171,288,176C384,181,480,171,576,144C672,117,768,75,864,69.3C960,64,1056,96,1152,112C1248,128,1344,128,1392,128L1440,128L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"></path>
+        <svg 
+          className="relative block w-full h-24 sm:h-32 md:h-48 lg:h-64" 
+          preserveAspectRatio="none" 
+          xmlns="http://www.w3.org/2000/svg" 
+          viewBox="0 0 1440 320"
+        >
+          <path 
+            className="fill-[#3D405B]/80" 
+            d="M0,192L48,197.3C96,203,192,213,288,192C384,171,480,117,576,117.3C672,117,768,171,864,192C960,213,1056,203,1152,176C1248,149,1344,107,1392,85.3L1440,64L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"
+          />
+
+          <path 
+            className="fill-[#3D405B]" 
+            d="M0,128L48,138.7C96,149,192,171,288,176C384,181,480,171,576,144C672,117,768,75,864,69.3C960,64,1056,96,1152,112C1248,128,1344,128,1392,128L1440,128L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"
+          />
         </svg>
       </div>
-
+      
       <div className="absolute bottom-0 left-0 w-full leading-none z-0 pointer-events-none opacity-20">
-        <svg className="relative block w-full h-24 sm:h-32 md:h-48 lg:h-64" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320">
-          <path className="fill-[#F0CA8E]" d="M0,224L34.3,192C68.6,160,137,96,206,90.7C274.3,85,343,139,411,144C480,149,549,107,617,122.7C685.7,139,754,213,823,240C891.4,267,960,245,1029,224C1097.1,203,1166,181,1234,160C1302.9,139,1371,117,1406,106.7L1440,96L1440,320L1405.7,320C1371.4,320,1303,320,1234,320C1165.7,320,1097,320,1029,320C960,320,891,320,823,320C754.3,320,686,320,617,320C548.6,320,480,320,411,320C342.9,320,274,320,206,320C137.1,320,69,320,34,320L0,320Z"></path>
+        <svg 
+          className="relative block w-full h-24 sm:h-32 md:h-48 lg:h-64" 
+          preserveAspectRatio="none" 
+          xmlns="http://www.w3.org/2000/svg" 
+          viewBox="0 0 1440 320"
+        >
+          <path 
+            className="fill-[#F0CA8E]" 
+            d="M0,224L34.3,192C68.6,160,137,96,206,90.7C274.3,85,343,139,411,144C480,149,549,107,617,122.7C685.7,139,754,213,823,240C891.4,267,960,245,1029,224C1097.1,203,1166,181,1234,160C1302.9,139,1371,117,1406,106.7L1440,96L1440,320L1405.7,320C1371.4,320,1303,320,1234,320C1165.7,320,1097,320,1029,320C960,320,891,320,823,320C754.3,320,686,320,617,320C548.6,320,480,320,411,320C342.9,320,274,320,206,320C137.1,320,69,320,34,320L0,320Z"
+          />
         </svg>
       </div>
 
@@ -193,11 +214,22 @@ export default function BusinessMalaysianBusinessAddress() {
           className="inline-flex items-center text-sm text-gray-600 dark:text-white/80 transition-colors hover:text-gray-900 dark:hover:text-white"
         >
           <ChevronLeftIcon className="w-5 h-5" />
+          
           Back
         </button>
+
         <div className="flex items-center gap-2">
-          <Image src="/images/logo/logo-light.svg" alt="Logo" width={40} height={40} className="block dark:invert-0 invert" />
-          <h1 className="text-2xl font-bold uppercase tracking-tight text-gray-800 dark:text-white">DTCOB</h1>
+          <Image 
+            src="/images/logo/logo-light.svg" 
+            alt="Logo" 
+            width={40} 
+            height={40} 
+            className="block dark:invert-0 invert" 
+          />
+
+          <h1 className="text-2xl font-bold uppercase tracking-tight text-gray-800 dark:text-white">
+            DTCOB
+          </h1>
         </div>
       </div>
 
@@ -208,6 +240,7 @@ export default function BusinessMalaysianBusinessAddress() {
               <h1 className="mb-3 font-bold text-gray-800 text-title-sm dark:text-white sm:text-title-md whitespace-nowrap">
                 Verify Your Business Address
               </h1>
+
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-8">
                 If your business address is different from the registered business address on your MyKad below, please update it.
               </p>
@@ -216,7 +249,10 @@ export default function BusinessMalaysianBusinessAddress() {
                 <p className="text-sm font-bold text-blue-600 dark:text-blue-400 text-center">
                   Jalan SS15/1H, 40000 Subang Jaya, Selangor, Malaysia
                 </p>
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Registered MyKad Address</p>
+
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Registered MyKad Address
+                </p>
               </div>
             </div>
 
@@ -224,8 +260,9 @@ export default function BusinessMalaysianBusinessAddress() {
               <div className="grid grid-cols-1 gap-4">
                 <div>
                   <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-                    Street Address <span className="text-red-500">*</span>
+                    Street Address<span className="text-red-500">*</span>
                   </label>
+
                   <input
                     type="text"
                     className={inputClasses}
@@ -237,8 +274,9 @@ export default function BusinessMalaysianBusinessAddress() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-                      Zip Code <span className="text-red-500">*</span>
+                      Postal Code<span className="text-red-500">*</span>
                     </label>
+
                     <input
                       type="text"
                       className={inputClasses}
@@ -246,10 +284,12 @@ export default function BusinessMalaysianBusinessAddress() {
                       onChange={(e) => setBusinessAddress({ ...businessAddress, postal: e.target.value })}
                     />
                   </div>
+
                   <div>
                     <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-                      City <span className="text-red-500">*</span>
+                      City<span className="text-red-500">*</span>
                     </label>
+
                     <input
                       type="text"
                       className={inputClasses}
@@ -262,8 +302,9 @@ export default function BusinessMalaysianBusinessAddress() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-                      State <span className="text-red-500">*</span>
+                      State<span className="text-red-500">*</span>
                     </label>
+                    
                     <input
                       type="text"
                       className={inputClasses}
@@ -271,10 +312,12 @@ export default function BusinessMalaysianBusinessAddress() {
                       onChange={(e) => setBusinessAddress({ ...businessAddress, state: e.target.value })}
                     />
                   </div>
+
                   <div>
                     <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-                      Country <span className="text-red-500">*</span>
+                      Country<span className="text-red-500">*</span>
                     </label>
+
                     <input
                       type="text"
                       className={inputClasses}
@@ -287,8 +330,12 @@ export default function BusinessMalaysianBusinessAddress() {
 
               <div className="pt-2 text-center">
                 <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-                  Keep business address as mailing address? <span className="text-red-500">*</span>
+                  Keep business address as mailing address? 
+                  <span className="text-red-500">
+                    *
+                  </span>
                 </label>
+
                 <div className="flex justify-center gap-8 mt-2">
                   <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300">
                     <input
@@ -298,8 +345,10 @@ export default function BusinessMalaysianBusinessAddress() {
                       checked={useBusinessAsMailing === true}
                       onChange={() => setUseBusinessAsMailing(true)}
                     />
+
                     Yes
                   </label>
+
                   <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300">
                     <input
                       type="radio"
@@ -308,6 +357,7 @@ export default function BusinessMalaysianBusinessAddress() {
                       checked={useBusinessAsMailing === false}
                       onChange={() => setUseBusinessAsMailing(false)}
                     />
+
                     No
                   </label>
                 </div>
@@ -317,6 +367,7 @@ export default function BusinessMalaysianBusinessAddress() {
                 <p className="text-xs text-gray-500 dark:text-gray-400 text-center mb-6">
                   By clicking continue, you confirm that the information provided is accurate and belongs to you.
                 </p>
+
                 <button
                   onClick={handleStep1Submit}
                   disabled={useBusinessAsMailing === null}
@@ -339,6 +390,7 @@ export default function BusinessMalaysianBusinessAddress() {
               <h1 className="mb-3 font-bold text-gray-800 text-title-sm dark:text-white sm:text-title-md whitespace-nowrap">
                 Verify Your Mailing Address
               </h1>
+
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-8">
                 If your mailing address is different from the registered business address below, please update it.
               </p>
@@ -347,7 +399,10 @@ export default function BusinessMalaysianBusinessAddress() {
                 <p className="text-sm font-bold text-blue-600 dark:text-blue-400 text-center">
                   {`${businessAddress.streetAddress}, ${businessAddress.postal} ${businessAddress.city}, ${businessAddress.state}, ${businessAddress.country}`}
                 </p>
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Registered Business Address</p>
+
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Registered Business Address
+                </p>
               </div>
             </div>
 
@@ -355,8 +410,9 @@ export default function BusinessMalaysianBusinessAddress() {
               <div className="grid grid-cols-1 gap-4">
                 <div>
                   <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-                    Street Address <span className="text-red-500">*</span>
+                    Street Address<span className="text-red-500">*</span>
                   </label>
+                  
                   <input
                     type="text"
                     className={inputClasses}
@@ -368,8 +424,9 @@ export default function BusinessMalaysianBusinessAddress() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-                      Postal Code <span className="text-red-500">*</span>
+                      Postal Code<span className="text-red-500">*</span>
                     </label>
+
                     <input
                       type="text"
                       className={inputClasses}
@@ -377,10 +434,12 @@ export default function BusinessMalaysianBusinessAddress() {
                       onChange={(e) => setMailingAddress({ ...mailingAddress, postal: e.target.value })}
                     />
                   </div>
+
                   <div>
                     <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-                      City <span className="text-red-500">*</span>
+                      City<span className="text-red-500">*</span>
                     </label>
+
                     <input
                       type="text"
                       className={inputClasses}
@@ -393,8 +452,9 @@ export default function BusinessMalaysianBusinessAddress() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-                      State <span className="text-red-500">*</span>
+                      State<span className="text-red-500">*</span>
                     </label>
+
                     <input
                       type="text"
                       className={inputClasses}
@@ -402,10 +462,12 @@ export default function BusinessMalaysianBusinessAddress() {
                       onChange={(e) => setMailingAddress({ ...mailingAddress, state: e.target.value })}
                     />
                   </div>
+
                   <div>
                     <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-                      Country <span className="text-red-500">*</span>
+                      Country<span className="text-red-500">*</span>
                     </label>
+
                     <input
                       type="text"
                       className={inputClasses}
@@ -420,6 +482,7 @@ export default function BusinessMalaysianBusinessAddress() {
                 <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
                   By clicking continue, you confirm that the information provided is accurate and belongs to you.
                 </p>
+
                 <button
                   onClick={handleStep2Submit}
                   className="inline-flex items-center justify-center w-full px-4 py-3 text-sm font-bold transition rounded-lg shadow-theme-xs bg-[#3D405B] text-white hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d] active:scale-[0.98]"
@@ -437,36 +500,86 @@ export default function BusinessMalaysianBusinessAddress() {
               <h1 className="mb-3 font-bold text-gray-800 text-title-sm dark:text-white sm:text-title-md whitespace-nowrap">
                 Select Your Preferred Branch
               </h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Select a branch based on your current location.</p>
+
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Select a branch based on your current location.
+              </p>
             </div>
 
             <div className="mb-8">
               {!userLocation ? (
                 <div className="p-6 bg-blue-50 border border-blue-200 rounded-xl text-center dark:bg-blue-900/30 dark:border-blue-500/50">
                   <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 dark:bg-blue-800 dark:text-blue-300">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <svg 
+                      className="w-6 h-6" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                        strokeWidth="2" 
+                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" 
+                      />
+
+                      <path 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                        strokeWidth="2" 
+                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" 
+                      />
                     </svg>
                   </div>
-                  <h3 className="font-bold text-blue-900 dark:text-blue-100 mb-1">Enable Location Services</h3>
-                  <p className="text-xs text-blue-800 dark:text-blue-200/70 mb-3">To suggest the nearest branches to you.</p>
-                  <button onClick={handleRequestLocation} disabled={isLocating} className="text-sm font-bold text-blue-700 hover:text-blue-800 dark:text-blue-400">
+
+                  <h3 className="font-bold text-blue-900 dark:text-blue-100 mb-1">
+                    Enable Location Services
+                  </h3>
+
+                  <p className="text-xs text-blue-800 dark:text-blue-200/70 mb-3">
+                    To suggest the nearest branches to you.
+                  </p>
+
+                  <button 
+                    onClick={handleRequestLocation} 
+                    disabled={isLocating} 
+                    className="text-sm font-bold text-blue-700 hover:text-blue-800 dark:text-blue-400"
+                  >
                     {isLocating ? "Locating..." : "Use My Current Location"}
                   </button>
                 </div>
               ) : (
                 <div className="flex items-center gap-3 p-4 bg-[#3D405B]/5 border-2 border-[#3D405B]/20 rounded-xl">
                   <div className="flex-shrink-0 w-8 h-8 bg-[#3D405B] text-white rounded-lg flex items-center justify-center">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <svg 
+                      className="w-4 h-4" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                        strokeWidth="2" 
+                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" 
+                      />
                     </svg>
                   </div>
+
                   <div className="flex-1 overflow-hidden">
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Current Location</p>
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">{userAddressLabel}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Current Location
+                    </p>
+
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">
+                      {userAddressLabel}
+                    </p>
                   </div>
-                  <button onClick={() => setUserLocation(null)} className="text-xs font-bold text-[#3D405B] dark:text-blue-400">
+
+                  <button 
+                    onClick={() => setUserLocation(null)} 
+                    className="text-xs font-bold text-[#3D405B] dark:text-blue-400"
+                  >
                     Change
                   </button>
                 </div>
@@ -475,8 +588,9 @@ export default function BusinessMalaysianBusinessAddress() {
 
             <div className="grid grid-cols-1 gap-4">
               <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-                Available Branches <span className="text-red-500">*</span>
+                Available Branches<span className="text-red-500">*</span>
               </label>
+
               {sortedBranches.map((branch) => {
                 const distance = userLocation ? getDistance(userLocation.lat, userLocation.lng, branch.lat, branch.lng).toFixed(1) : null;
                 const isSelected = preferredBranch === branch.id;
@@ -492,18 +606,33 @@ export default function BusinessMalaysianBusinessAddress() {
                     }`}
                   >
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${isSelected ? "bg-[#F0CA8E] text-[#3D405B] dark:text-white" : "bg-gray-100 dark:bg-gray-800 text-gray-400"}`}>
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      <svg 
+                        className="w-5 h-5" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round" 
+                          strokeWidth="2" 
+                          d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" 
+                        />
                       </svg>
                     </div>
+
                     <div className="flex-1">
-                      <h4 className="text-sm font-bold text-gray-800 dark:text-white">{branch.name}</h4>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{branch.address}</p>
+                      <h4 className="text-sm font-bold text-gray-800 dark:text-white">
+                        {branch.name}
+                      </h4>
+
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {branch.address}
+                      </p>
                     </div>
+
                     {distance && (
-                      <span className="text-[10px] font-bold px-2 py-1 bg-gray-100 dark:bg-gray-800 dark:text-gray-300 rounded-md">
-                        {distance} km
-                      </span>
+                      <span className="text-[10px] font-bold px-2 py-1 bg-gray-100 dark:bg-gray-800 dark:text-gray-300 rounded-md">{distance} km</span>
                     )}
                   </div>
                 );
@@ -514,6 +643,7 @@ export default function BusinessMalaysianBusinessAddress() {
               <p className="mb-6 text-xs text-gray-500 dark:text-gray-400 text-center">
                 By clicking continue, you confirm that all selected information is correct.
               </p>
+
               <button
                 onClick={handleFinalSubmit}
                 disabled={!preferredBranch}
@@ -532,16 +662,20 @@ export default function BusinessMalaysianBusinessAddress() {
         <div className="mt-5 text-center">
           <p className="text-sm font-normal">
             <span className="text-gray-500 dark:text-gray-400">Having trouble? </span>
-            <Link href="/support" className="font-semibold text-blue-700 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">
+
+            <Link 
+              href="/support" 
+              className="font-semibold text-blue-700 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+            >
               Contact Support
             </Link>
           </p>
         </div>
       </div>
 
-      <p className="relative mt-8 text-xs text-gray-400 dark:text-gray-200 text-center z-10">
+      <footer className="relative mt-8 text-xs text-gray-400 dark:text-gray-200 text-center z-10">
         &copy; {new Date().getFullYear()} DTCOB Banking Services. All rights reserved.
-      </p>
+      </footer>
     </div>
   );
 }
