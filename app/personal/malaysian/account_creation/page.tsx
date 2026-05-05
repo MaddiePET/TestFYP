@@ -82,11 +82,65 @@ export default function PersonalMalaysianAccountCreation() {
 
     const phoneVerification = JSON.parse(localStorage.getItem("phoneVerification") || "{}");
     const personalInfo = JSON.parse(localStorage.getItem("personalInfo") || "{}");
-    const homeAddress = JSON.parse(localStorage.getItem("homeAddress") || "{}");
+    const storedHomeAddress = JSON.parse(localStorage.getItem("homeAddress") || "{}");
     const contactInfo = JSON.parse(localStorage.getItem("contactInfo") || "{}");
-    const mailingAddress = JSON.parse(localStorage.getItem("mailingAddress") || "{}");
+    const storedMailingAddress = JSON.parse(localStorage.getItem("mailingAddress") || "{}");
     const branchInfo = JSON.parse(localStorage.getItem("branchInfo") || "{}");
     const savingsApplication = JSON.parse(localStorage.getItem("savingsApplication") || "{}");
+
+   // Convert stored address fields into the format required by the savings account API
+   const homeAddress = {
+    add_type: storedHomeAddress.add_type || "Home",
+    add_1:
+      storedHomeAddress.add_1 ||
+      storedHomeAddress.streetAddress1 ||
+      storedHomeAddress.streetAddress ||
+      "",
+    add_2:
+      storedHomeAddress.add_2 ||
+      storedHomeAddress.streetAddress2 ||
+      storedHomeAddress.city ||
+      "",
+    postcode:
+      storedHomeAddress.postcode ||
+      storedHomeAddress.postal ||
+      "",
+    state: storedHomeAddress.state || "",
+    country: storedHomeAddress.country || "Malaysia",
+  };
+
+  const mailingAddress = {
+    add_type: storedMailingAddress.add_type || "Mailing",
+    add_1:
+    storedMailingAddress.add_1 ||
+    storedMailingAddress.streetAddress1 ||
+    storedMailingAddress.streetAddress ||
+    homeAddress.add_1,
+  add_2:
+    storedMailingAddress.add_2 ||
+    storedMailingAddress.streetAddress2 ||
+    storedMailingAddress.city ||
+    homeAddress.add_2,
+  postcode:
+    storedMailingAddress.postcode ||
+    storedMailingAddress.postal ||
+    homeAddress.postcode,
+  state: storedMailingAddress.state || homeAddress.state,
+  country: storedMailingAddress.country || homeAddress.country || "Malaysia",
+};
+
+// Stop submission if the required home address fields are missing
+if (
+  !homeAddress.add_1 ||
+  !homeAddress.add_2 ||
+  !homeAddress.postcode ||
+  !homeAddress.state ||
+  !homeAddress.country
+) {
+  throw new Error(
+    "Home address is incomplete. Please go back and fill in the Malaysian address page again."
+  );
+}
 
     const payload = {
       customer: {
