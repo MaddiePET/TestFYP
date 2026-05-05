@@ -1,139 +1,50 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 
-// Generate a 16-character account number
-// Format: SA + 14 random digits
-function generateAccountNo(): string {
-  const randomDigits = Math.floor(Math.random() * 10 ** 14)
-    .toString()
-    .padStart(14, "0");
-
-  return `SA${randomDigits}`;
-}
-
-// Capitalize first letter of each word
-function toTitleCase(value: string): string {
-  return value
-    .toLowerCase()
-    .split(" ")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-}
-
-// Generate a unique savings account number
-async function generateUniqueAccountNo(client: any): Promise<string> {
+// Generates a random 16 digit savings account number
+function generateAccountNumber() {
   let accountNo = "";
-  let exists = true;
 
-  while (exists) {
-    accountNo = generateAccountNo();
-
-    const checkQuery = `
-      SELECT 1
-      FROM banka."Savings_account"
-      WHERE account_no = $1
-      LIMIT 1;
-    `;
-
-    const checkResult = await client.query(checkQuery, [accountNo]);
-    exists = checkResult.rows.length > 0;
+  for (let i = 0; i < 16; i++) {
+    accountNo += Math.floor(Math.random() * 10).toString();
   }
 
   return accountNo;
 }
 
-// Final submission route for Malaysian personal savings account onboarding
-export async function POST(req: NextRequest): Promise<NextResponse> {
+export async function POST(req: Request) {
+  // Get a database client from the connection pool
   const client = await pool.connect();
 
   try {
+    // Read the JSON data sent from the frontend or Postman
     const body = await req.json();
 
     const {
       customer,
       homeAddress,
       mailingAddress,
-      savingsAccount,
       user,
+      savingsAccount,
     } = body;
 
-    // ----------------------------
-    // Basic validation
-    // ----------------------------
-    if (
-      !customer ||
-      !homeAddress ||
-      !savingsAccount ||
-      !user
-    ) {
+    // Make sure the required sections exist before inserting into database
+    if (!customer || !homeAddress || !user || !savingsAccount) {
       return NextResponse.json(
         { error: "Missing required submission sections." },
         { status: 400 }
       );
     }
 
-    if (
-      !customer.id_num ||
-      !customer.full_name ||
-      !customer.id_type ||
-      !customer.dob ||
-      !customer.ph_no_1 ||
-      !customer.email ||
-      !customer.country
-    ) {
-      return NextResponse.json(
-        { error: "Missing required customer fields." },
-        { status: 400 }
-      );
-    }
-
-    if (
-      !homeAddress.add_type ||
-      !homeAddress.add_1 ||
-      !homeAddress.add_2 ||
-      !homeAddress.postcode ||
-      !homeAddress.state ||
-      !homeAddress.country
-    ) {
-      return NextResponse.json(
-        { error: "Missing required home address fields." },
-        { status: 400 }
-      );
-    }
-
-    if (
-      !savingsAccount.occupation ||
-      !savingsAccount.monthly_income ||
-      !savingsAccount.income_source ||
-      !savingsAccount.employment_type ||
-      savingsAccount.is18 === undefined
-    ) {
-      return NextResponse.json(
-        { error: "Missing required savings account fields." },
-        { status: 400 }
-      );
-    }
-
-    if (
-      !user.username ||
-      !user.password ||
-      !user.status ||
-      !user.sec_phrase ||
-      !user.branch
-    ) {
-      return NextResponse.json(
-        { error: "Missing required user fields." },
-        { status: 400 }
-      );
-    }
-
+    // Start transaction so all inserts succeed together or fail together
     await client.query("BEGIN");
 
-    // ----------------------------
-    // Step 1: Insert home address
-    // ----------------------------
-    const homeAddressQuery = `
-      INSERT INTO banka."Address" (
+    // 1. Insert home address first
+    // Customer.home_add will store this generated add_id
+    const homeAddressResult = await client.query(
+      `
+      INSERT INTO banka."Address"
+      (
         add_type,
         add_1,
         add_2,
@@ -142,70 +53,30 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         country
       )
       VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING *;
-    `;
+      RETURNING add_id
+      `,
+      [
+        homeAddress.add_type || "Home",
+        homeAddress.add_1,
+        homeAddress.add_2,
+        homeAddress.postcode,
+        homeAddress.state,
+        homeAddress.country,
+      ]
+    );
 
-    const homeAddressValues = [
-      homeAddress.add_type,
-      homeAddress.add_1,
-      homeAddress.add_2,
-      homeAddress.postcode,
-      homeAddress.state,
-      homeAddress.country,
-    ];
+    // Store generated home address ID for Customer.home_add
+    const homeAddId = homeAddressResult.rows[0].add_id;
 
-    const homeAddressResult = await client.query(homeAddressQuery, homeAddressValues);
-    const homeAddressRow = homeAddressResult.rows[0];
+    // 2. Insert mailing address only if it is provided
+    // If user selected same as home address, frontend can skip mailingAddress
+    let mailingAddId = null;
 
-    // ----------------------------
-    // Step 2: Insert customer
-    // ----------------------------
-    const customerQuery = `
-      INSERT INTO banka."Customer" (
-        id_num,
-        full_name,
-        id_type,
-        dob,
-        ph_no_1,
-        ph_no_2,
-        email,
-        country
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      RETURNING *;
-    `;
-
-    const customerValues = [
-      customer.id_num,
-      customer.full_name,
-      customer.id_type,
-      customer.dob,
-      customer.ph_no_1,
-      customer.ph_no_2 || null,
-      customer.email,
-      customer.country
-    ];
-
-    const customerResult = await client.query(customerQuery, customerValues);
-    const customerRow = customerResult.rows[0];
-
-    // ----------------------------
-    // Step 3: Insert mailing address if provided
-    // If not provided, use home address as linked address
-    // ----------------------------
-    let finalAddressId = homeAddressRow.add_id;
-    let mailingAddressRow = null;
-
-    if (
-      mailingAddress &&
-      mailingAddress.add_1 &&
-      mailingAddress.add_2 &&
-      mailingAddress.postcode &&
-      mailingAddress.state &&
-      mailingAddress.country
-    ) {
-      const mailingAddressQuery = `
-        INSERT INTO banka."Address" (
+    if (mailingAddress) {
+      const mailingAddressResult = await client.query(
+        `
+        INSERT INTO banka."Address"
+        (
           add_type,
           add_1,
           add_2,
@@ -214,32 +85,59 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           country
         )
         VALUES ($1, $2, $3, $4, $5, $6)
-        RETURNING *;
-      `;
-
-      const mailingAddressValues = [
-        mailingAddress.add_type || "Mailing",
-        mailingAddress.add_1,
-        mailingAddress.add_2,
-        mailingAddress.postcode,
-        mailingAddress.state,
-        mailingAddress.country,
-      ];
-
-      const mailingAddressResult = await client.query(
-        mailingAddressQuery,
-        mailingAddressValues
+        RETURNING add_id
+        `,
+        [
+          mailingAddress.add_type || "Mailing",
+          mailingAddress.add_1,
+          mailingAddress.add_2,
+          mailingAddress.postcode,
+          mailingAddress.state,
+          mailingAddress.country,
+        ]
       );
 
-      mailingAddressRow = mailingAddressResult.rows[0];
-      finalAddressId = mailingAddressRow.add_id;
+      // Store generated mailing address ID for response/reference
+      mailingAddId = mailingAddressResult.rows[0].add_id;
     }
 
-    // ----------------------------
-    // Step 4: Insert user
-    // ----------------------------
-    const userQuery = `
-      INSERT INTO banka."User" (
+    // 3. Insert customer and link to home address using home_add
+    const customerResult = await client.query(
+      `
+      INSERT INTO banka."Customer"
+      (
+        id_num,
+        full_name,
+        id_type,
+        dob,
+        ph_no_1,
+        ph_no_2,
+        email,
+        home_add
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING cust_id
+      `,
+      [
+        customer.id_num,
+        customer.full_name,
+        customer.id_type || "IC",
+        customer.dob,
+        customer.ph_no_1,
+        customer.ph_no_2 || null,
+        customer.email,
+        homeAddId,
+      ]
+    );
+
+    // Store generated customer ID for User table
+    const custId = customerResult.rows[0].cust_id;
+
+    // 4. Insert user/login details and link to customer using cust_id
+    const userResult = await client.query(
+      `
+      INSERT INTO banka."User"
+      (
         cust_id,
         username,
         password,
@@ -249,86 +147,103 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         branch
       )
       VALUES ($1, $2, $3, $4, $5, $6, $7)
-      RETURNING *;
-    `;
+      RETURNING user_id
+      `,
+      [
+        custId,
+        user.username,
+        user.password,
+        user.status || "Pending",
+        user.img || null,
+        user.sec_phrase,
+        user.branch,
+      ]
+    );
 
-    const userValues = [
+    // Store generated user ID for Savings_account table
+    const userId = userResult.rows[0].user_id;
 
-      customerRow.cust_id,
-      user.username,
-      user.password,
-      user.status,
-      user.img || null,
-      user.sec_phrase,
-      user.branch,
-    ];
+    // 5. Generate a unique 16 digit savings account number
+    let accountNo = generateAccountNumber();
+    let accountExists = true;
 
-    const userResult = await client.query(userQuery, userValues);
-    const userRow = userResult.rows[0];
+    // Keep generating until the number does not already exist
+    while (accountExists) {
+      const checkAccount = await client.query(
+        `
+        SELECT account_no
+        FROM banka."Savings_account"
+        WHERE account_no = $1
+        `,
+        [accountNo]
+      );
 
+      if (checkAccount.rows.length === 0) {
+        accountExists = false;
+      } else {
+        accountNo = generateAccountNumber();
+      }
+    }
 
-    // ----------------------------
-    // Step 5: Insert savings account
-    // ----------------------------
-    const accountNo = await generateUniqueAccountNo(client);
-
-    const savingsAccountQuery = `
-      INSERT INTO banka."Savings_account" (
+    // 6. Insert savings account and link it to user using user_id
+    const savingsResult = await client.query(
+      `
+      INSERT INTO banka."Savings_account"
+      (
         account_no,
         user_id,
         occupation,
         monthly_income,
         income_source,
         employment_type,
-        is18,
-        add_id
+        is18
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      RETURNING *;
-    `;
-
-    const savingsAccountValues = [
-      accountNo,
-      userRow.user_id,
-      toTitleCase(savingsAccount.occupation),
-      savingsAccount.monthly_income,
-      toTitleCase(savingsAccount.income_source),
-      toTitleCase(savingsAccount.employment_type),
-      savingsAccount.is18,
-      finalAddressId,
-    ];
-
-    const savingsAccountResult = await client.query(
-      savingsAccountQuery,
-      savingsAccountValues
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING account_no
+      `,
+      [
+        accountNo,
+        userId,
+        savingsAccount.occupation,
+        savingsAccount.monthly_income,
+        savingsAccount.income_source,
+        savingsAccount.employment_type,
+        savingsAccount.is18,
+      ]
     );
-    const savingsAccountRow = savingsAccountResult.rows[0];
 
-    
+    // Save all changes permanently after every insert is successful
     await client.query("COMMIT");
 
+    // Return success response to frontend/Postman
     return NextResponse.json(
       {
-        message: "Malaysian savings account application submitted successfully.",
-        data: {
-          customer: customerRow,
-          homeAddress: homeAddressRow,
-          mailingAddress: mailingAddressRow,
-          savingsAccount: savingsAccountRow,
-          user: userRow,
-        },
+        message: "Malaysian savings account application created successfully",
+        cust_id: custId,
+        user_id: userId,
+        home_add_id: homeAddId,
+        mailing_add_id: mailingAddId,
+        account_no: savingsResult.rows[0].account_no,
       },
       { status: 201 }
     );
   } catch (error: any) {
+    // Undo all inserts if any query fails
     await client.query("ROLLBACK");
-    console.error("Final submission error:", error);
 
+    console.error("Malaysian savings account error:", error);
+
+    // Return error response to frontend/Postman
     return NextResponse.json(
-      { error: error.message || "Failed to submit Malaysian savings account application." },
+      {
+        error:
+          error.message ||
+          "Failed to create Malaysian savings account application",
+      },
       { status: 500 }
     );
   } finally {
+    // Release the database client back to the pool
     client.release();
   }
 }
