@@ -60,10 +60,91 @@ export default function PersonalNonMalaysianAccountCreation() {
     }
   };
 
-  const handleNext = () => {
-    if (step === "profile") setStep("password");
-    else if (step === "password") setStep("pending");
-  };
+   //Collects everything saved from earlier pages with localStorage and makes a POST request to POstGReSQL
+   //Submits the completed non-Msiab savings account application to backend
+  const handleFinalSubmit = async () => {
+  try {
+    //Retrieve data saved from the earlier steps in the non-Msian application flow
+    const savedPhone = JSON.parse(localStorage.getItem("nonMsianPhone") || "{}");
+    const savedEmail = JSON.parse(localStorage.getItem("nonMsianEmail") || "{}");
+    const savedInfo = JSON.parse(localStorage.getItem("nonMsianInfo") || "{}");
+    const savedAddress = JSON.parse(localStorage.getItem("nonMsianAddress") || "{}");
+    const savedApplication = JSON.parse(localStorage.getItem("nonMsianApplication") || "{}");
+
+    //Combine all saved page data into the structure expected by APO route
+    const finalData = {
+      id_type: savedInfo.id_type || "Passport",
+      id_num: savedInfo.id_num,
+      full_name: savedInfo.full_name,
+      dob: savedInfo.dob,
+
+      ph_no_1: savedPhone.ph_no_1,
+      ph_no_2: savedPhone.ph_no_2 || null,
+      email: savedEmail.email,
+
+      address: savedAddress.address,
+
+      non_msian_details: savedInfo.non_msian_details,
+
+      non_msian_supporting_docs:
+        savedApplication.non_msian_supporting_docs || [],
+
+      user: {
+        username,
+        password,
+        status: "PENDING",
+        img: profilePreview,
+        sec_phrase: securityPhrase,
+        branch: savedApplication.preferredBranch,
+      },
+
+      savings_account: savedApplication.savings_account,
+    };
+
+   // console.log("FINAL NON-MSIAN DATA:", finalData); // helps with debugging by showing final payload before sending to backend 
+
+    //sends the complete non-msian application data to backend route for db insert
+    const response = await fetch("/api/non_msian_savings_account", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(finalData),
+    });
+
+    const result = await response.json();
+    //Show the response returned by the API route
+    //console.log("NON-MSIAN SUBMIT RESULT:", result);
+
+    //stops the process if backends runs into error
+    if (!response.ok) {
+      throw new Error(result.error || "Failed to submit application");
+    }
+
+     // Clear temporary localStorage data after the application is successfully saved.
+    localStorage.removeItem("nonMsianPhone");
+    localStorage.removeItem("nonMsianEmail");
+    localStorage.removeItem("nonMsianInfo");
+    localStorage.removeItem("nonMsianAddress");
+    localStorage.removeItem("nonMsianApplication");
+
+  // Show the pending approval page after successful submission.
+    setStep("pending");
+  } catch (error) {
+    console.error("Final submit error:", error);
+    alert(error instanceof Error ? error.message : "Failed to submit application");
+  }
+};
+
+// Controls movement between the account creation steps.
+// The final submit only happens after the password step is completed.
+const handleNext = () => {
+  if (step === "profile") {
+    setStep("password");
+  } else if (step === "password") {
+    handleFinalSubmit();
+  }
+};
 
   const handleBack = () => {
     if (step === "password") setStep("profile");
