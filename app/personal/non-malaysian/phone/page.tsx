@@ -53,13 +53,26 @@ export default function PersonalNonMalaysianPhone() {
     }, 800);
   };
 
-  const handleVerifyOtp = () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      router.push("/personal/non-malaysian/email");
-    }, 800);
-  };
+ // Verifies the OTP and stores the phone number for the final application submission.
+const handleVerifyOtp = () => {
+  setIsLoading(true);
+
+  setTimeout(() => {
+    // Save phone details temporarily so the final account creation page can submit them to the backend.
+    localStorage.setItem(
+      "nonMsianPhone",
+      JSON.stringify({
+        ph_no_1: phoneNumber,
+        ph_no_2: null,
+      })
+    );
+
+    setIsLoading(false);
+
+    // Move to the email verification step after saving the phone data.
+    router.push("/personal/non-malaysian/email");
+  }, 800);
+};
 
   const handleOtpChange = (value: string, index: number) => {
     const cleanValue = value.replace(/[^0-9]/g, "");

@@ -49,13 +49,25 @@ export default function PersonalNonMalaysianEmail() {
     }, 800);
   };
 
-  const handleVerifyOtp = () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      router.push("/personal/non-malaysian/info");
-    }, 800);
-  };
+  // Verifies the email OTP and stores the email for the final application submission.
+const handleVerifyOtp = () => {
+  setIsLoading(true);
+
+  setTimeout(() => {
+    // Save email temporarily so it can be included in the final API request.
+    localStorage.setItem(
+      "nonMsianEmail",
+      JSON.stringify({
+        email: email,
+      })
+    );
+
+    setIsLoading(false);
+
+    // Move to the personal information step after saving the email.
+    router.push("/personal/non-malaysian/info");
+  }, 800);
+};
 
   const handleOtpChange = (value: string, index: number) => {
     const cleanValue = value.replace(/[^0-9]/g, "");

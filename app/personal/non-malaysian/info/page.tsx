@@ -27,9 +27,44 @@ export default function PersonalNonMalaysianInfo() {
     setMounted(true);
   }, []);
 
-  const handleNavigation = () => router.push('/personal/non-malaysian/address');
+  const handleNavigation = () => {
+    //convert month name into month number
+    const months: Record<string, string> = {
+      January: "01",
+      February: "02",
+      March: "03",
+      April: "04",
+      May: "05",
+      June: "06",
+      July: "07",
+      August: "08",
+      September: "09",
+      October: "10",
+      November: "11",
+      December: "12",
+    };
 
-  const isFormValid = 
+    // save passport and personal details for final submission
+    const nonMsianInfo = {
+      id_type: "Passport",
+      id_num: formData.passportNumber,
+      full_name: formData.fullName,
+      dob: `${formData.dobYear}-${months[formData.dobMonth]}-${formData.dobDay}`,
+
+      non_msian_details: {
+        pp_issue_office: formData.issuingOffice,
+        pp_issue_date: formData.issueDate,
+        pp_exp_date: formData.expiryDate,
+        nationality: formData.nationality,
+      },
+    };
+
+    localStorage.setItem("nonMsianInfo", JSON.stringify(nonMsianInfo));
+
+    router.push("/personal/non-malaysian/address");
+  };
+
+  const isFormValid =
     formData.fullName.trim() !== "" &&
     formData.passportNumber.trim() !== "" &&
     formData.issuingOffice.trim() !== "" &&
@@ -38,7 +73,6 @@ export default function PersonalNonMalaysianInfo() {
     formData.expiryDate.trim() !== "";
 
   if (!mounted) return null;
-
   return (
     <div className="relative flex flex-col items-center justify-center min-h-screen px-4 py-20 bg-[#F9FAFB] dark:bg-gray-950 overflow-hidden">
       <div className="absolute top-0 left-0 w-full leading-none z-0 pointer-events-none opacity-20">

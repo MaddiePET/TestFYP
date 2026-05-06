@@ -174,30 +174,58 @@ export default function PersonalNonMalaysianAddress() {
   }, []);
 
   const isFormValid =
-    Object.values(addressData.permanentAddress).every(
-      (val) => val.trim() !== ""
-    ) &&
-    Object.values(addressData.mailingAddress).every(
-      (val) => val.trim() !== ""
-    );
+  Object.values(addressData.permanentAddress).every(
+    (val) => val.trim() !== ""
+  ) &&
+  Object.values(addressData.mailingAddress).every(
+    (val) => val.trim() !== ""
+  );
 
-  const handleNavigation = () => {
-    router.push("/personal/non-malaysian/application");
+// Updates one field inside either permanentAddress or mailingAddress.
+const updateField = (
+  type: keyof AddressState,
+  field: keyof AddressFields,
+  value: string
+) => {
+  setAddressData((prev) => ({
+    ...prev,
+    [type]: {
+      ...prev[type],
+      [field]: value,
+    },
+  }));
+};
+
+// Saves the residential and mailing address before moving to the application details page.
+const handleNavigation = () => {
+  // Convert frontend address field names into backend database field names.
+  const addressInfo = {
+    address: {
+      add_type: "Home",
+      add_1: addressData.permanentAddress.streetAddress1,
+      add_2: addressData.permanentAddress.streetAddress2,
+      postcode: addressData.permanentAddress.postal,
+      city: addressData.permanentAddress.city,
+      state: addressData.permanentAddress.state,
+      country: addressData.permanentAddress.country,
+    },
+
+    mailingAddress: {
+      add_type: "Mailing",
+      add_1: addressData.mailingAddress.streetAddress1,
+      add_2: addressData.mailingAddress.streetAddress2,
+      postcode: addressData.mailingAddress.postal,
+      city: addressData.mailingAddress.city,
+      state: addressData.mailingAddress.state,
+      country: addressData.mailingAddress.country,
+    },
   };
 
-  const updateField = (
-    type: keyof AddressState,
-    field: keyof AddressFields,
-    value: string
-  ) => {
-    setAddressData((prev) => ({
-      ...prev,
-      [type]: {
-        ...prev[type],
-        [field]: value,
-      },
-    }));
-  };
+  // Store address data temporarily for the final backend submission.
+  localStorage.setItem("nonMsianAddress", JSON.stringify(addressInfo));
+
+  router.push("/personal/non-malaysian/application");
+};
 
   if (!mounted) return null;
 
