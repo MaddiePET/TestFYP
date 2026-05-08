@@ -3,28 +3,120 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import ChevronLeftIcon from "@/icons/chevron-left.svg";
 
 export default function PersonalNonMalaysianInfo() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const journeyId = searchParams.get("journeyId") || "";
 
   const [mounted, setMounted] = useState(false);
   const [formData, setFormData] = useState({
-    title: "Ms.",
-    fullName: "Jane Doe",
-    passportNumber: "A0000000",
-    dobDay: "01",
+    title: "",
+    fullName: "",
+    passportNumber: "",
+    dobDay: "",
     dobMonth: "January",
-    dobYear: "2001",
-    issuingOffice: "United Kingdom",
-    nationality: "British",
-    issueDate: "1 January 2021",
-    expiryDate: "1 January 2031",
+    dobYear: "",
+    issuingOffice: "",
+    nationality: "",
+    issueDate: "",
+    expiryDate: "",
   });
+  const [lookupStatus, setLookupStatus] = useState<"idle" | "fetching" | "done" | "not-found">("idle");
+  const [lookupError, setLookupError] = useState<string | null>(null);
+
+  const formatDateForFields = (value: unknown) => {
+    if (!value) return { day: "", month: "January", year: "" };
+    const date = new Date(String(value));
+    if (!Number.isNaN(date.getTime())) {
+      const monthNames = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December",
+      ];
+      return {
+        day: date.getDate().toString().padStart(2, "0"),
+        month: monthNames[date.getMonth()] || "January",
+        year: date.getFullYear().toString(),
+      };
+    }
+
+    const isoMatch = String(value).match(/(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
+    if (isoMatch) {
+      const year = isoMatch[1];
+      const month = Number(isoMatch[2]);
+      const day = Number(isoMatch[3]);
+      return {
+        day: day.toString().padStart(2, "0"),
+        month: [
+          "January", "February", "March", "April", "May", "June",
+          "July", "August", "September", "October", "November", "December",
+        ][month - 1] || "January",
+        year,
+      };
+    }
+
+    return { day: "", month: "January", year: "" };
+  };
+
+  const normalizeIdentity = (identity: any, idType: string, idNum: string) => {
+    const dob = identity.dob || identity.birth_date || identity.date_of_birth || identity.dob_date || identity.dobDate || "";
+    const { day, month, year } = formatDateForFields(dob);
+    return {
+      title: identity.title || "",
+      fullName: identity.full_name || identity.name || identity.fullName || "",
+      passportNumber: identity.passport_number || identity.passport_no || identity.passportNo || identity.document_number || idNum,
+      dobDay: day || "",
+      dobMonth: month,
+      dobYear: year || "",
+      issuingOffice: identity.pp_issue_office || identity.issuing_office || identity.issue_place || identity.issueOffice || identity.issuingOffice || identity.issue_office || "",
+      nationality: identity.nationality || identity.country || "",
+      issueDate: identity.pp_issue_date || identity.issue_date || identity.issued_date || "",
+      expiryDate: identity.exp_date || identity.pp_exp_date || identity.expiry_date || identity.expiry || identity.expiryDate || "",
+    };
+  };
+
+  const fetchIdentity = async (idType: string, idNum: string) => {
+    if (!idNum) return;
+    setLookupStatus("fetching");
+    setLookupError(null);
+
+    try {
+      const response = await fetch(`/api/identity/lookup?id_type=${encodeURIComponent(idType)}&id_num=${encodeURIComponent(idNum)}`);
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        const identityData = data.formData || data.identity;
+
+        setFormData((prev) => ({
+          ...prev,
+          ...normalizeIdentity(identityData, idType, idNum),
+        }));
+        setLookupStatus("done");
+      } else {
+        setLookupStatus("not-found");
+        setLookupError(data.message || "No identity data found.");
+      }
+    } catch (error: any) {
+      setLookupStatus("not-found");
+      setLookupError(error?.message || "Unable to load identity data.");
+    }
+  };
 
   useEffect(() => {
     setMounted(true);
+    if (typeof window === "undefined") return;
+
+    const savedInfo = JSON.parse(localStorage.getItem("nonMsianInfo") || "{}") || {};
+    const queryParams = new URLSearchParams(window.location.search);
+    const idType = queryParams.get("id_type") || savedInfo.id_type || "passport";
+    const idNum = queryParams.get("id_num") || savedInfo.id_num || "";
+
+    if (idNum) {
+      setFormData((prev) => ({ ...prev, passportNumber: idNum }));
+      fetchIdentity(idType, idNum);
+    }
   }, []);
 
   const handleNavigation = () => {
@@ -111,7 +203,11 @@ export default function PersonalNonMalaysianInfo() {
       <div className="absolute top-6 left-4 right-4 flex justify-between items-center max-w-7xl mx-auto w-full z-20">
         <button
           type="button"
-          onClick={() => router.push('/personal/non-malaysian/email')}
+          onClick={() => 
+            router.push(
+              `/personal/non-malaysian/email?journeyId=${encodeURIComponent(journeyId)}`
+            )
+          }
           className="inline-flex items-center text-sm text-gray-600 dark:text-white/80 transition-colors hover:text-gray-900 dark:hover:text-white"
         >
           <ChevronLeftIcon className="w-5 h-5" />

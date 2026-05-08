@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import ChevronLeftIcon from "@/icons/chevron-left.svg";
 
 type Step = "input" | "otp";
@@ -21,6 +21,12 @@ export default function PersonalNonMalaysianEmail() {
 
   const otpInputs = useRef<(HTMLInputElement | null)[]>([]);
 
+  const searchParams = useSearchParams();
+  const journeyId =
+    searchParams.get("journeyId") ||
+    (typeof window !== "undefined" ? localStorage.getItem("journeyId") : "") ||
+    "";
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -37,7 +43,9 @@ export default function PersonalNonMalaysianEmail() {
 
   const handleGlobalBack = () => {
     if (step === "otp") setStep("input");
-    else router.push("/personal/non-malaysian/phone");
+    else router.push(
+      `/personal/non-malaysian/phone?journeyId=${encodeURIComponent(journeyId)}`
+    );
   };
 
   const handleSendOtp = async (e?: React.FormEvent) => {
@@ -47,6 +55,12 @@ export default function PersonalNonMalaysianEmail() {
   // Start loading state and clear any previous success or error message.
   setIsLoading(true);
   setMessage("");
+
+  if (!journeyId) {
+    setMessage("Journey ID missing. Please restart passport verification.");
+    setIsLoading(false);
+    return;
+  }
 
   try {
     // Call the backend API route that generates and sends the OTP email.
@@ -63,6 +77,7 @@ export default function PersonalNonMalaysianEmail() {
     // If the API returns an error, show the message and stop the flow.
     if (!res.ok) {
       setMessage(data.error || "Failed to send email OTP.");
+      setIsLoading(false);
       return;
     }
 
@@ -110,6 +125,7 @@ export default function PersonalNonMalaysianEmail() {
     // If the OTP is wrong, expired, or missing, show the API error message.
     if (!res.ok) {
       setMessage(data.error || "Invalid OTP. Please try again.");
+      setIsLoading(false);
       return;
     }
 
@@ -122,8 +138,31 @@ export default function PersonalNonMalaysianEmail() {
       })
     );
 
-    // Move to the next step only after successful OTP verification.
-    router.push("/personal/non-malaysian/info");
+    // GET PASSPORT NUMBER FROM PREVIOUS STEP TO PASS TO NEXT PAGE
+    const statusRes = await fetch(
+      `/api/ekyc/status?journeyId=${encodeURIComponent(journeyId)}`
+    );
+
+    const statusData = await statusRes.json();
+
+    console.log("Status API response:", statusData);
+
+    const passportNo =
+      statusData?.id_num ||
+      statusData?.data?.id_num ||
+      statusData?.identity?.id_num ||
+      "";
+
+    if (!passportNo) {
+      console.error("Missing passport number from journey status:", statusData);
+      setMessage("Passport number missing. Please restart passport verification.");
+      setIsLoading(false);
+      return;
+    }
+
+    router.push(
+      `/personal/non-malaysian/info?id_type=passport&id_num=${encodeURIComponent(passportNo)}&journeyId=${encodeURIComponent(journeyId)}`
+    );
   } catch (error) {
     // Log the technical error for debugging and show a user-friendly message.
     console.error("Verify OTP error:", error);

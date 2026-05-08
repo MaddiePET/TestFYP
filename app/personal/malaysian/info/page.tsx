@@ -12,23 +12,113 @@ export default function PersonalMalaysianInfo() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [lookupStatus, setLookupStatus] = useState<"idle" | "fetching" | "done" | "not-found">("idle");
+  const [lookupError, setLookupError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    fullName: "Jane Doe",
-    nric: "000000-00-0000",
-    dobDay: "01",
+    fullName: "",
+    nric: "",
+    dobDay: "",
     dobMonth: "January",
-    dobYear: "2001",
+    dobYear: "",
     phoneCode: "+60",
-    phoneNumber: "119876543",
-    streetAddress: "Jalan SS15/1H",
-    postal: "40000",
-    city: "Subang Jaya",
-    state: "Selangor",
+    phoneNumber: "",
+    streetAddress: "",
+    postal: "",
+    city: "",
+    state: "",
     country: "Malaysia",
   });
 
+  const formatDateForFields = (value: unknown) => {
+    if (!value) return { day: "", month: "January", year: "" };
+    const date = new Date(String(value));
+    if (!Number.isNaN(date.getTime())) {
+      const monthNames = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December",
+      ];
+      return {
+        day: date.getDate().toString().padStart(2, "0"),
+        month: monthNames[date.getMonth()] || "January",
+        year: date.getFullYear().toString(),
+      };
+    }
+
+    const isoMatch = String(value).match(/(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
+    if (isoMatch) {
+      const year = isoMatch[1];
+      const month = Number(isoMatch[2]);
+      const day = Number(isoMatch[3]);
+      return {
+        day: day.toString().padStart(2, "0"),
+        month: [
+          "January", "February", "March", "April", "May", "June",
+          "July", "August", "September", "October", "November", "December",
+        ][month - 1] || "January",
+        year,
+      };
+    }
+
+    return { day: "", month: "January", year: "" };
+  };
+
+  const normalizeIdentity = (identity: any, idType: string, idNum: string) => {
+    const dob = identity.dob || identity.birth_date || identity.date_of_birth || identity.dob_date || identity.dobDate || "";
+    const { day, month, year } = formatDateForFields(dob);
+    return {
+      fullName: identity.full_name || identity.name || identity.fullName || "",
+      nric: identity.ic_number || identity.nric || identity.id_num || idNum,
+      dobDay: day || "",
+      dobMonth: month,
+      dobYear: year || "",
+      phoneCode: "+60",
+      phoneNumber: identity.ph_no_1 || identity.phone_number || identity.phoneNumber || "",
+      streetAddress: identity.address || identity.home_address || "",
+      postal: identity.postcode || identity.postal_code || identity.postal || "",
+      city: identity.city || "",
+      state: identity.state || "",
+      country: identity.country || "Malaysia",
+    };
+  };
+
+  const fetchIdentity = async (idType: string, idNum: string) => {
+    if (!idNum) return;
+    setLookupStatus("fetching");
+    setLookupError(null);
+
+    try {
+      const response = await fetch(`/api/identity/lookup?id_type=${encodeURIComponent(idType)}&id_num=${encodeURIComponent(idNum)}`);
+      const data = await response.json();
+
+      if (response.ok && data.success && data.identity) {
+        setFormData((prev) => ({
+          ...prev,
+          ...normalizeIdentity(data.identity, idType, idNum),
+        }));
+        setLookupStatus("done");
+      } else {
+        setLookupStatus("not-found");
+        setLookupError(data.message || "No identity data found.");
+      }
+    } catch (error: any) {
+      setLookupStatus("not-found");
+      setLookupError(error?.message || "Unable to load identity data.");
+    }
+  };
+
   useEffect(() => {
     setMounted(true);
+    if (typeof window === "undefined") return;
+
+    const savedInfo = JSON.parse(localStorage.getItem("personalInfo") || "{}") || {};
+    const queryParams = new URLSearchParams(window.location.search);
+    const idType = savedInfo.id_type || queryParams.get("id_type") || "ic";
+    const idNum = savedInfo.id_num || queryParams.get("id_num") || "";
+
+    if (idNum) {
+      setFormData((prev) => ({ ...prev, nric: idNum }));
+      fetchIdentity(idType, idNum);
+    }
   }, []);
 
  const handleNavigation = async () => {
