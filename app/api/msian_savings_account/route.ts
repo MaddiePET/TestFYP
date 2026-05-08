@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
+import { hashPassword } from "@/hashpw";
 
 // Generates a random 16 digit savings account number
 function generateAccountNumber() {
@@ -133,6 +134,17 @@ export async function POST(req: Request) {
     // Store generated customer ID for User table
     const custId = customerResult.rows[0].cust_id;
 
+    //Ensures the passwords exists before hashing
+    if (!user.password) {
+      throw new Error("Password is missing");
+    }
+
+   //Gets the plain password from user from final submission payload
+    const rawPassword = user.password;
+
+    //Prevents storing password in plain text and hashed password before saving it in db
+    const hashedPassword = await hashPassword(rawPassword);
+
     // 4. Insert user/login details and link to customer using cust_id
     const userResult = await client.query(
       `
@@ -152,7 +164,7 @@ export async function POST(req: Request) {
       [
         custId,
         user.username,
-        user.password,
+        hashedPassword, //Stores hashed password
         user.status || "Pending",
         user.img || null,
         user.sec_phrase,
