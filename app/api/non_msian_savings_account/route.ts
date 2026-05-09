@@ -1,8 +1,8 @@
 import fs from "fs";
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
-<<<<<<< HEAD
 import * as admin from "firebase-admin";
+import { hashPassword } from "@/hashpw";
 
 function loadFirebaseServiceAccount(project: 'jim' | 'jpn') {
   const envVar = project === 'jim' ? 'FIREBASE_JIM_SERVICE_ACCOUNT_PATH' : 'FIREBASE_JPN_SERVICE_ACCOUNT_PATH';
@@ -51,9 +51,6 @@ function getJpnDb() {
   }
   return jpnDb;
 }
-=======
-import { hashPassword } from "@/hashpw";
->>>>>>> 059db3c (Fix savings account password hashing,drop ph_no_2, and document upload for non-msian flow)
 
 // Generates a random 16 digit savings account number
 function generateAccountNumber() {
@@ -111,7 +108,6 @@ export async function POST(req: Request) {
       full_name,
       dob,
       ph_no_1,
-      ph_no_2,
       email,
       address,
       non_msian_details,
@@ -119,8 +115,6 @@ export async function POST(req: Request) {
       user,
       savings_account,
     } = body;
-
-    await client.query("BEGIN");
 
     // Check required sections before inserting into database
     if (!address) {
