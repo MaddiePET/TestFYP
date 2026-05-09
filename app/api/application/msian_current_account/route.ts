@@ -9,14 +9,14 @@ export async function POST(req: Request) {
   try {
     await client.query("BEGIN");
 
-console.log("FULL SUBMIT DATA:", JSON.stringify(data, null, 2));
-console.log("personalInfo:", data.personalInfo);
-console.log("contactInfo:", data.contactInfo);
-console.log("businessContact:", data.businessContact?.bus_email);
-console.log("businessAddress section:", data.businessAddress);
-console.log("businessAddress.businessAddress:", data.businessAddress?.businessAddress);
-console.log("businessAddress.mailingAddress:", data.businessAddress?.mailingAddress);
-console.log("business details:", data.businessParticulars);
+    console.log("FULL SUBMIT DATA:", JSON.stringify(data, null, 2));
+    console.log("personalInfo:", data.personalInfo);
+    console.log("contactInfo:", data.contactInfo);
+    console.log("businessContact:", data.businessContact?.bus_email);
+    console.log("businessAddress section:", data.businessAddress);
+    console.log("businessAddress.businessAddress:", data.businessAddress?.businessAddress);
+    console.log("businessAddress.mailingAddress:", data.businessAddress?.mailingAddress);
+    console.log("business details:", data.businessParticulars);
 
     const personalAddress = {
       add_1: data.personalInfo?.streetAddress || "",
@@ -26,43 +26,47 @@ console.log("business details:", data.businessParticulars);
       country: data.personalInfo?.country || "Malaysia",
     };
 
-    if (!personalAddress.add_1) {
-      throw new Error("Personal address line 1 is missing");
-    }
+    if (!personalAddress.add_1) throw new Error("Personal address line 1 is missing");
+
     // 1. Insert personal/home address first
     const homeAddressRes = await client.query(
       `
       INSERT INTO banka."Address" (
-        add_1,
-        add_2,
-        postcode,
-        state,
+        add_1, 
+        add_2, 
+        postcode, 
+        state, 
         country
       )
       VALUES ($1, $2, $3, $4, $5)
       RETURNING add_id
       `,
       [
-        data.personalInfo?.streetAddress || null,
-        data.personalInfo?.city || null,
-        data.personalInfo?.postal || null,
-        data.personalInfo?.state || null,
-        data.personalInfo?.country || "Malaysia",
+        personalAddress.add_1,
+        personalAddress.add_2,
+        personalAddress.postcode,
+        personalAddress.state,
+        personalAddress.country,
       ]
     );
-
     const home_add = homeAddressRes.rows[0].add_id;
 
     // 2. Insert Customer using home_add FK
     const customerRes = await client.query(
       `
       INSERT INTO banka."Customer" (
-        id_num,
-        full_name,
-        id_type,
+        id_num, 
+        full_name, 
+        id_type, 
         dob,
+<<<<<<< HEAD
+        ph_no_1, 
+        ph_no_2, 
+        email, 
+=======
         ph_no,
         email,
+>>>>>>> b7426fcc7ec4087e9b5ffed5a00beab4499a751b
         home_add
       )
       VALUES ($1,$2,$3,$4,$5,$6,$7)
@@ -78,8 +82,15 @@ console.log("business details:", data.businessParticulars);
         home_add,
       ]
     );
-
     const cust_id = customerRes.rows[0].cust_id;
+
+    const profilePreview = data.account?.profilePreview;
+    let profileBuffer: Buffer | string | null = null;
+    if (profilePreview) {
+      profileBuffer = profilePreview.startsWith("data:image")
+        ? Buffer.from(profilePreview.split(",")[1], "base64")
+        : Buffer.from(profilePreview);
+    }
 
     const rawPassword = data.account?.password;
     const hashedPassword = await hashPassword(rawPassword);
@@ -88,12 +99,12 @@ console.log("business details:", data.businessParticulars);
     const userRes = await client.query(
       `
       INSERT INTO banka."User" (
-        cust_id,
-        username,
-        password,
+        cust_id, 
+        username, 
+        password, 
         status,
-        img,
-        sec_phrase,
+        img, 
+        sec_phrase, 
         branch
       )
       VALUES ($1,$2,$3,$4,$5,$6,$7)
@@ -104,70 +115,49 @@ console.log("business details:", data.businessParticulars);
         data.account?.username || null,
         hashedPassword || null,
         "PENDING",
-        data.account?.profilePreview || null,
+        profileBuffer || null,
         data.account?.securityPhrase || null,
         data.businessAddress?.preferredBranch || null,
       ]
     );
-
     const user_id = userRes.rows[0].user_id;
 
     // 4. Insert business address
-
     const businessAddress = {
       add_1:
         data.businessAddress?.businessAddress?.streetAddress ||
-        data.businessAddress?.streetAddress ||
-        "",
+        data.businessAddress?.streetAddress || "",
       add_2:
         data.businessAddress?.businessAddress?.city ||
-        data.businessAddress?.city ||
-        "",
+        data.businessAddress?.city || "",
       postcode:
         data.businessAddress?.businessAddress?.postal ||
-        data.businessAddress?.postal ||
-        "",
+        data.businessAddress?.postal || "",
       state:
         data.businessAddress?.businessAddress?.state ||
-        data.businessAddress?.state ||
-        "",
+        data.businessAddress?.state || "",
       country:
         data.businessAddress?.businessAddress?.country ||
-        data.businessAddress?.country ||
-        "Malaysia",
+        data.businessAddress?.country || "Malaysia",
     };
-
-    if (!businessAddress.add_1) {
-      throw new Error("Business address line 1 is missing");
-    }
+    if (!businessAddress.add_1) throw new Error("Business address line 1 is missing");
 
     const mailingAddress = {
-      add_1:
-        data.businessAddress?.mailingAddress?.streetAddress ||
-        "",
-      add_2:
-        data.businessAddress?.mailingAddress?.city ||
-        "",
-      postcode:
-        data.businessAddress?.mailingAddress?.postal ||
-        "",
-      state:
-        data.businessAddress?.mailingAddress?.state ||
-        "",
-      country:
-        data.businessAddress?.mailingAddress?.country ||
-        "Malaysia",
+      add_1: data.businessAddress?.mailingAddress?.streetAddress || "",
+      add_2: data.businessAddress?.mailingAddress?.city || "",
+      postcode: data.businessAddress?.mailingAddress?.postal || "",
+      state: data.businessAddress?.mailingAddress?.state || "",
+      country: data.businessAddress?.mailingAddress?.country || "Malaysia",
     };
-    const isMailingSameAsBusiness =
-      data.businessAddress?.isMailingSameAsBusiness ?? true;
+    const isMailingSameAsBusiness = data.businessAddress?.isMailingSameAsBusiness ?? true;
 
     const businessAddressRes = await client.query(
       `
       INSERT INTO banka."Address" (
-        add_1,
-        add_2,
-        postcode,
-        state,
+        add_1, 
+        add_2, 
+        postcode, 
+        state, 
         country
       )
       VALUES ($1,$2,$3,$4,$5)
@@ -181,20 +171,18 @@ console.log("business details:", data.businessParticulars);
         businessAddress.country,
       ]
     );
-
     const bus_add_id = businessAddressRes.rows[0].add_id;
 
     // 5. Insert mailing address only if different
     let mail_add_id = bus_add_id;
-
     if (!isMailingSameAsBusiness) {
       const mailingAddressRes = await client.query(
         `
         INSERT INTO banka."Address" (
-          add_1,
-          add_2,
-          postcode,
-          state,
+          add_1, 
+          add_2, 
+          postcode, 
+          state, 
           country
         )
         VALUES ($1,$2,$3,$4,$5)
@@ -208,7 +196,6 @@ console.log("business details:", data.businessParticulars);
           mailingAddress.country,
         ]
       );
-
       mail_add_id = mailingAddressRes.rows[0].add_id;
     }
 
@@ -216,15 +203,15 @@ console.log("business details:", data.businessParticulars);
     await client.query(
       `
       INSERT INTO banka."Current_account" (
-        user_id,
-        reg_no,
-        bus_name,
+        user_id, 
+        reg_no, 
+        bus_name, 
         bus_type,
-        role,
-        bus_ph_no,
-        bus_email,
+        role, 
+        bus_ph_no, 
+        bus_email, 
         start_date,
-        bus_add_id,
+        bus_add_id, 
         mail_add_id
       )
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
@@ -245,21 +232,16 @@ console.log("business details:", data.businessParticulars);
 
     // 7. Insert supporting documents
     const supportingDocs = data.supportingDocuments || [];
-
     for (const doc of supportingDocs) {
       if (!doc?.name || !doc?.fileBase64) continue;
-
-      const base64Part = doc.fileBase64.includes(",")
-        ? doc.fileBase64.split(",")[1]
-        : doc.fileBase64;
-
+      const base64Part = doc.fileBase64.includes(",") ? doc.fileBase64.split(",")[1] : doc.fileBase64;
       const fileBuffer = Buffer.from(base64Part, "base64");
 
       await client.query(
         `
         INSERT INTO banka."Business_supporting_docs" (
-          user_id,
-          doc_name,
+          user_id, 
+          doc_name, 
           doc_file
         )
         VALUES ($1,$2,$3)
@@ -281,12 +263,8 @@ console.log("business details:", data.businessParticulars);
   } catch (err) {
     await client.query("ROLLBACK");
     console.error("Application submit error:", err);
-
     return NextResponse.json(
-      {
-        error: "Failed",
-        details: err instanceof Error ? err.message : "Unknown error",
-      },
+      { error: "Failed", details: err instanceof Error ? err.message : "Unknown error" },
       { status: 500 }
     );
   } finally {

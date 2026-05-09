@@ -7,6 +7,7 @@ export async function GET(
 ) {
   try {
     const { username } = await context.params;
+    console.log("PROFILE QUERY USERNAME:", username);
 
     const query = `
       SELECT
@@ -31,8 +32,6 @@ export async function GET(
       WHERE LOWER(u.username) = LOWER($1)
     `;
 
-    console.log("PROFILE QUERY USERNAME:", username);
-
     const result = await pool.query(query, [username]);
 
     if (result.rows.length === 0) {
@@ -41,12 +40,25 @@ export async function GET(
 
     const user = result.rows[0];
 
+    let avatarString = "";
+
+    if (user.img) {
+      if (Buffer.isBuffer(user.img)) {
+        const content = user.img.toString();
+        avatarString = content.startsWith("http")
+          ? content
+          : `data:image/jpeg;base64,${user.img.toString("base64")}`;
+      } else if (typeof user.img === "string") {
+        avatarString = user.img;
+      }
+    }
+
     return NextResponse.json({
       username: user.username,
       name: user.full_name || "",
       fullName: user.full_name || "",
       email: user.email || "",
-      avatar: user.img || "/images/user/default.jpg",
+      avatar: avatarString,
       phone: user.ph_no_1 || "",
       occupation: user.occupation || "",
       country: user.country || "",

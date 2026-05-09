@@ -289,7 +289,7 @@ export default function BusinessMalaysianPhone() {
               </h1>
 
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                We've sent a 6-digit code to <span className="font-bold text-gray-900 dark:text-white">+60 {activePhoneNumber}</span>.
+                We've sent a 6-digit code to <span className="font-bold text-gray-900 dark:text-white">+60 {activePhoneNumber}</span>. Please provide the code to proceed with the registration.
               </p>
             </div>
 
