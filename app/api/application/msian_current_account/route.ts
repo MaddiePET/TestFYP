@@ -59,14 +59,10 @@ export async function POST(req: Request) {
         full_name, 
         id_type, 
         dob,
-<<<<<<< HEAD
-        ph_no_1, 
-        ph_no_2, 
+        ph_no,
         email, 
-=======
         ph_no,
         email,
->>>>>>> b7426fcc7ec4087e9b5ffed5a00beab4499a751b
         home_add
       )
       VALUES ($1,$2,$3,$4,$5,$6,$7)
