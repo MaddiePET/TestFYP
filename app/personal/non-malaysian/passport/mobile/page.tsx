@@ -9,8 +9,7 @@ function PersonalNonMalaysianMobilePassportCapture() {
   const router = useRouter();
 
   const searchParams = useSearchParams();
-
-  const journeyId = searchParams.get("journeyId");
+  const journeyId = searchParams.get("journeyId") || "";
 
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -84,6 +83,19 @@ function PersonalNonMalaysianMobilePassportCapture() {
 
       const okayidResult = await okayidResponse.json();
 
+      const passportNo =
+        okayidResult?.extracted?.passport_no ||
+        okayidResult?.passport_no ||
+        okayidResult?.data?.passport_no ||
+        "";
+
+      console.log("Extracted passport number:", passportNo);
+
+      if (!passportNo) {
+        throw new Error("Passport number could not be extracted");
+      }
+
+
       if (okayidResult.status !== "success") {
         throw new Error(okayidResult.message || "unrecognized");
       }
@@ -116,6 +128,8 @@ function PersonalNonMalaysianMobilePassportCapture() {
         body: JSON.stringify({
           journeyId,
           status: "verified",
+          id_type: "passport",
+          id_num: passportNo,
         }),
       });
 

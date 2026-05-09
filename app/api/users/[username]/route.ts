@@ -32,7 +32,7 @@ export async function GET(
 
     const user = result.rows[0];
 
-    let avatarString = "/images/user/owner.jpg";
+    let avatarString = "";
 
     if (user.img) {
       if (Buffer.isBuffer(user.img)) {
