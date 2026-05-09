@@ -61,8 +61,6 @@ export async function POST(req: Request) {
         dob,
         ph_no,
         email, 
-        ph_no,
-        email,
         home_add
       )
       VALUES ($1,$2,$3,$4,$5,$6,$7)
