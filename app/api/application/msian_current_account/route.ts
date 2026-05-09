@@ -59,12 +59,17 @@ export async function POST(req: Request) {
         full_name, 
         id_type, 
         dob,
+<<<<<<< HEAD
         ph_no_1, 
         ph_no_2, 
         email, 
+=======
+        ph_no,
+        email,
+>>>>>>> b7426fcc7ec4087e9b5ffed5a00beab4499a751b
         home_add
       )
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+      VALUES ($1,$2,$3,$4,$5,$6,$7)
       RETURNING cust_id
       `,
       [
@@ -72,8 +77,7 @@ export async function POST(req: Request) {
         data.personalInfo?.fullName || null,
         "IC",
         data.personalInfo?.dob || null,
-        data.phoneVerification?.ph_no_1 || null,
-        data.phoneVerification?.ph_no_2 || "-", 
+        data.phoneVerification?.phoneNumber || null,
         data.contactInfo?.email || null,
         home_add,
       ]

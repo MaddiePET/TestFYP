@@ -9,6 +9,8 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
+jim-db/node_modules/
+jpn-db/node_modules/
 
 # testing
 /coverage
@@ -32,6 +34,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+.env.local
 
 # vercel
 .vercel
@@ -39,3 +42,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# secrets
+jim-db/serviceAccountKey-JIM.json
+jpn-db/serviceAccountKey-JPN.json

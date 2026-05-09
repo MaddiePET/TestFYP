@@ -174,128 +174,58 @@ export default function PersonalNonMalaysianAddress() {
   }, []);
 
   const isFormValid =
-    Object.values(addressData.permanentAddress).every(
-      (val) => val.trim() !== ""
-    ) &&
-    Object.values(addressData.mailingAddress).every(
-      (val) => val.trim() !== ""
-    );
-
-  const handleNavigation = () => {
-    router.push("/personal/non-malaysian/application");
-  };
-
-  const updateField = (
-    type: keyof AddressState,
-    field: keyof AddressFields,
-    value: string
-  ) => {
-    setAddressData((prev) => ({
-      ...prev,
-      [type]: {
-        ...prev[type],
-        [field]: value,
-      },
-    }));
-  };
-
-  const AddressSection = ({ title, type }: AddressSectionProps) => (
-    <div className="flex-1">
-      <h2 className="block mb-6 text-md font-bold text-[#3D405B] dark:text-white border-b border-gray-200 dark:border-gray-800 pb-2">
-        {title}
-      </h2>
-
-      <div className="space-y-5">
-        <div>
-          <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-            Address Line 1<span className="text-red-500">*</span>
-          </label>
-
-          <input 
-            type="text" 
-            className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none" 
-            placeholder="House no, Building name"
-            value={addressData[type].streetAddress1} 
-            onChange={(e: ChangeEvent<HTMLInputElement>) => updateField(type, 'streetAddress1', e.target.value)} 
-          />
-        </div>
-
-        <div>
-          <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-            Address Line 2<span className="text-red-500">*</span>
-          </label>
-
-          <input 
-            type="text" 
-            className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none" 
-            placeholder="Street name, Area"
-            value={addressData[type].streetAddress2} 
-            onChange={(e: ChangeEvent<HTMLInputElement>) => updateField(type, 'streetAddress2', e.target.value)} 
-          />
-        </div>
-        
-        <div className="grid grid-cols-2 gap-5">
-          <div>
-            <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-              Postal Code<span className="text-red-500">*</span>
-            </label>
-
-            <input 
-              type="text" 
-              className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none" 
-              placeholder="e.g. 47610"
-              value={addressData[type].postal} 
-              onChange={(e: ChangeEvent<HTMLInputElement>) => updateField(type, 'postal', e.target.value)} 
-            />
-          </div>
-
-          <div>
-            <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-              City<span className="text-red-500">*</span>
-            </label>
-
-            <input 
-              type="text" 
-              className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none" 
-              placeholder="e.g. Subang Jaya"
-              value={addressData[type].city} 
-              onChange={(e: ChangeEvent<HTMLInputElement>) => updateField(type, 'city', e.target.value)} 
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-5">
-          <div>
-            <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-              State<span className="text-red-500">*</span>
-            </label>
-
-            <input 
-              type="text" 
-              className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none" 
-              placeholder="e.g. Selangor"
-              value={addressData[type].state} 
-              onChange={(e: ChangeEvent<HTMLInputElement>) => updateField(type, 'state', e.target.value)} 
-            />
-          </div>
-
-          <div>
-            <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-              Country <span className="text-red-500">*</span>
-            </label>
-
-            <input 
-              type="text" 
-              className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none" 
-              placeholder="e.g. United Kingdom"
-              value={addressData[type].country} 
-              onChange={(e: ChangeEvent<HTMLInputElement>) => updateField(type, 'country', e.target.value)} 
-            />
-          </div>
-        </div>
-      </div>
-    </div>
+  Object.values(addressData.permanentAddress).every(
+    (val) => val.trim() !== ""
+  ) &&
+  Object.values(addressData.mailingAddress).every(
+    (val) => val.trim() !== ""
   );
+
+// Updates one field inside either permanentAddress or mailingAddress.
+const updateField = (
+  type: keyof AddressState,
+  field: keyof AddressFields,
+  value: string
+) => {
+  setAddressData((prev) => ({
+    ...prev,
+    [type]: {
+      ...prev[type],
+      [field]: value,
+    },
+  }));
+};
+
+// Saves the residential and mailing address before moving to the application details page.
+const handleNavigation = () => {
+  // Convert frontend address field names into backend database field names.
+  const addressInfo = {
+    address: {
+      add_type: "Home",
+      add_1: addressData.permanentAddress.streetAddress1,
+      add_2: addressData.permanentAddress.streetAddress2,
+      postcode: addressData.permanentAddress.postal,
+      city: addressData.permanentAddress.city,
+      state: addressData.permanentAddress.state,
+      country: addressData.permanentAddress.country,
+    },
+
+    mailingAddress: {
+      add_type: "Mailing",
+      add_1: addressData.mailingAddress.streetAddress1,
+      add_2: addressData.mailingAddress.streetAddress2,
+      postcode: addressData.mailingAddress.postal,
+      city: addressData.mailingAddress.city,
+      state: addressData.mailingAddress.state,
+      country: addressData.mailingAddress.country,
+    },
+  };
+
+  // Store address data temporarily for the final backend submission.
+  localStorage.setItem("nonMsianAddress", JSON.stringify(addressInfo));
+
+  router.push("/personal/non-malaysian/application");
+};
 
   if (!mounted) return null;
 

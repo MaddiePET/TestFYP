@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import ChevronLeftIcon from "@/icons/chevron-left.svg";
 
 type Step = "input" | "otp";
@@ -17,8 +17,15 @@ export default function PersonalNonMalaysianEmail() {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [isLoading, setIsLoading] = useState(false);
   const [timer, setTimer] = useState(0);
+  const [message, setMessage] = useState("");
 
   const otpInputs = useRef<(HTMLInputElement | null)[]>([]);
+
+  const searchParams = useSearchParams();
+  const journeyId =
+    searchParams.get("journeyId") ||
+    (typeof window !== "undefined" ? localStorage.getItem("journeyId") : "") ||
+    "";
 
   useEffect(() => {
     setMounted(true);
@@ -36,26 +43,135 @@ export default function PersonalNonMalaysianEmail() {
 
   const handleGlobalBack = () => {
     if (step === "otp") setStep("input");
-    else router.push("/personal/non-malaysian/phone");
+    else router.push(
+      `/personal/non-malaysian/phone?journeyId=${encodeURIComponent(journeyId)}`
+    );
   };
 
-  const handleSendOtp = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      setStep("otp");
-      setTimer(60); 
-    }, 800);
-  };
+  const handleSendOtp = async (e?: React.FormEvent) => {
+  // Prevent the form from refreshing the page when the Continue button is clicked.
+  if (e) e.preventDefault();
 
-  const handleVerifyOtp = () => {
-    setIsLoading(true);
-    setTimeout(() => {
+  // Start loading state and clear any previous success or error message.
+  setIsLoading(true);
+  setMessage("");
+
+  if (!journeyId) {
+    setMessage("Journey ID missing. Please restart passport verification.");
+    setIsLoading(false);
+    return;
+  }
+
+  try {
+    // Call the backend API route that generates and sends the OTP email.
+    const res = await fetch("/api/otp/email/send", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    const data = await res.json();
+
+    // If the API returns an error, show the message and stop the flow.
+    if (!res.ok) {
+      setMessage(data.error || "Failed to send email OTP.");
       setIsLoading(false);
-      router.push("/personal/non-malaysian/info");
-    }, 800);
-  };
+      return;
+    }
+
+    // Move the user to the OTP input screen after the email is sent.
+    setStep("otp");
+
+    // Start the resend countdown timer.
+    setTimer(60);
+
+    // Show a success message to the user.
+    setMessage("OTP sent successfully. Please check your email.");
+  } catch (error) {
+    // Log the technical error for debugging and show a user-friendly message.
+    console.error("Send OTP error:", error);
+    setMessage("Something went wrong while sending the OTP.");
+  } finally {
+    // Stop loading state whether the request succeeds or fails.
+    setIsLoading(false);
+  }
+};
+
+  const handleVerifyOtp = async () => {
+  // Combine the 6 separate OTP input boxes into one OTP string.
+  const enteredOtp = otp.join("");
+
+  // Start loading state and clear previous messages.
+  setIsLoading(true);
+  setMessage("");
+
+  try {
+    // Call the backend API route that verifies the email and OTP.
+    const res = await fetch("/api/otp/email/verify", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        otp: enteredOtp,
+      }),
+    });
+
+    const data = await res.json();
+
+    // If the OTP is wrong, expired, or missing, show the API error message.
+    if (!res.ok) {
+      setMessage(data.error || "Invalid OTP. Please try again.");
+      setIsLoading(false);
+      return;
+    }
+
+    // Save the verified email temporarily so it can be used during final submission.
+    localStorage.setItem(
+      "nonMsianEmail",
+      JSON.stringify({
+        email: email,
+        emailVerified: true,
+      })
+    );
+
+    // GET PASSPORT NUMBER FROM PREVIOUS STEP TO PASS TO NEXT PAGE
+    const statusRes = await fetch(
+      `/api/ekyc/status?journeyId=${encodeURIComponent(journeyId)}`
+    );
+
+    const statusData = await statusRes.json();
+
+    console.log("Status API response:", statusData);
+
+    const passportNo =
+      statusData?.id_num ||
+      statusData?.data?.id_num ||
+      statusData?.identity?.id_num ||
+      "";
+
+    if (!passportNo) {
+      console.error("Missing passport number from journey status:", statusData);
+      setMessage("Passport number missing. Please restart passport verification.");
+      setIsLoading(false);
+      return;
+    }
+
+    router.push(
+      `/personal/non-malaysian/info?id_type=passport&id_num=${encodeURIComponent(passportNo)}&journeyId=${encodeURIComponent(journeyId)}`
+    );
+  } catch (error) {
+    // Log the technical error for debugging and show a user-friendly message.
+    console.error("Verify OTP error:", error);
+    setMessage("Something went wrong while verifying the OTP.");
+  } finally {
+    // Stop loading state whether the request succeeds or fails.
+    setIsLoading(false);
+  }
+};
 
   const handleOtpChange = (value: string, index: number) => {
     const cleanValue = value.replace(/[^0-9]/g, "");
@@ -216,6 +332,12 @@ export default function PersonalNonMalaysianEmail() {
                 ))}
               </div>
               
+              {message && (
+              <p className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm text-center">
+                {message}
+              </p>
+            )}
+              
               <button 
                 type="button" 
                 onClick={handleVerifyOtp} 
@@ -229,7 +351,7 @@ export default function PersonalNonMalaysianEmail() {
                 {isLoading ? "Verifying..." : "Verify"}
               </button>
             </div>
-
+            
             <div className="text-center mt-6">
               {timer > 0 ? (
                 <p className="text-sm text-gray-500 dark:text-gray-400">

@@ -18,6 +18,7 @@ interface DocEntry {
   id: number;
   name: string;
   preview: string | null;
+  fileBase64?:string
 }
 
 interface CustomSelectProps {
@@ -110,11 +111,40 @@ export default function PersonalNonMalaysianApplication() {
     setDocuments(documents.map(d => d.id === id ? { ...d, ...fields } : d));
   };
 
-  const handleFile = (id: number, file: File | undefined) => {
-    const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-    if (file && allowedTypes.includes(file.type)) {
-      updateDoc(id, { preview: file.name });
-    }
+  // Converts an uploaded file into Base64 so it can be sent to the backend.
+  const fileToBase64 = (file: File): Promise<string> => {
+   return new Promise((resolve, reject) => {
+     const reader = new FileReader();
+
+     reader.onload = () => {
+       resolve(reader.result as string);
+     };
+     reader.onerror = reject;
+     reader.readAsDataURL(file);
+    });
+};
+
+  // Handles document upload and stores both the file name and Base64 file data.
+  const handleFile = async (id: number, file: File | undefined) => {
+   const allowedTypes = [
+     "application/pdf",
+     "application/msword",
+     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+   ];
+
+   if (!file) return;
+
+   if (!allowedTypes.includes(file.type)) {
+     alert("Please upload a PDF, DOC, or DOCX file.");
+     return;
+   }
+
+   const fileBase64 = await fileToBase64(file);
+
+   updateDoc(id, {
+     preview: file.name,
+     fileBase64,
+     });
   };
 
   const handleRequestLocation = () => {
@@ -151,15 +181,43 @@ export default function PersonalNonMalaysianApplication() {
     return distA - distB;
   });
 
+  // Saves employment, income, supporting document, and branch details before account creation.
+const handleApplicationContinue = () => {
+  // Convert application form data into the structure expected by the backend route.
+  const applicationData = {
+    savings_account: {
+      occupation: formData.occupation,
+      monthly_income: formData.incomeRange,
+      income_source: formData.sourceOfIncome,
+      employment_type: formData.employmentType,
+      is18: formData.isOfAge,
+    },
+
+    // Prepare supporting document details for database insertion.
+    non_msian_supporting_docs: documents.map((doc) => ({
+      doc_name: doc.name,
+      doc_file: doc.fileBase64 || null 
+    })),
+
+    preferredBranch,
+  };
+
+  // Store application details temporarily until the final account creation page submits everything.
+  localStorage.setItem(
+    "nonMsianApplication",
+    JSON.stringify(applicationData)
+  );
+
+  router.push("/personal/non-malaysian/account_creation");
+};
+
   const handleBack = () => {
-    if (step === 3) {
-      setStep(2);
-    } else if (step === 2) {
-      setStep(1);
+    if (step > 1){
+      setStep(step - 1);
     } else {
       router.push("/personal/non-malaysian/address");
     }
-  };
+  }
 
   if (!mounted) return null;
 
@@ -649,7 +707,7 @@ export default function PersonalNonMalaysianApplication() {
                </p>
               
               <button 
-                onClick={() => router.push("/personal/non-malaysian/account_creation")} 
+                onClick={handleApplicationContinue}
                 disabled={!preferredBranch} 
                 className="inline-flex items-center justify-center w-full px-4 py-3 text-sm font-bold transition rounded-lg bg-[#3D405B] text-white hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d] disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed dark:disabled:bg-gray-800 dark:disabled:text-gray-600 shadow-theme-xs"
               >

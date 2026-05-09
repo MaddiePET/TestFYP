@@ -1,5 +1,56 @@
+import fs from "fs";
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
+import * as admin from "firebase-admin";
+import { hashPassword } from "@/hashpw";
+
+function loadFirebaseServiceAccount(project: 'jim' | 'jpn') {
+  const envVar = project === 'jim' ? 'FIREBASE_JIM_SERVICE_ACCOUNT_PATH' : 'FIREBASE_JPN_SERVICE_ACCOUNT_PATH';
+  const jsonPath = process.env[envVar];
+
+  if (!jsonPath) {
+    throw new Error(`Missing ${envVar} environment variable`);
+  }
+
+  return JSON.parse(fs.readFileSync(jsonPath, "utf8"));
+}
+
+let jimDb: admin.firestore.Firestore | null = null;
+let jpnDb: admin.firestore.Firestore | null = null;
+
+function getJimDb() {
+  if (!jimDb) {
+    const appName = "jim-app";
+
+    const jimApp = admin.apps.find((app) => app?.name === appName)
+      || admin.initializeApp(
+        {
+          credential: admin.credential.cert(loadFirebaseServiceAccount("jim")),
+        },
+        appName
+      );
+
+    jimDb = jimApp.firestore();
+  }
+  return jimDb;
+}
+
+function getJpnDb() {
+  if (!jpnDb) {
+    const appName = "jpn-app";
+
+    const jpnApp = admin.apps.find((app) => app?.name === appName)
+      || admin.initializeApp(
+        {
+          credential: admin.credential.cert(loadFirebaseServiceAccount("jpn")),
+        },
+        appName
+      );
+
+    jpnDb = jpnApp.firestore();
+  }
+  return jpnDb;
+}
 
 // Generates a random 16 digit savings account number
 function generateAccountNumber() {
@@ -12,13 +63,44 @@ function generateAccountNumber() {
   return accountNo;
 }
 
+const JIM_NONRESIDENTS_COLLECTION = "jim_nonresidents";
+
+async function verifyIdentityInFirebase(idNum: string) {
+  if (!idNum) return false;
+
+  const db = getJimDb();
+  const docRef = db.collection(JIM_NONRESIDENTS_COLLECTION).doc(idNum);
+  const docSnapshot = await docRef.get();
+  if (docSnapshot.exists) {
+    return true;
+  }
+
+  const passportQuery = await db
+    .collection(JIM_NONRESIDENTS_COLLECTION)
+    .where("passport_no", "==", idNum)
+    .limit(1)
+    .get();
+
+  if (!passportQuery.empty) {
+    return true;
+  }
+
+  const icQuery = await db
+    .collection(JIM_NONRESIDENTS_COLLECTION)
+    .where("ic_number", "==", idNum)
+    .limit(1)
+    .get();
+
+  return !icQuery.empty;
+}
+
 export async function POST(req: Request) {
-  // Get a database client from the connection pool
   const client = await pool.connect();
 
   try {
-    // Read the data sent from the frontend or Postman
     const body = await req.json();
+
+   // console.log("NON-MSIAN SUBMIT BODY:", JSON.stringify(body, null, 2));
 
     const {
       id_type,
@@ -26,7 +108,6 @@ export async function POST(req: Request) {
       full_name,
       dob,
       ph_no_1,
-      ph_no_2,
       email,
       address,
       non_msian_details,
@@ -35,7 +116,46 @@ export async function POST(req: Request) {
       savings_account,
     } = body;
 
-    // Start transaction so all inserts succeed together or fail together
+    // Check required sections before inserting into database
+    if (!address) {
+      throw new Error("Address data is missing from request body");
+    }
+
+    if (!non_msian_details) {
+      throw new Error("Non-Malaysian passport details are missing from request body");
+    }
+
+    if (!user) {
+      throw new Error("User account data is missing from request body");
+    }
+
+    if (!savings_account) {
+      throw new Error("Savings account data is missing from request body");
+    }
+
+    if (!id_num || !full_name || !dob || !ph_no_1 || !email) {
+      throw new Error("Customer personal information is incomplete");
+    }
+
+    if (!address.add_1 || !address.postcode || !address.state || !address.country) {
+      throw new Error("Address information is incomplete");
+    }
+
+    if (!user.username || !user.password || !user.sec_phrase || !user.branch) {
+      throw new Error("User account information is incomplete");
+    }
+
+    const isVerified = await verifyIdentityInFirebase(id_num);
+    if (!isVerified) {
+      return NextResponse.json(
+        {
+          error:
+            "eKYC verification failed: the provided passport/ID number was not found in the government identity records.",
+        },
+        { status: 403 }
+      );
+    }
+
     await client.query("BEGIN");
 
     // 1. Insert address first because Customer needs home_add as a foreign key
@@ -56,14 +176,13 @@ export async function POST(req: Request) {
       [
         address.add_type || "Home",
         address.add_1,
-        address.add_2,
+        address.add_2 || null,
         address.postcode,
         address.state,
         address.country,
       ]
     );
 
-    // Store the generated address ID to use in Customer and Non_msian_details
     const addId = addressResult.rows[0].add_id;
 
     // 2. Insert customer details and link customer to address using home_add
@@ -76,29 +195,26 @@ export async function POST(req: Request) {
         id_type,
         dob,
         ph_no_1,
-        ph_no_2,
         email,
         home_add
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING cust_id
       `,
       [
         id_num,
         full_name,
-        id_type,
+        id_type || "Passport",
         dob,
         ph_no_1,
-        ph_no_2 || null,
         email,
         addId,
       ]
     );
 
-    // Store the generated customer ID for the next tables
     const custId = customerResult.rows[0].cust_id;
 
-    // 3. Insert non Malaysian passport details
+    // 3. Insert non-Malaysian passport details
     await client.query(
       `
       INSERT INTO banka."Non_msian_details"
@@ -113,17 +229,25 @@ export async function POST(req: Request) {
       `,
       [
         custId,
-        non_msian_details.pp_issue_office,
-        non_msian_details.pp_issue_date,
-        non_msian_details.pp_exp_date,
+        non_msian_details.pp_issue_office || null,
+        non_msian_details.pp_issue_date || null,
+        non_msian_details.pp_exp_date || null,
         addId,
       ]
     );
 
-    // 4. Insert non Malaysian supporting document records
-    // These records are linked to the customer using cust_id
+    // 4. Insert non-Malaysian supporting documents
+    // This converts Base64 file data into Buffer before saving into PostgreSQL bytea column
     if (Array.isArray(non_msian_supporting_docs)) {
       for (const doc of non_msian_supporting_docs) {
+        if (!doc?.doc_name || !doc?.doc_file) continue;
+
+        const base64Part = doc.doc_file.includes(",")
+          ? doc.doc_file.split(",")[1]
+          : doc.doc_file;
+
+        const fileBuffer = Buffer.from(base64Part, "base64");
+
         await client.query(
           `
           INSERT INTO banka."Non_msian_supporting_docs"
@@ -134,17 +258,15 @@ export async function POST(req: Request) {
           )
           VALUES ($1, $2, $3)
           `,
-          [
-            custId,
-            doc.doc_name,
-            doc.doc_file || null,
-          ]
+          [custId, doc.doc_name, fileBuffer]
         );
       }
     }
 
-    // 5. Insert login/user profile details
-    // This links the User record to the Customer using cust_id
+    const rawPassword = user.password;
+    const hashedPassword = await hashPassword(rawPassword);
+
+    // 6. Insert login/user profile details
     const userResult = await client.query(
       `
       INSERT INTO banka."User"
@@ -163,22 +285,20 @@ export async function POST(req: Request) {
       [
         custId,
         user.username,
-        user.password,
-        user.status || "Pending",
+        hashedPassword,
+        user.status || "PENDING",
         user.img || null,
         user.sec_phrase,
         user.branch,
       ]
     );
 
-    // Store the generated user ID for the Savings_account table
     const userId = userResult.rows[0].user_id;
 
-    // 6. Generate a unique 16 digit savings account number
+    // 7. Generate a unique 16 digit savings account number
     let accountNo = generateAccountNumber();
     let accountExists = true;
 
-    // Keep checking until the generated account number does not exist in the table
     while (accountExists) {
       const checkAccount = await client.query(
         `
@@ -196,8 +316,7 @@ export async function POST(req: Request) {
       }
     }
 
-    // 7. Insert savings account details
-    // This links the savings account to the User using user_id
+    // 8. Insert savings account details
     const savingsResult = await client.query(
       `
       INSERT INTO banka."Savings_account"
@@ -216,18 +335,16 @@ export async function POST(req: Request) {
       [
         accountNo,
         userId,
-        savings_account.occupation,
-        savings_account.monthly_income,
-        savings_account.income_source,
-        savings_account.employment_type,
-        savings_account.is18,
+        savings_account.occupation || null,
+        savings_account.monthly_income || null,
+        savings_account.income_source || null,
+        savings_account.employment_type || null,
+        savings_account.is18 ?? true,
       ]
     );
 
-    // Save all changes permanently after all inserts are successful
     await client.query("COMMIT");
 
-    // Send success response back to frontend
     return NextResponse.json(
       {
         message: "Non-Malaysian savings account application created successfully",
@@ -238,12 +355,10 @@ export async function POST(req: Request) {
       { status: 201 }
     );
   } catch (error: any) {
-    // Undo all inserts if any step fails
     await client.query("ROLLBACK");
 
-    console.error("Non-Malaysian savings account error:", error);
+   // console.error("Non-Malaysian savings account error:", error);
 
-    // Send error message back to frontend or Postman
     return NextResponse.json(
       {
         error:
@@ -253,7 +368,6 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   } finally {
-    // Release the database client back to the pool
     client.release();
   }
 }

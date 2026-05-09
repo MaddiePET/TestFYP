@@ -3,10 +3,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import ChevronLeftIcon from "@/icons/chevron-left.svg";
 import Label from "@/components/form/Label";
-
 type Step = "input" | "otp";
 
 export default function PersonalNonMalaysianPhone() {
@@ -20,6 +19,9 @@ export default function PersonalNonMalaysianPhone() {
   const [timer, setTimer] = useState(0);
 
   const otpInputs = useRef<(HTMLInputElement | null)[]>([]);
+
+  const searchParams = useSearchParams();
+  const journeyId = searchParams.get("journeyId") || "";
 
   useEffect(() => {
     setMounted(true);
@@ -53,13 +55,25 @@ export default function PersonalNonMalaysianPhone() {
     }, 800);
   };
 
-  const handleVerifyOtp = () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      router.push("/personal/non-malaysian/email");
-    }, 800);
-  };
+ // Verifies the OTP and stores the phone number for the final application submission.
+const handleVerifyOtp = () => {
+  setIsLoading(true);
+
+  setTimeout(() => {
+    // Save phone details temporarily so the final account creation page can submit them to the backend.
+    localStorage.setItem(
+      "nonMsianPhone",
+      JSON.stringify({
+        ph_no_1: phoneNumber,
+      })
+    );
+
+    setIsLoading(false);
+
+    // Move to the email verification step.
+    router.push(`/personal/non-malaysian/email?journeyId=${encodeURIComponent(journeyId)}`);
+  }, 800);
+};
 
   const handleOtpChange = (value: string, index: number) => {
     const cleanValue = value.replace(/[^0-9]/g, "");
@@ -232,7 +246,6 @@ export default function PersonalNonMalaysianPhone() {
                   />
                 ))}
               </div>
-
               <button 
                 type="button" 
                 onClick={handleVerifyOtp} 

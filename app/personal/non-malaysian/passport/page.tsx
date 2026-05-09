@@ -18,8 +18,13 @@ export default function PersonalNonMalaysianPassportQRCode() {
   const [hostWarning, setHostWarning] = useState<string | null>(null);
 
   useEffect(() => {
-    const jId = localStorage.getItem("journeyId") || `TEST-${Date.now()}`;
+    const jId = localStorage.getItem("journeyId");
 
+    if (!jId) {
+      console.error("Journey ID missing");
+      return;
+    }
+    
     setJourneyId(jId);
 
     if (!localStorage.getItem("journeyId")) {
@@ -59,7 +64,9 @@ export default function PersonalNonMalaysianPassportQRCode() {
 
   const handleNext = () => {
     if (isVerified) {
-      router.push("/personal/non-malaysian/face_verification");
+      router.push(
+        `/personal/non-malaysian/face_verification?journeyId=${encodeURIComponent(journeyId || "")}`
+      );
     }
   };
 

@@ -17,9 +17,8 @@ export default function PersonalMalaysianEmail() {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [isLoading, setIsLoading] = useState(false);
   const [timer, setTimer] = useState(0);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-
+  const [message, setMessage] = useState("");
+  
   const otpInputs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
@@ -41,34 +40,97 @@ export default function PersonalMalaysianEmail() {
     else router.push("/personal/malaysian/phone");
   };
 
-  const handleSendOtp = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      setStep("otp");
-      setTimer(60); 
-    }, 800);
-  };
+ const handleSendOtp = async (e?: React.FormEvent) => {
+  // Prevent the form from refreshing the page.
+  if (e) e.preventDefault();
+
+  // Start loading state and clear previous messages.
+  setIsLoading(true);
+  setMessage("");
+
+  try {
+    // Call the backend API route that generates and sends the OTP email.
+    const res = await fetch("/api/otp/email/send", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    const data = await res.json();
+
+    // Show an error message if the OTP email fails to send.
+    if (!res.ok) {
+      setMessage(data.error || "Failed to send email OTP.");
+      return;
+    }
+
+    // Move to the OTP input screen only after the email is sent.
+    setStep("otp");
+
+    // Start the resend countdown timer.
+    setTimer(60);
+
+    // Show a success message to the user.
+    setMessage("OTP sent successfully. Please check your email.");
+  } catch (error) {
+    // Log the technical error for debugging and show a user-friendly message.
+    console.error("Send OTP error:", error);
+    setMessage("Something went wrong while sending the OTP.");
+  } finally {
+    // Stop loading state whether the request succeeds or fails.
+    setIsLoading(false);
+  }
+};
 
   const handleVerifyOtp = async () => {
-  try {
-    setIsSubmitting(true);
-    setSubmitError(null);
+  // Combine the 6 OTP input boxes into one OTP string.
+  const enteredOtp = otp.join("");
 
+  // Start loading state and clear previous messages.
+  setIsLoading(true);
+  setMessage("");
+
+  try {
+    // Call the backend API route that verifies the OTP for the entered email.
+    const res = await fetch("/api/otp/email/verify", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        otp: enteredOtp,
+      }),
+    });
+
+    const data = await res.json();
+
+    // Show an error message if the OTP is incorrect, expired, or missing.
+    if (!res.ok) {
+      setMessage(data.error || "Invalid OTP. Please try again.");
+      return;
+    }
+
+    // Save the verified email temporarily for the Malaysian final submission flow.
     localStorage.setItem(
       "contactInfo",
       JSON.stringify({
         email,
+        emailVerified: true,
       })
     );
 
+    // Move to the personal information page only after successful verification.
     router.push("/personal/malaysian/info");
-  } catch (error: any) {
-    console.error("Email save error:", error);
-    setSubmitError(error.message || "Failed to save email.");
+  } catch (error) {
+    // Log the technical error for debugging and show a user-friendly message.
+    console.error("Verify OTP error:", error);
+    setMessage("Something went wrong while verifying the OTP.");
   } finally {
-    setIsSubmitting(false);
+    // Stop loading state whether the request succeeds or fails.
+    setIsLoading(false);
   }
 };
 
@@ -199,6 +261,13 @@ export default function PersonalMalaysianEmail() {
               >
                 {isLoading ? "Processing..." : "Continue"}
               </button>
+
+              {message && (
+                 <p className="text-center text-sm font-medium text-gray-700 dark:text-gray-200">
+                 {message}
+                 </p>
+              )}
+              
             </form>
           </div>
         )}
@@ -232,23 +301,23 @@ export default function PersonalMalaysianEmail() {
                 ))}
               </div>
 
-              {submitError &&(
+              {message &&(
                 <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm text-center">
-                  {submitError}
+                  {message}
                 </div>
               )}
 
               <button 
                 type="button" 
                 onClick={handleVerifyOtp} 
-                disabled={otp.join("").length < 6 || isSubmitting} 
+                disabled={otp.join("").length < 6 || isLoading} 
                 className={`inline-flex items-center justify-center w-full px-4 py-3 text-sm font-bold transition rounded-lg shadow-theme-xs ${
                   otp.join("").length === 6 
                     ? 'bg-[#3D405B] text-white hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d]' 
                     : 'bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600'
                 }`}
               >
-                {isSubmitting ? "Verifying..." : "Verify"}
+                {isLoading ? "Verifying..." : "Verify"}
               </button>
             </div>
 
