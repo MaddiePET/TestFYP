@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import * as admin from "firebase-admin";
 import { hashPassword } from "@/hashpw";
+export const runtime = "nodejs";
 
 function loadFirebaseServiceAccount(project: 'jim' | 'jpn') {
   const envVar = project === 'jim' ? 'FIREBASE_JIM_SERVICE_ACCOUNT_PATH' : 'FIREBASE_JPN_SERVICE_ACCOUNT_PATH';
@@ -357,7 +358,7 @@ export async function POST(req: Request) {
   } catch (error: any) {
     await client.query("ROLLBACK");
 
-   // console.error("Non-Malaysian savings account error:", error);
+    console.error("Non-Malaysian savings account error:", error);
 
     return NextResponse.json(
       {
