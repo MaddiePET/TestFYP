@@ -95,7 +95,7 @@ export default function PersonalNonMalaysianAccountCreation() {
         status: "Pending",
         img: profilePreview,
         sec_phrase: securityPhrase,
-        branch: branchInfo.branch,
+        branch: branchInfo.branch || savedApplication.preferredBranch,
       },
 
       savings_account: savedApplication.savings_account,
@@ -106,6 +106,9 @@ export default function PersonalNonMalaysianAccountCreation() {
     );
 
    console.log("FINAL NON-MSIAN DATA:", finalData); // helps with debugging by showing final payload before sending to backend 
+   console.log("NON-MSIAN USER DATA BEFORE SUBMIT:", finalData.user);
+   console.log("BRANCH INFO:", branchInfo);
+   console.log("SAVED APPLICATION:", savedApplication);
 
     //sends the complete non-msian application data to backend route for db insert
     const response = await fetch("/api/non_msian_savings_account", {
