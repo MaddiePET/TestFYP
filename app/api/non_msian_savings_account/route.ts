@@ -164,18 +164,16 @@ export async function POST(req: Request) {
       `
       INSERT INTO banka."Address"
       (
-        add_type,
         add_1,
         add_2,
         postcode,
         state,
         country
       )
-      VALUES ($1, $2, $3, $4, $5, $6)
+      VALUES ($1, $2, $3, $4, $5)
       RETURNING add_id
       `,
       [
-        address.add_type || "Home",
         address.add_1,
         address.add_2 || null,
         address.postcode,
