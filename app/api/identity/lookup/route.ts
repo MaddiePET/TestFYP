@@ -42,9 +42,11 @@ export async function GET(req: Request) {
 
     return NextResponse.json({
       success: true,
-      ...result,
-      full_name: result.full_name || result.name || `${result.fname} ${result.lname}`.trim(),
-      id_num: result.ic_number || result.passport_no || idNum,
+      source: result.source,
+      identity: result.identity,
+      formData: result.formData,
+      full_name: result.formData.full_name,
+      id_num: result.formData.id_number,
     });
   } catch (error: any) {
     console.error("Identity lookup error:", error);
