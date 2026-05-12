@@ -3,14 +3,18 @@
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import ChevronLeftIcon from "@/icons/chevron-left.svg";
 
 type Step = "input" | "otp";
 
 export default function PersonalMalaysianEmail() {
   const router = useRouter();
-  
+  const searchParams = useSearchParams();
+  const journeyId =
+    searchParams.get("journeyId") ||
+    (typeof window !== "undefined" ? localStorage.getItem("journeyId") : "") ||
+    "";
   const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState<Step>("input");
   const [email, setEmail] = useState("");
@@ -37,7 +41,9 @@ export default function PersonalMalaysianEmail() {
 
   const handleGlobalBack = () => {
     if (step === "otp") setStep("input");
-    else router.push("/personal/malaysian/phone");
+    else router.push(
+      `/personal/malaysian/phone?journeyId=${encodeURIComponent(journeyId)}`
+    );
   };
 
  const handleSendOtp = async (e?: React.FormEvent) => {
@@ -122,8 +128,28 @@ export default function PersonalMalaysianEmail() {
       })
     );
 
-    // Move to the personal information page only after successful verification.
-    router.push("/personal/malaysian/info");
+    const statusRes = await fetch(
+      `/api/ekyc/status?journeyId=${encodeURIComponent(journeyId)}`
+    );
+
+    const statusData = await statusRes.json();
+
+    const icNo =
+      statusData?.id_num ||
+      statusData?.data?.id_num ||
+      statusData?.identity?.id_num ||
+      "";
+
+    if (!icNo) {
+      console.error("Missing IC number from journey status:", statusData);
+      setMessage("IC number missing. Please restart MyKad verification.");
+      setIsLoading(false);
+      return;
+    }
+
+    router.push(
+      `/personal/malaysian/info?id_type=ic&id_num=${encodeURIComponent(icNo)}&journeyId=${encodeURIComponent(journeyId)}`
+    );
   } catch (error) {
     // Log the technical error for debugging and show a user-friendly message.
     console.error("Verify OTP error:", error);
