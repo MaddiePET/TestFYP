@@ -79,7 +79,7 @@ export default function PersonalNonMalaysianAccountCreation() {
       full_name: savedInfo.full_name,
       dob: savedInfo.dob,
 
-      ph_no_1: savedPhone.ph_no_1,
+      ph_no: savedPhone.ph_no_1|| savedPhone.ph_no || savedPhone.phoneNumber,
       email: savedEmail.email,
 
       address: savedAddress.address,

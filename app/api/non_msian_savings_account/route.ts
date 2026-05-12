@@ -108,7 +108,7 @@ export async function POST(req: Request) {
       id_num,
       full_name,
       dob,
-      ph_no_1,
+      ph_no,
       email,
       address,
       non_msian_details,
@@ -134,7 +134,7 @@ export async function POST(req: Request) {
       throw new Error("Savings account data is missing from request body");
     }
 
-    if (!id_num || !full_name || !dob || !ph_no_1 || !email) {
+    if (!id_num || !full_name || !dob || !ph_no || !email) {
       throw new Error("Customer personal information is incomplete");
     }
 
@@ -193,7 +193,7 @@ export async function POST(req: Request) {
         full_name,
         id_type,
         dob,
-        ph_no_1,
+        ph_no,
         email,
         home_add
       )
@@ -205,7 +205,7 @@ export async function POST(req: Request) {
         full_name,
         id_type || "Passport",
         dob,
-        ph_no_1,
+        ph_no,
         email,
         addId,
       ]
