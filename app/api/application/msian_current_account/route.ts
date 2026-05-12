@@ -2,6 +2,17 @@ import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { hashPassword } from "@/hashpw";
 
+// Generates a random 16 digit savings account number
+function generateAccountNumber() {
+  let accountNo = "";
+
+  for (let i = 0; i < 16; i++) {
+    accountNo += Math.floor(Math.random() * 10).toString();
+  }
+
+  return accountNo;
+}
+
 export async function POST(req: Request) {
   const data = await req.json();
   const client = await pool.connect();
@@ -193,34 +204,61 @@ export async function POST(req: Request) {
       mail_add_id = mailingAddressRes.rows[0].add_id;
     }
 
+    // 7. Generate a unique 16 digit current account number
+    let accountNo = generateAccountNumber();
+    let accountExists = true;
+
+    while (accountExists) {
+      const checkAccount = await client.query(
+        `
+        SELECT account_no
+        FROM banka."Current_account"
+        WHERE account_no = $1
+        `,
+        [accountNo]
+      );
+
+      if (checkAccount.rows.length === 0) {
+        accountExists = false;
+      } else {
+        accountNo = generateAccountNumber();
+      }
+    }
+
     // 6. Insert Current_account
     await client.query(
       `
       INSERT INTO banka."Current_account" (
-        user_id, 
-        reg_no, 
-        bus_name, 
+        account_no,
+        user_id,
+        reg_no,
+        bus_name,
         bus_type,
         role, 
         bus_ph_no, 
         bus_email, 
         start_date,
-        bus_add_id, 
-        mail_add_id
+        bus_add_id,
+        mail_add_id,
+        MSIC_code,
+        MSIC_name
       )
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
       `,
       [
+        accountNo,
         user_id,
         data.businessParticulars?.brn || data.businessParticulars?.reg_no || null,
         data.businessParticulars?.businessName || data.businessParticulars?.bus_name || null,
         data.businessParticulars?.businessType || data.businessParticulars?.bus_type || null,
-        data.businessParticulars?.role || "notyet",
+        data.businessParticulars?.role,
         data.businessContact?.bus_ph_no || null,
         data.businessContact?.bus_email || null,
         data.businessParticulars?.startDate || null,
         bus_add_id,
         mail_add_id,
+        data.businessParticulars?.msicCode,
+        data.businessParticulars?.msicName
       ]
     );
 

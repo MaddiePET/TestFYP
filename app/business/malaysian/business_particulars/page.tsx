@@ -32,10 +32,13 @@ export default function BusinessMalaysianBusinessParticulars() {
   const [formData, setFormData] = useState({
     businessName: "",
     brn: "",
+    msicCode: "",
+    msicName: "",
     day: "",
     month: "",
     year: "",
     businessType: "",
+    role: ""
   });
 
   useEffect(() => {
@@ -50,10 +53,13 @@ export default function BusinessMalaysianBusinessParticulars() {
         setFormData({
           businessName: biz.name,
           brn: biz.brn,
+          msicCode: "",
+          msicName: "",
           day: d,
           month: m,
           year: y,
           businessType: biz.type,
+          role: ""
         });
       }
     }
@@ -79,6 +85,9 @@ export default function BusinessMalaysianBusinessParticulars() {
         brn: formData.brn,
         startDate: `${formData.year}-${formData.month.padStart(2, "0")}-${formData.day.padStart(2, "0")}`,
         businessType: formData.businessType,
+        role: formData.role,
+        msicCode: formData.msicCode,
+        msicName: formData.msicName
       },
     });
 
@@ -270,6 +279,36 @@ export default function BusinessMalaysianBusinessParticulars() {
                 </div>
 
                 <div className="md:col-span-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
+                      MSIC Code<span className="text-red-500">*</span>
+                    </label>
+
+                    <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
+                      MSIC Name<span className="text-red-500">*</span>
+                    </label>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="string"
+                      placeholder="00000"
+                      className={inputClasses}
+                      value={formData.msicCode}
+                      onChange={(e) => setFormData({...formData, msicCode: e.target.value})}
+                    />
+
+                    <input
+                      type="string"
+                      placeholder="Title"
+                      className={inputClasses}
+                      value={formData.msicName}
+                      onChange={(e) => setFormData({...formData, msicName: e.target.value})}
+                    />
+                  </div>
+                </div>
+
+                <div className="md:col-span-2">
                   <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
                     Operation Start Date<span className="text-red-500">*</span>
                   </label>
@@ -307,52 +346,99 @@ export default function BusinessMalaysianBusinessParticulars() {
                   </div>
                 </div>
 
-                <div className="md:col-span-2">
-                  <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-                    Business Type<span className="text-red-500">*</span>
-                  </label>
 
-                  <div className="relative">
-                    <select
-                      value={formData.businessType}
-                      onChange={(e) => setFormData({ ...formData, businessType: e.target.value })}
-                      className={inputClasses}
-                    >
-                      <option 
-                        value="" 
-                        disabled
-                      >
-                        Select Type
-                      </option>
-                      {[
-                        "Sole Proprietorship",
-                        "Partnership",
-                        "Private Limited (Sdn Bhd)",
-                        "Limited Liability Partnership (LLP)",
-                      ].map((type) => (
-                        <option 
-                          key={type} 
-                          value={type}
+                <div className="md:col-span-2">
+                  <div className="grid grid-cols-2 gap-2">
+
+                    <div>
+                      <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
+                        Business Type<span className="text-red-500">*</span>
+                      </label>
+
+                      <div className="relative">
+                        <select
+                          value={formData.businessType}
+                          onChange={(e) =>
+                            setFormData({ ...formData, businessType: e.target.value })
+                          }
+                          className={inputClasses}
                         >
-                          {type}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
-                      <svg 
-                        className="w-4 h-4 text-gray-400" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
-                      >
-                        <path 
-                          strokeLinecap="round" 
-                          strokeLinejoin="round" 
-                          strokeWidth="2" 
-                          d="M19 9l-7 7-7-7" 
-                        />
-                      </svg>
+                          <option value="" disabled>
+                            Select Type
+                          </option>
+
+                          {[
+                            "Sole Proprietorship",
+                            "Partnership",
+                            "Private Limited (Sdn Bhd)",
+                            "Limited Liability Partnership (LLP)",
+                          ].map((type) => (
+                            <option key={type} value={type}>
+                              {type}
+                            </option>
+                          ))}
+                        </select>
+
+                        <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
+                          <svg
+                            className="w-4 h-4 text-gray-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
+                        </div>
+                      </div>
                     </div>
+
+                    <div>
+                      <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
+                        Role<span className="text-red-500">*</span>
+                      </label>
+
+                      <div className="relative">
+                        <select
+                          value={formData.role}
+                          onChange={(e) =>
+                            setFormData({ ...formData, role: e.target.value })
+                          }
+                          className={inputClasses}
+                        >
+                          <option value="" disabled>
+                            Select Role
+                          </option>
+
+                          {["Checker", "Maker", "Both"].map((role) => (
+                            <option key={role} value={role}>
+                              {role}
+                            </option>
+                          ))}
+                        </select>
+
+                        <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
+                          <svg
+                            className="w-4 h-4 text-gray-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+
                   </div>
                 </div>
               </div>

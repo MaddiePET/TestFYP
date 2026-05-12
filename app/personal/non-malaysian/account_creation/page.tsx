@@ -53,8 +53,7 @@ export default function PersonalNonMalaysianAccountCreation() {
       const reader = new FileReader();
       reader.onloadend = () => {
         const dataUrl = reader.result as string;
-        const base64String = dataUrl.split(',')[1];
-        setProfilePreview(base64String);
+        setProfilePreview(dataUrl); 
       };
       reader.readAsDataURL(file);
     }
@@ -273,7 +272,6 @@ const handleNext = () => {
                         alt="Profile" 
                       />
 
-                      <img src={`data:${profileFile?.type};base64,${profilePreview}`} className="w-full h-full object-cover" alt="Profile" />
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         <span className="text-white text-[10px] font-bold uppercase bg-white/20 backdrop-blur-sm px-2 py-1 rounded">Change</span>
                       </div>

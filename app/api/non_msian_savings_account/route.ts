@@ -265,6 +265,13 @@ export async function POST(req: Request) {
     const rawPassword = user.password;
     const hashedPassword = await hashPassword(rawPassword);
 
+    let profileBuffer: Buffer | string | null = null;
+    if (user.img) {
+      profileBuffer = user.img.startsWith("data:image")
+        ? Buffer.from(user.img.split(",")[1], "base64")
+        : Buffer.from(user.img); 
+    }
+
     // 6. Insert login/user profile details
     const userResult = await client.query(
       `
