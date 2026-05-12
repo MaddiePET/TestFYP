@@ -72,6 +72,24 @@ export default function PersonalNonMalaysianAccountCreation() {
     const savedApplication = JSON.parse(localStorage.getItem("nonMsianApplication") || "{}");
     const branchInfo = JSON.parse(localStorage.getItem("branchInfo") || "{}");
 
+    console.log("savedPhone:", savedPhone);
+    console.log("savedEmail:", savedEmail);
+    console.log("savedInfo:", savedInfo);
+    console.log("savedAddress:", savedAddress);
+    console.log("savedApplication:", savedApplication);
+
+    if (!savedPhone.ph_no) {
+      throw new Error("Phone number is missing from localStorage");
+    }
+
+    if (!savedEmail.email) {
+      throw new Error("Email is missing from localStorage");
+    }
+
+   if (!savedInfo.id_num || !savedInfo.full_name || !savedInfo.dob) {
+     throw new Error("Passport information is missing from localStorage");
+    }
+
     //Combine all saved page data into the structure expected by APO route
     const finalData = {
       id_type: savedInfo.id_type || "Passport",
@@ -79,7 +97,7 @@ export default function PersonalNonMalaysianAccountCreation() {
       full_name: savedInfo.full_name,
       dob: savedInfo.dob,
 
-      ph_no: savedPhone.ph_no_1|| savedPhone.ph_no || savedPhone.phoneNumber,
+      ph_no: savedPhone.ph_no,
       email: savedEmail.email,
 
       address: savedAddress.address,
@@ -92,7 +110,7 @@ export default function PersonalNonMalaysianAccountCreation() {
       user: {
         username,
         password,
-        status: "Pending",
+        status: "PENDING",
         img: profilePreview,
         sec_phrase: securityPhrase,
         branch: branchInfo.branch || savedApplication.preferredBranch,
@@ -105,10 +123,12 @@ export default function PersonalNonMalaysianAccountCreation() {
      savedApplication.non_msian_supporting_docs
     );
 
-   console.log("FINAL NON-MSIAN DATA:", finalData); // helps with debugging by showing final payload before sending to backend 
-   console.log("NON-MSIAN USER DATA BEFORE SUBMIT:", finalData.user);
-   console.log("BRANCH INFO:", branchInfo);
-   console.log("SAVED APPLICATION:", savedApplication);
+   //console.log("savedPhone:", savedPhone);
+   //console.log("savedEmail:", savedEmail);
+   //console.log("FINAL NON-MSIAN DATA:", finalData); // helps with debugging by showing final payload before sending to backend 
+   //console.log("NON-MSIAN USER DATA BEFORE SUBMIT:", finalData.user);
+   //console.log("BRANCH INFO:", branchInfo);
+   //console.log("SAVED APPLICATION:", savedApplication);
 
     //sends the complete non-msian application data to backend route for db insert
     const response = await fetch("/api/non_msian_savings_account", {

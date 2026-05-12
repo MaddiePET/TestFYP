@@ -60,13 +60,15 @@ const handleVerifyOtp = () => {
   setIsLoading(true);
 
   setTimeout(() => {
+    console.log("Phone number being saved:", phoneNumber);
     // Save phone details temporarily so the final account creation page can submit them to the backend.
     localStorage.setItem(
       "nonMsianPhone",
       JSON.stringify({
-        ph_no_1: phoneNumber,
+        ph_no: phoneNumber,
       })
     );
+    console.log("Saved phone:", localStorage.getItem("nonMsianPhone"));
 
     setIsLoading(false);
 

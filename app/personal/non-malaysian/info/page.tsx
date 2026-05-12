@@ -111,18 +111,18 @@ export default function PersonalNonMalaysianInfo() {
     const currentJourneyId = searchParams.get("journeyId") || "";
     const savedJourneyId = localStorage.getItem("nonMsianJourneyId");
 
-    if (savedJourneyId && savedJourneyId !== currentJourneyId) {
-      localStorage.removeItem("nonMsianInfo");
+    //Clears only page specific data that should be reset for a new journey
+    if (currentJourneyId && savedJourneyId && savedJourneyId !== currentJourneyId) {      localStorage.removeItem("nonMsianInfo");
       localStorage.removeItem("nonMsianAddress");
       localStorage.removeItem("nonMsianApplication");
-      localStorage.removeItem("nonMsianEmail");
-      localStorage.removeItem("nonMsianPhone");
       localStorage.removeItem("nonMsianIdType");
       localStorage.removeItem("nonMsianIdNum");
     }
 
-    localStorage.setItem("nonMsianJourneyId", currentJourneyId);
-
+    //Only updates the saved Journey ID when the current page still has the valid Journey ID
+    if (currentJourneyId) {
+      localStorage.setItem("nonMsianJourneyId", currentJourneyId);
+    }
     const savedInfo = JSON.parse(localStorage.getItem("nonMsianInfo") || "{}") || {};
 
     const queryParams = new URLSearchParams(window.location.search);
