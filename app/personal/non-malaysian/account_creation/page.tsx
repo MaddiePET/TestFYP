@@ -341,7 +341,7 @@ export default function PersonalNonMalaysianAccountCreation() {
               <button 
                 type="button" 
                 onClick={handleNext} 
-                disabled={!username || !profilePreview} 
+                disabled={!username || username.length < 5 || !profilePreview} 
                 className="inline-flex items-center justify-center w-full px-4 py-3 text-sm font-bold text-white transition rounded-lg bg-[#3D405B] shadow-theme-xs hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d] disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed dark:disabled:bg-gray-800 dark:disabled:text-gray-600"
               >
                 Continue

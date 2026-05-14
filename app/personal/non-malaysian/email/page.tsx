@@ -242,6 +242,7 @@ export default function PersonalNonMalaysianEmail() {
             height={40} 
             className="block dark:invert-0 invert" 
           />
+          
           <h1 className="text-2xl font-bold uppercase tracking-tight text-gray-800 dark:text-white">
             DTCOB
           </h1>

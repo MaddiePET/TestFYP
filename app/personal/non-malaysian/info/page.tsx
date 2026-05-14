@@ -15,7 +15,7 @@ export default function PersonalNonMalaysianInfo() {
     fullName: "",
     passportNumber: "",
     dobDay: "",
-    dobMonth: "January",
+    dobMonth: "",
     dobYear: "",
     issuingOffice: "",
     nationality: "",
@@ -351,83 +351,29 @@ export default function PersonalNonMalaysianInfo() {
                 </label>
 
                 <div className="grid grid-cols-3 gap-3">
-                  <div className="relative">
-                    <select 
-                      value={formData.dobDay} 
-                      onChange={(e) => setFormData({ ...formData, dobDay: e.target.value })} 
-                      className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none cursor-not-allowed"
-                      disabled
-                    >
-                      {Array.from({ length: 31 }, (_, i) => (i + 1).toString().padStart(2, "0")).map((opt) => <option key={opt} value={opt}>{opt}</option>)}
-                    </select>
-                    
-                    <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
-                      <svg 
-                        className="w-4 h-4 text-gray-400" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
-                      >
-                        <path 
-                          strokeLinecap="round" 
-                          strokeLinejoin="round" 
-                          strokeWidth="2" d="M19 9l-7 7-7-7" 
-                        />
-                      </svg>
-                    </div>
-                  </div>
+                  <input
+                    type="text" 
+                    value={formData.dobDay} 
+                    onChange={(e) => setFormData({ ...formData, dobDay: e.target.value })} 
+                    className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none cursor-not-allowed"
+                    disabled
+                  />
 
-                  <div className="relative">
-                    <select 
-                      value={formData.dobMonth} 
-                      onChange={(e) => setFormData({ ...formData, dobMonth: e.target.value })} 
-                      className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none cursor-not-allowed"
-                      disabled
-                    >
-                      {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map((opt) => <option key={opt} value={opt}>{opt}</option>)}
-                    </select>
+                  <input
+                    type="text" 
+                    value={formData.dobMonth} 
+                    onChange={(e) => setFormData({ ...formData, dobMonth: e.target.value })} 
+                    className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none cursor-not-allowed"
+                    disabled
+                  />
 
-                    <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
-                      <svg 
-                        className="w-4 h-4 text-gray-400" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
-                      >
-                        <path 
-                          strokeLinecap="round" 
-                          strokeLinejoin="round" 
-                          strokeWidth="2" d="M19 9l-7 7-7-7" 
-                        />
-                      </svg>
-                    </div>
-                  </div>
-
-                  <div className="relative">
-                    <select 
-                      value={formData.dobYear} 
-                      onChange={(e) => setFormData({ ...formData, dobYear: e.target.value })} 
-                      className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none cursor-not-allowed"
-                      disabled
-                    >
-                      {Array.from({ length: 100 }, (_, i) => (2025 - i).toString()).map((opt) => <option key={opt} value={opt}>{opt}</option>)}
-                    </select>
-                    
-                    <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
-                      <svg 
-                        className="w-4 h-4 text-gray-400" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
-                      >
-                        <path 
-                          strokeLinecap="round" 
-                          strokeLinejoin="round" 
-                          strokeWidth="2" d="M19 9l-7 7-7-7" 
-                        />
-                      </svg>
-                    </div>
-                  </div>
+                  <input 
+                    type="text"
+                    value={formData.dobYear} 
+                    onChange={(e) => setFormData({ ...formData, dobYear: e.target.value })} 
+                    className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none cursor-not-allowed"
+                    disabled
+                  />
                 </div>
               </div>
             </div>

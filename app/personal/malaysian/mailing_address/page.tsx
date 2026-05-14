@@ -8,6 +8,10 @@ import ChevronLeftIcon from "@/icons/chevron-left.svg";
 
 export default function PersonalMalaysianMailingAddress() {
   const router = useRouter();
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
   const searchParams = useSearchParams();
 
   const journeyId =
@@ -35,9 +39,6 @@ export default function PersonalMalaysianMailingAddress() {
     state: "",
     country: "Malaysia",
   });
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -151,7 +152,10 @@ export default function PersonalMalaysianMailingAddress() {
           Back
         </button>
 
-        <Link href="/" className="flex items-center gap-2">
+        <Link 
+          href="/"
+          className="flex items-center gap-2"
+        >
           <Image 
             src="/images/logo/logo-light.svg" 
             alt="Logo" 
@@ -197,10 +201,17 @@ export default function PersonalMalaysianMailingAddress() {
               <input
                 type="text"
                 className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
+                placeholder="House no, Building name"
                 value={mailingData.add1}
-                onChange={(e) => setMailingData({ ...mailingData, add1: e.target.value })}
+                onChange={(e) => 
+                  setMailingData({ 
+                    ...mailingData, 
+                    add1: e.target.value.replace(/[^a-zA-Z0-9,.\-\/ ]/g, "") 
+                  })
+                }
               />
             </div>
+
             <div>
               <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
                 Address 2 <span className="text-red-500">*</span>
@@ -209,8 +220,14 @@ export default function PersonalMalaysianMailingAddress() {
               <input
                 type="text"
                 className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
+                placeholder="Street name, Area"
                 value={mailingData.add2}
-                onChange={(e) => setMailingData({ ...mailingData, add2: e.target.value })}
+                onChange={(e) => 
+                  setMailingData({ 
+                    ...mailingData, 
+                    add2: e.target.value.replace(/[^a-zA-Z0-9,.\-\/ ]/g, "") 
+                  })
+                }
               />
             </div>
             
@@ -221,10 +238,14 @@ export default function PersonalMalaysianMailingAddress() {
                 </label>
 
                 <input
-                  type="text"
+                  type="text"                  
+                  maxLength={5}
                   className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
+                  placeholder="Enter your postal code"
                   value={mailingData.postal}
-                  onChange={(e) => setMailingData({ ...mailingData, postal: e.target.value })}
+                  onChange={(e) => setMailingData({ 
+                    ...mailingData, 
+                    postal: e.target.value.replace(/[^0-9]/g, "") })}
                 />
               </div>
 
@@ -236,24 +257,31 @@ export default function PersonalMalaysianMailingAddress() {
                 <input
                   type="text"
                   className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
+                  placeholder="Enter your state"
                   value={mailingData.state}
-                  onChange={(e) => setMailingData({ ...mailingData, state: e.target.value })}
+                  onChange={(e) => setMailingData({ 
+                    ...mailingData, 
+                    state: e.target.value.replace(/[^a-zA-Z ]/g, "") })}
                 />
               </div>
             </div>
           </div>
-            <div>
-              <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-                Country <span className="text-red-500">*</span>
-              </label>
+
+          <div>
+            <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
+              Country <span className="text-red-500">*</span>
+            </label>
               
-              <input
-                type="text"
-                className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
-                value={mailingData.country}
-                onChange={(e) => setMailingData({ ...mailingData, add2: e.target.value })}
-              />
-            </div>
+            <input
+              type="text"
+              className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
+              placeholder="Enter your country"
+              value={mailingData.country}
+              onChange={(e) => setMailingData({ 
+                ...mailingData, 
+                country: e.target.value.replace(/[^a-zA-Z ]/g, "") })}
+            />
+          </div>
 
           <div className="space-y-6">
             <p className="text-xs text-gray-500 dark:text-gray-400 text-center">

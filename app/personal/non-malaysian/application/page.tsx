@@ -312,33 +312,46 @@ export default function PersonalNonMalaysianApplication() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
                 <CustomSelect 
                   label="Occupation" 
-                  required value={formData.occupation} 
-                  onChange={(e) => setFormData({...formData, occupation: e.target.value})} 
-                  options={[{value: "accounting", label: "Accounting"}, {value: "student", label: "Student"}, {value: "engineer", label: "Engineer"}]}
+                  required 
+                  value={formData.occupation} 
+                  onChange={(e) => setFormData({...formData, occupation: e.target.value})}
+                  options={[
+                    {value: "accounting", label: "Accounting"},
+                    {value: "student", label: "Student"},
+                    {value: "engineer", label: "Engineer"}
+                  ]}
                 />
 
                 <CustomSelect 
                   label="Monthly Income Range" 
                   required 
                   value={formData.incomeRange} 
-                  onChange={(e) => setFormData({...formData, incomeRange: e.target.value})} 
-                  options={[{value: "1001-3000", label: "RM1,001 - RM3,000"}, {value: "3001-5000", label: "RM3,001 - RM5,000"}]}
+                  onChange={(e) => setFormData({...formData, incomeRange: e.target.value})}
+                  options={[
+                    {value: "1-1000", label: "RM1 - RM1,000"},
+                    {value: "1001-3000", label: "RM1,001 - RM3,000"}
+                  ]}
                 />
 
                 <CustomSelect 
                   label="Employment Type" 
                   required 
                   value={formData.employmentType} 
-                  onChange={(e) => setFormData({...formData, employmentType: e.target.value})} 
-                  options={[{value: "private", label: "Private"}, {value: "self-employed", label: "Self Employed"}]}
+                  onChange={(e) => setFormData({...formData, employmentType: e.target.value})}
+                  options={[
+                    {value: "government", label: "Government"},
+                    {value: "private", label: "Private"}
+                  ]}
                 />
 
                 <CustomSelect 
                   label="Source of Income" 
                   required 
                   value={formData.sourceOfIncome} 
-                  onChange={(e) => setFormData({...formData, sourceOfIncome: e.target.value})} 
-                  options={[{value: "salary", label: "Salary"}]}
+                  onChange={(e) => setFormData({...formData, sourceOfIncome: e.target.value})}
+                  options={[
+                    {value: "salary", label: "Salary"}
+                  ]}
                 />
               </div>
 

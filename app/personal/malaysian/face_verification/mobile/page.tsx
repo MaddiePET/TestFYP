@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 
-function PersonalNonMalaysianMobileFaceCapture() {
+function PersonalMalaysianMobileFaceCapture() {
   const MAX_ATTEMPTS = 3;
 
   const router = useRouter();
@@ -52,7 +52,7 @@ function PersonalNonMalaysianMobileFaceCapture() {
 
     const idCardBase64 = localStorage.getItem("ekyc_id_image");
     if (!idCardBase64) {
-      setErrorMessage("ID Document not found. Please rescan your Passport first.");
+      setErrorMessage("ID Document not found. Please rescan your MyKad first.");
       return;
     }
 
@@ -98,11 +98,11 @@ function PersonalNonMalaysianMobileFaceCapture() {
 
       if (remaining > 0) {
         setErrorMessage(
-            `Verification failed: ${reason}. You have ${remaining} attempt${remaining > 1 ? "s" : ""} remaining.`
+          `Verification failed: ${reason}. You have ${remaining} attempt${remaining > 1 ? "s" : ""} remaining.`
         );
       } else {
         setErrorMessage(
-            "Too many failed attempts. Please refer to your desktop screen."
+          "Too many failed attempts. Please refer to your desktop screen."
         );
 
         await fetch("/api/ekyc/status", {
@@ -199,7 +199,7 @@ function PersonalNonMalaysianMobileFaceCapture() {
               </h1>
 
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Your face has been securely matched with your Passport.
+                Your face has been securely matched with your MyKad.
               </p>
             </div>
 
@@ -329,7 +329,7 @@ function PersonalNonMalaysianMobileFaceCapture() {
   );
 }
 
-export default function PersonalNonMalaysianMobileFaceCapturePage() {
+export default function PersonalMalaysianMobileFaceCapturePage() {
   return (
     <React.Suspense
       fallback={
@@ -338,7 +338,7 @@ export default function PersonalNonMalaysianMobileFaceCapturePage() {
         </div>
       }
     >
-      <PersonalNonMalaysianMobileFaceCapture />
+      <PersonalMalaysianMobileFaceCapture />
     </React.Suspense>
   );
 }
