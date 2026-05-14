@@ -151,10 +151,7 @@ export default function PersonalNonMalaysianAddress() {
   const [mounted, setMounted] = useState<boolean>(false);
   const searchParams = useSearchParams();
   
-    const journeyId =
-      searchParams.get("journeyId") ||
-      (typeof window !== "undefined" ? localStorage.getItem("journeyId") : "") ||
-      "";
+  const journeyId = searchParams.get("journeyId") || (typeof window !== "undefined" ? localStorage.getItem("journeyId") : "") || "";
 
   const [addressData, setAddressData] = useState<AddressState>({
     permanentAddress: {
@@ -187,55 +184,53 @@ export default function PersonalNonMalaysianAddress() {
     (val) => val.trim() !== ""
   );
 
-// Updates one field inside either permanentAddress or mailingAddress.
-const updateField = (
-  type: keyof AddressState,
-  field: keyof AddressFields,
-  value: string
-) => {
-  setAddressData((prev) => ({
-    ...prev,
-    [type]: {
-      ...prev[type],
-      [field]: value,
-    },
-  }));
-};
-
-const saveAddressToLocalStorage = () => {
-  const addressInfo = {
-    address: {
-      add_type: "Home",
-      add_1: addressData.permanentAddress.streetAddress1,
-      add_2: addressData.permanentAddress.streetAddress2,
-      postcode: addressData.permanentAddress.postal,
-      city: addressData.permanentAddress.city,
-      state: addressData.permanentAddress.state,
-      country: addressData.permanentAddress.country,
-    },
-
-    mailingAddress: {
-      add_type: "Mailing",
-      add_1: addressData.mailingAddress.streetAddress1,
-      add_2: addressData.mailingAddress.streetAddress2,
-      postcode: addressData.mailingAddress.postal,
-      city: addressData.mailingAddress.city,
-      state: addressData.mailingAddress.state,
-      country: addressData.mailingAddress.country,
-    },
+  const updateField = (
+    type: keyof AddressState,
+    field: keyof AddressFields,
+    value: string
+  ) => {
+    setAddressData((prev) => ({
+      ...prev,
+      [type]: {
+        ...prev[type],
+        [field]: value,
+      },
+    }));
   };
 
-  localStorage.setItem(
-    "nonMsianAddress",
-    JSON.stringify(addressInfo)
-  );
-};
+  const saveAddressToLocalStorage = () => {
+    const addressInfo = {
+      address: {
+        add_type: "Home",
+        add_1: addressData.permanentAddress.streetAddress1,
+        add_2: addressData.permanentAddress.streetAddress2,
+        postcode: addressData.permanentAddress.postal,
+        city: addressData.permanentAddress.city,
+        state: addressData.permanentAddress.state,
+        country: addressData.permanentAddress.country,
+      },
 
-// Saves the residential and mailing address before moving to the application details page.
-const handleNavigation = () => {
-  saveAddressToLocalStorage();
-  router.push("/personal/non-malaysian/application");
-};
+      mailingAddress: {
+        add_type: "Mailing",
+        add_1: addressData.mailingAddress.streetAddress1,
+        add_2: addressData.mailingAddress.streetAddress2,
+        postcode: addressData.mailingAddress.postal,
+        city: addressData.mailingAddress.city,
+        state: addressData.mailingAddress.state,
+        country: addressData.mailingAddress.country,
+      },
+    };
+
+    localStorage.setItem(
+      "nonMsianAddress",
+      JSON.stringify(addressInfo)
+    );
+  };
+
+  const handleNavigation = () => {
+    saveAddressToLocalStorage();
+    router.push("/personal/non-malaysian/application");
+  };
 
   if (!mounted) return null;
 
@@ -277,9 +272,8 @@ const handleNavigation = () => {
       <div className="absolute top-6 left-4 right-4 flex justify-between items-center max-w-7xl mx-auto w-full z-20">
         <button
           type="button"
-          onClick={() => {
+          onClick={() => { 
             saveAddressToLocalStorage();
-
             router.push(
               `/personal/non-malaysian/info?journeyId=${encodeURIComponent(journeyId)}`
             );
@@ -290,7 +284,10 @@ const handleNavigation = () => {
           Back
         </button>
 
-        <Link href="/" className="flex items-center gap-2">
+        <Link 
+          href="/" 
+          className="flex items-center gap-2"
+        >
           <Image
             src="/images/logo/logo-light.svg"
             alt="Logo"

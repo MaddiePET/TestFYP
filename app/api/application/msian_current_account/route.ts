@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { hashPassword } from "@/hashpw";
 
-// Generates a random 16 digit savings account number
 function generateAccountNumber() {
   let accountNo = "";
 
@@ -39,7 +38,6 @@ export async function POST(req: Request) {
 
     if (!personalAddress.add_1) throw new Error("Personal address line 1 is missing");
 
-    // 1. Insert personal/home address first
     const homeAddressRes = await client.query(
       `
       INSERT INTO banka."Address" (
@@ -62,7 +60,6 @@ export async function POST(req: Request) {
     );
     const home_add = homeAddressRes.rows[0].add_id;
 
-    // 2. Insert Customer using home_add FK
     const customerRes = await client.query(
       `
       INSERT INTO banka."Customer" (
@@ -100,7 +97,6 @@ export async function POST(req: Request) {
     const rawPassword = data.account?.password;
     const hashedPassword = await hashPassword(rawPassword);
 
-    // 3. Insert User
     const userRes = await client.query(
       `
       INSERT INTO banka."User" (
@@ -127,7 +123,6 @@ export async function POST(req: Request) {
     );
     const user_id = userRes.rows[0].user_id;
 
-    // 4. Insert business address
     const businessAddress = {
       add_1:
         data.businessAddress?.businessAddress?.streetAddress ||
@@ -178,7 +173,6 @@ export async function POST(req: Request) {
     );
     const bus_add_id = businessAddressRes.rows[0].add_id;
 
-    // 5. Insert mailing address only if different
     let mail_add_id = bus_add_id;
     if (!isMailingSameAsBusiness) {
       const mailingAddressRes = await client.query(
@@ -204,7 +198,6 @@ export async function POST(req: Request) {
       mail_add_id = mailingAddressRes.rows[0].add_id;
     }
 
-    // 7. Generate a unique 16 digit current account number
     let accountNo = generateAccountNumber();
     let accountExists = true;
 
@@ -225,7 +218,6 @@ export async function POST(req: Request) {
       }
     }
 
-    // 6. Insert Current_account
     await client.query(
       `
       INSERT INTO banka."Current_account" (
@@ -262,7 +254,6 @@ export async function POST(req: Request) {
       ]
     );
 
-    // 7. Insert supporting documents
     const supportingDocs = data.supportingDocuments || [];
     for (const doc of supportingDocs) {
       if (!doc?.name || !doc?.fileBase64) continue;

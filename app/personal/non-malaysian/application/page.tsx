@@ -111,7 +111,6 @@ export default function PersonalNonMalaysianApplication() {
     setDocuments(documents.map(d => d.id === id ? { ...d, ...fields } : d));
   };
 
-  // Converts an uploaded file into Base64 so it can be sent to the backend.
   const fileToBase64 = (file: File): Promise<string> => {
    return new Promise((resolve, reject) => {
      const reader = new FileReader();
@@ -124,7 +123,6 @@ export default function PersonalNonMalaysianApplication() {
     });
 };
 
-  // Handles document upload and stores both the file name and Base64 file data.
   const handleFile = async (id: number, file: File | undefined) => {
    const allowedTypes = [
      "application/pdf",
@@ -181,35 +179,31 @@ export default function PersonalNonMalaysianApplication() {
     return distA - distB;
   });
 
-  // Saves employment, income, supporting document, and branch details before account creation.
-const handleApplicationContinue = () => {
-  // Convert application form data into the structure expected by the backend route.
-  const applicationData = {
-    savings_account: {
-      occupation: formData.occupation,
-      monthly_income: formData.incomeRange,
-      income_source: formData.sourceOfIncome,
-      employment_type: formData.employmentType,
-      is18: formData.isOfAge,
-    },
+  const handleApplicationContinue = () => {
+    const applicationData = {
+      savings_account: {
+        occupation: formData.occupation,
+        monthly_income: formData.incomeRange,
+        income_source: formData.sourceOfIncome,
+        employment_type: formData.employmentType,
+        is18: formData.isOfAge,
+      },
 
-    // Prepare supporting document details for database insertion.
-    non_msian_supporting_docs: documents.map((doc) => ({
-      doc_name: doc.name,
-      doc_file: doc.fileBase64 || null 
-    })),
+      non_msian_supporting_docs: documents.map((doc) => ({
+        doc_name: doc.name,
+        doc_file: doc.fileBase64 || null 
+      })),
 
-    preferredBranch,
+      preferredBranch,
+    };
+
+    localStorage.setItem(
+      "nonMsianApplication",
+      JSON.stringify(applicationData)
+    );
+
+    router.push("/personal/non-malaysian/account_creation");
   };
-
-  // Store application details temporarily until the final account creation page submits everything.
-  localStorage.setItem(
-    "nonMsianApplication",
-    JSON.stringify(applicationData)
-  );
-
-  router.push("/personal/non-malaysian/account_creation");
-};
 
   const handleBack = () => {
     if (step > 1){
@@ -266,7 +260,10 @@ const handleApplicationContinue = () => {
           Back
         </button>
 
-        <Link href="/" className="flex items-center gap-2">
+        <Link 
+          href="/" 
+          className="flex items-center gap-2"
+        >
           <Image 
             src="/images/logo/logo-light.svg" 
             alt="Logo" 

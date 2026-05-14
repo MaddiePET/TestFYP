@@ -1,19 +1,21 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 const admin = require('firebase-admin');
 const fs = require('fs');
+const path = require('path');
 const crypto = require('crypto');
 
-const serviceAccount = require('./serviceAccountKey-JPN.json');
-
-function generateHashID(identifier) {
-  return crypto.createHash('sha256').update(identifier).digest('hex');
-}
+const keyPath = path.join(process.cwd(), 'jpn-db', 'serviceAccountKey-JPN.json');
+const serviceAccount = JSON.parse(fs.readFileSync(keyPath, 'utf8'));
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
 
 const db = admin.firestore();
+
+function generateHashID(identifier) {
+  return crypto.createHash('sha256').update(identifier).digest('hex');
+}
 
 async function uploadJPN() {
   try {
@@ -24,10 +26,8 @@ async function uploadJPN() {
 
     console.log(`Found ${citizens.length} citizens and ${templates.length} templates.`);
 
-    // Use a batch to upload multiple records efficiently
     const batch = db.batch();
 
-    // Upload Citizens with Deterministic Hashed IDs
     citizens.forEach((citizen, index) => {
       if (!citizen.ic_number) {
         console.error(`Citizen at index ${index} is missing ic_number!`);
@@ -45,7 +45,6 @@ async function uploadJPN() {
       );
     });
 
-    // Upload Face Templates with Deterministic Hashed IDs
     templates.forEach((template, index) => {
       if (!template.ic_number) {
         console.error(`Template at index ${index} is missing ic_number!`);

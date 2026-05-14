@@ -59,118 +59,98 @@ export default function PersonalNonMalaysianAccountCreation() {
     }
   };
 
-   //Collects everything saved from earlier pages with localStorage and makes a POST request to POstGReSQL
-   //Submits the completed non-Msiab savings account application to backend
   const handleFinalSubmit = async () => {
-  try {
-    //Retrieve data saved from the earlier steps in the non-Msian application flow
-    const savedPhone = JSON.parse(localStorage.getItem("nonMsianPhone") || "{}");
-    const savedEmail = JSON.parse(localStorage.getItem("nonMsianEmail") || "{}");
-    const savedInfo = JSON.parse(localStorage.getItem("nonMsianInfo") || "{}");
-    const savedAddress = JSON.parse(localStorage.getItem("nonMsianAddress") || "{}");
-    const savedApplication = JSON.parse(localStorage.getItem("nonMsianApplication") || "{}");
-    const branchInfo = JSON.parse(localStorage.getItem("branchInfo") || "{}");
+    try {
+      const savedPhone = JSON.parse(localStorage.getItem("nonMsianPhone") || "{}");
+      const savedEmail = JSON.parse(localStorage.getItem("nonMsianEmail") || "{}");
+      const savedInfo = JSON.parse(localStorage.getItem("nonMsianInfo") || "{}");
+      const savedAddress = JSON.parse(localStorage.getItem("nonMsianAddress") || "{}");
+      const savedApplication = JSON.parse(localStorage.getItem("nonMsianApplication") || "{}");
+      const branchInfo = JSON.parse(localStorage.getItem("branchInfo") || "{}");
 
-    console.log("savedPhone:", savedPhone);
-    console.log("savedEmail:", savedEmail);
-    console.log("savedInfo:", savedInfo);
-    console.log("savedAddress:", savedAddress);
-    console.log("savedApplication:", savedApplication);
+      console.log("savedPhone:", savedPhone);
+      console.log("savedEmail:", savedEmail);
+      console.log("savedInfo:", savedInfo);
+      console.log("savedAddress:", savedAddress);
+      console.log("savedApplication:", savedApplication);
 
-    if (!savedPhone.ph_no) {
-      throw new Error("Phone number is missing from localStorage");
+      if (!savedPhone.ph_no) {
+        throw new Error("Phone number is missing from localStorage");
+      }
+
+      if (!savedEmail.email) {
+        throw new Error("Email is missing from localStorage");
+      }
+
+      if (!savedInfo.id_num || !savedInfo.full_name || !savedInfo.dob) {
+        throw new Error("Passport information is missing from localStorage");
+      }
+
+      const finalData = {
+        id_type: savedInfo.id_type || "Passport",
+        id_num: savedInfo.id_num,
+        full_name: savedInfo.full_name,
+        dob: savedInfo.dob,
+
+        ph_no: savedPhone.ph_no,
+        email: savedEmail.email,
+
+        address: savedAddress.address,
+
+        non_msian_details: savedInfo.non_msian_details,
+
+        non_msian_supporting_docs: savedApplication.non_msian_supporting_docs || [],
+
+        user: {
+          username,
+          password,
+          status: "PENDING",
+          img: profilePreview,
+          sec_phrase: securityPhrase,
+          branch: branchInfo.branch || savedApplication.preferredBranch,
+        },
+
+        savings_account: savedApplication.savings_account,
+      };
+
+      console.log(
+        "NON-MSIAN SUPPORTING DOCS BEFORE SUBMIT:", savedApplication.non_msian_supporting_docs
+      );
+
+      const response = await fetch("/api/non_msian_savings_account", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(finalData),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to submit application");
+      }
+
+      localStorage.removeItem("nonMsianPhone");
+      localStorage.removeItem("nonMsianEmail");
+      localStorage.removeItem("nonMsianInfo");
+      localStorage.removeItem("nonMsianAddress");
+      localStorage.removeItem("nonMsianApplication");
+
+      setStep("pending");
+    } catch (error) {
+      console.error("Final submit error:", error);
+      alert(error instanceof Error ? error.message : "Failed to submit application");
     }
+  };
 
-    if (!savedEmail.email) {
-      throw new Error("Email is missing from localStorage");
+  const handleNext = () => {
+    if (step === "profile") {
+      setStep("password");
+    } else if (step === "password") {
+      handleFinalSubmit();
     }
-
-   if (!savedInfo.id_num || !savedInfo.full_name || !savedInfo.dob) {
-     throw new Error("Passport information is missing from localStorage");
-    }
-
-    //Combine all saved page data into the structure expected by APO route
-    const finalData = {
-      id_type: savedInfo.id_type || "Passport",
-      id_num: savedInfo.id_num,
-      full_name: savedInfo.full_name,
-      dob: savedInfo.dob,
-
-      ph_no: savedPhone.ph_no,
-      email: savedEmail.email,
-
-      address: savedAddress.address,
-
-      non_msian_details: savedInfo.non_msian_details,
-
-      non_msian_supporting_docs:
-        savedApplication.non_msian_supporting_docs || [],
-
-      user: {
-        username,
-        password,
-        status: "PENDING",
-        img: profilePreview,
-        sec_phrase: securityPhrase,
-        branch: branchInfo.branch || savedApplication.preferredBranch,
-      },
-
-      savings_account: savedApplication.savings_account,
-    };
-    console.log(
-     "NON-MSIAN SUPPORTING DOCS BEFORE SUBMIT:",
-     savedApplication.non_msian_supporting_docs
-    );
-
-   //console.log("savedPhone:", savedPhone);
-   //console.log("savedEmail:", savedEmail);
-   //console.log("FINAL NON-MSIAN DATA:", finalData); // helps with debugging by showing final payload before sending to backend 
-   //console.log("NON-MSIAN USER DATA BEFORE SUBMIT:", finalData.user);
-   //console.log("BRANCH INFO:", branchInfo);
-   //console.log("SAVED APPLICATION:", savedApplication);
-
-    //sends the complete non-msian application data to backend route for db insert
-    const response = await fetch("/api/non_msian_savings_account", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(finalData),
-    });
-
-    const result = await response.json();
-    //Show the response returned by the API route
-    //console.log("NON-MSIAN SUBMIT RESULT:", result);
-
-    //stops the process if backends runs into error
-    if (!response.ok) {
-      throw new Error(result.error || "Failed to submit application");
-    }
-
-     // Clear temporary localStorage data after the application is successfully saved.
-    localStorage.removeItem("nonMsianPhone");
-    localStorage.removeItem("nonMsianEmail");
-    localStorage.removeItem("nonMsianInfo");
-    localStorage.removeItem("nonMsianAddress");
-    localStorage.removeItem("nonMsianApplication");
-
-  // Show the pending approval page after successful submission.
-    setStep("pending");
-  } catch (error) {
-    console.error("Final submit error:", error);
-    alert(error instanceof Error ? error.message : "Failed to submit application");
-  }
-};
-
-// Controls movement between the account creation steps.
-// The final submit only happens after the password step is completed.
-const handleNext = () => {
-  if (step === "profile") {
-    setStep("password");
-  } else if (step === "password") {
-    handleFinalSubmit();
-  }
-};
+  };
 
   const handleBack = () => {
     if (step === "password") setStep("profile");
@@ -226,7 +206,10 @@ const handleNext = () => {
           Back
         </button>
 
-        <Link href="/" className="flex items-center gap-2">
+        <Link 
+          href="/" 
+          className="flex items-center gap-2"
+        >
           <Image 
             src="/images/logo/logo-light.svg" 
             alt="Logo" 

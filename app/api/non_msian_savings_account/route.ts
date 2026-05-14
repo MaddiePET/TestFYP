@@ -24,9 +24,8 @@ function getJimDb() {
     const appName = "jim-app";
 
     const jimApp = admin.apps.find((app) => app?.name === appName)
-      || admin.initializeApp(
-        {
-          credential: admin.credential.cert(loadFirebaseServiceAccount("jim")),
+      || admin.initializeApp({
+          credential: admin.credential.cert(loadFirebaseServiceAccount('jim')),
         },
         appName
       );
@@ -41,9 +40,8 @@ function getJpnDb() {
     const appName = "jpn-app";
 
     const jpnApp = admin.apps.find((app) => app?.name === appName)
-      || admin.initializeApp(
-        {
-          credential: admin.credential.cert(loadFirebaseServiceAccount("jpn")),
+      || admin.initializeApp({
+          credential: admin.credential.cert(loadFirebaseServiceAccount('jpn')),
         },
         appName
       );
@@ -53,7 +51,6 @@ function getJpnDb() {
   return jpnDb;
 }
 
-// Generates a random 16 digit savings account number
 function generateAccountNumber() {
   let accountNo = "";
 
@@ -101,8 +98,6 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-   // console.log("NON-MSIAN SUBMIT BODY:", JSON.stringify(body, null, 2));
-
     const {
       id_type,
       id_num,
@@ -117,7 +112,6 @@ export async function POST(req: Request) {
       savings_account,
     } = body;
 
-    // Check required sections before inserting into database
     if (!address) {
       throw new Error("Address data is missing from request body");
     }
@@ -159,7 +153,6 @@ export async function POST(req: Request) {
 
     await client.query("BEGIN");
 
-    // 1. Insert address first because Customer needs home_add as a foreign key
     const addressResult = await client.query(
       `
       INSERT INTO banka."Address"
@@ -184,7 +177,6 @@ export async function POST(req: Request) {
 
     const addId = addressResult.rows[0].add_id;
 
-    // 2. Insert customer details and link customer to address using home_add
     const customerResult = await client.query(
       `
       INSERT INTO banka."Customer"
@@ -213,7 +205,6 @@ export async function POST(req: Request) {
 
     const custId = customerResult.rows[0].cust_id;
 
-    // 3. Insert non-Malaysian passport details
     await client.query(
       `
       INSERT INTO banka."Non_msian_details"
@@ -235,8 +226,6 @@ export async function POST(req: Request) {
       ]
     );
 
-    // 4. Insert non-Malaysian supporting documents
-    // This converts Base64 file data into Buffer before saving into PostgreSQL bytea column
     if (Array.isArray(non_msian_supporting_docs)) {
       for (const doc of non_msian_supporting_docs) {
         if (!doc?.doc_name || !doc?.doc_file) continue;
@@ -272,7 +261,6 @@ export async function POST(req: Request) {
         : Buffer.from(user.img); 
     }
 
-    // 6. Insert login/user profile details
     const userResult = await client.query(
       `
       INSERT INTO banka."User"
@@ -301,7 +289,6 @@ export async function POST(req: Request) {
 
     const userId = userResult.rows[0].user_id;
 
-    // 7. Generate a unique 16 digit savings account number
     let accountNo = generateAccountNumber();
     let accountExists = true;
 
@@ -322,7 +309,6 @@ export async function POST(req: Request) {
       }
     }
 
-    // 8. Insert savings account details
     const savingsResult = await client.query(
       `
       INSERT INTO banka."Savings_account"

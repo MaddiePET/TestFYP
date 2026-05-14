@@ -26,6 +26,7 @@ export default function PersonalMalaysianMailingAddress() {
     "";
 
   const [mounted, setMounted] = useState(false);
+
   const [mailingData, setMailingData] = useState({
     permanentAddress: "",
     add1: "",
@@ -34,6 +35,7 @@ export default function PersonalMalaysianMailingAddress() {
     state: "",
     country: "Malaysia",
   });
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -54,49 +56,50 @@ export default function PersonalMalaysianMailingAddress() {
       .filter(Boolean)
       .join(", ");
 
-    setMailingData({
-      permanentAddress,
-      add1: savedHomeAddress.add_1 || "",
-      add2: savedHomeAddress.add_2 || "",
-      postal: savedHomeAddress.postcode || "",
-      state: savedHomeAddress.state || "",
-      country: savedHomeAddress.country || "Malaysia",
-    });
-  }, []);
+      setMailingData({
+        permanentAddress,
+        add1: savedHomeAddress.add_1 || "",
+        add2: savedHomeAddress.add_2 || "",
+        postal: savedHomeAddress.postcode || "",
+        state: savedHomeAddress.state || "",
+        country: savedHomeAddress.country || "Malaysia",
+      });
+  },[]);
 
   if (!mounted) return null;
 
-const handleNavigation = async () => {
-  try {
-    setIsSubmitting(true);
-    setSubmitError(null);
+  const handleNavigation = async () => {
+    try {
+      setIsSubmitting(true);
+      setSubmitError(null);
 
-    localStorage.setItem(
-    "mailingAddress",
-    JSON.stringify({
-      add_type: "Mailing",
-      add_1: mailingData.add1,
-      add_2: mailingData.add2,
-      postcode: mailingData.postal,
-      state: mailingData.state,
-      country: mailingData.country,
-    })
-  );
+      localStorage.setItem(
+      "mailingAddress",
+      JSON.stringify({
+        add_type: "Mailing",
+        add_1: mailingData.add1,
+        add_2: mailingData.add2,
+        postcode: mailingData.postal,
+        state: mailingData.state,
+        country: mailingData.country,
+      })
+    );
 
-    router.push("/personal/malaysian/application");
-  } catch (error: any) {
-    console.error("Mailing address save error:", error);
-    setSubmitError(error.message || "Failed to save mailing address.");
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+      router.push("/personal/malaysian/application");
+    } catch (error: any) {
+      console.error("Mailing address save error:", error);
+      setSubmitError(error.message || "Failed to save mailing address.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
   const isFormValid = 
-    mailingData.add1.trim() !== "" &&
-    mailingData.add2.trim() !== "" &&
-    mailingData.postal.trim() !== "" &&
-    mailingData.state.trim() !== "" &&
-    mailingData.country.trim() !== "";
+  mailingData.add1.trim() !== "" &&
+  mailingData.add2.trim() !== "" &&
+  mailingData.postal.trim() !== "" &&
+  mailingData.state.trim() !== "" &&
+  mailingData.country.trim() !== "";
 
   return (
     <div className="relative flex flex-col items-center justify-center min-h-screen px-4 py-20 bg-[#F9FAFB] dark:bg-gray-950 overflow-hidden">

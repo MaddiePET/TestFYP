@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import ChevronLeftIcon from "@/icons/chevron-left.svg";
 import Label from "@/components/form/Label";
+
 type Step = "input" | "otp";
 
 export default function PersonalNonMalaysianPhone() {
@@ -21,6 +22,7 @@ export default function PersonalNonMalaysianPhone() {
   const otpInputs = useRef<(HTMLInputElement | null)[]>([]);
 
   const searchParams = useSearchParams();
+  
   const journeyId = searchParams.get("journeyId") || "";
 
   useEffect(() => {
@@ -29,9 +31,11 @@ export default function PersonalNonMalaysianPhone() {
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
+
     if (timer > 0) {
       interval = setInterval(() => setTimer((prev) => prev - 1), 1000);
     }
+    
     return () => clearInterval(interval);
   }, [timer]);
 
@@ -41,13 +45,17 @@ export default function PersonalNonMalaysianPhone() {
     if (step === "otp") {
       setStep("input");
     } else {
-      router.push("/personal/non-malaysian/face_verification");
+      router.push(
+        `/personal/non-malaysian/face_verification?journeyId=${encodeURIComponent(journeyId || "")}`
+      );
     }
   };
 
   const handleSendOtp = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+
     setIsLoading(true);
+
     setTimeout(() => {
       setIsLoading(false);
       setStep("otp");
@@ -55,41 +63,45 @@ export default function PersonalNonMalaysianPhone() {
     }, 800);
   };
 
- // Verifies the OTP and stores the phone number for the final application submission.
-const handleVerifyOtp = () => {
-  setIsLoading(true);
+  const handleVerifyOtp = () => {
+    setIsLoading(true);
 
-  setTimeout(() => {
-    console.log("Phone number being saved:", phoneNumber);
-    // Save phone details temporarily so the final account creation page can submit them to the backend.
-    localStorage.setItem(
-      "nonMsianPhone",
-      JSON.stringify({
-        ph_no: phoneNumber,
-      })
-    );
-    console.log("Saved phone:", localStorage.getItem("nonMsianPhone"));
+    setTimeout(() => {
+      console.log("Phone number being saved:", phoneNumber);
 
-    setIsLoading(false);
+      localStorage.setItem(
+        "nonMsianPhone",
+        JSON.stringify({
+          ph_no: phoneNumber,
+        })
+      );
+      console.log("Saved phone:", localStorage.getItem("nonMsianPhone"));
 
-    // Move to the email verification step.
-    router.push(`/personal/non-malaysian/email?journeyId=${encodeURIComponent(journeyId)}`);
-  }, 800);
-};
+      setIsLoading(false);
+
+      router.push(`/personal/non-malaysian/email?journeyId=${encodeURIComponent(journeyId)}`);
+    }, 800);
+  };
 
   const handleOtpChange = (value: string, index: number) => {
     const cleanValue = value.replace(/[^0-9]/g, "");
     const newOtp = [...otp];
+
     if (cleanValue.length > 1) {
       const pastedChars = cleanValue.slice(0, 6).split("");
+
       pastedChars.forEach((char, i) => {
         if (index + i < 6) newOtp[index + i] = char;
       });
+
       setOtp(newOtp);
+
       otpInputs.current[Math.min(index + pastedChars.length, 5)]?.focus();
     } else {
       newOtp[index] = cleanValue;
+
       setOtp(newOtp);
+
       if (cleanValue && index < 5) otpInputs.current[index + 1]?.focus();
     }
   };
@@ -146,7 +158,10 @@ const handleVerifyOtp = () => {
           Back
         </button>
 
-        <Link href="/" className="flex items-center gap-2">
+        <Link 
+          href="/" 
+          className="flex items-center gap-2"
+        >
           <Image 
             src="/images/logo/logo-light.svg" 
             alt="Logo" 

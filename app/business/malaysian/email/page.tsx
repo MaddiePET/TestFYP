@@ -55,97 +55,82 @@ export default function BusinessMalaysianEmail() {
   };
 
   const handleSendOtp = async (e?: React.FormEvent) => {
-  // Prevent the form from refreshing the page.
-  if (e) e.preventDefault();
+    if (e) e.preventDefault();
 
-  // Start loading state and clear previous messages.
-  setIsLoading(true);
-  setMessage("");
+    setIsLoading(true);
+    setMessage("");
 
-  try {
-    // Call the shared email OTP backend route to generate and send the OTP.
-    const res = await fetch("/api/otp/email/send", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email: email.trim() }),
-    });
+    try {
+      const res = await fetch("/api/otp/email/send", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: email.trim() }),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    // Stop the flow if the OTP email fails to send.
-    if (!res.ok) {
-      setMessage(data.error || "Failed to send email OTP.");
-      return;
+      if (!res.ok) {
+        setMessage(data.error || "Failed to send email OTP.");
+        return;
+      }
+
+      setStep("otp");
+      setTimer(60);
+      setMessage("OTP sent successfully. Please check your email.");
+    } catch (error) {
+      console.error("Send business email OTP error:", error);
+      setMessage("Something went wrong while sending the OTP.");
+    } finally {
+      setIsLoading(false);
     }
+  };
 
-    // Move to the OTP screen only after the email is sent successfully.
-    setStep("otp");
-    setTimer(60);
-    setMessage("OTP sent successfully. Please check your email.");
-  } catch (error) {
-    // Log the technical error for debugging and show a user-friendly message.
-    console.error("Send business email OTP error:", error);
-    setMessage("Something went wrong while sending the OTP.");
-  } finally {
-    // Stop loading state whether the request succeeds or fails.
-    setIsLoading(false);
-  }
-};
   const handleVerifyOtp = async () => {
-  // Stop if the email field is empty.
-  if (!email.trim()) return;
+    if (!email.trim()) return;
 
-  // Combine the 6 separate OTP boxes into one OTP string.
-  const enteredOtp = otp.join("");
+    const enteredOtp = otp.join("");
 
-  // Start loading state and clear previous messages.
-  setIsLoading(true);
-  setMessage("");
+    setIsLoading(true);
+    setMessage("");
 
-  try {
-    // Call the shared email OTP backend route to verify the entered OTP.
-    const res = await fetch("/api/otp/email/verify", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email: email.trim(),
-        otp: enteredOtp,
-      }),
-    });
+    try {
+      const res = await fetch("/api/otp/email/verify", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: email.trim(),
+          otp: enteredOtp,
+        }),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    // Stop the flow if the OTP is incorrect, expired, or missing.
-    if (!res.ok) {
-      setMessage(data.error || "Invalid OTP. Please try again.");
-      return;
+      if (!res.ok) {
+        setMessage(data.error || "Invalid OTP. Please try again.");
+        return;
+      }
+
+      setFormData((prev: any) => ({
+        ...prev,
+        contactInfo: {
+          ...prev?.contactInfo,
+          email: email.trim(),
+          emailVerified: true,
+        },
+      }));
+
+      router.push("/business/malaysian/info");
+    } catch (error) {
+      console.error("Verify business email OTP error:", error);
+      setMessage("Something went wrong while verifying the OTP.");
+    } finally {
+      setIsLoading(false);
     }
-
-    // Save the verified business email into the shared form context.
-    setFormData((prev: any) => ({
-      ...prev,
-      contactInfo: {
-        ...prev?.contactInfo,
-        email: email.trim(),
-        emailVerified: true,
-      },
-    }));
-
-    // Move to the next business Malaysian step only after successful verification.
-    router.push("/business/malaysian/info");
-  } catch (error) {
-    // Log the technical error for debugging and show a user-friendly message.
-    console.error("Verify business email OTP error:", error);
-    setMessage("Something went wrong while verifying the OTP.");
-  } finally {
-    // Stop loading state whether verification succeeds or fails.
-    setIsLoading(false);
-  }
-};
+  };
 
   const handleOtpChange = (value: string, index: number) => {
     const cleanValue = value.replace(/[^0-9]/g, "");

@@ -127,36 +127,36 @@ export default function PersonalMalaysianApplication() {
   });
 
   
- const handleNextStep = async (e: React.FormEvent) => {
-  e.preventDefault();
+  const handleNextStep = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-  try {
-    setIsSubmitting(true);
-    setSubmitError(null);
+    try {
+      setIsSubmitting(true);
+      setSubmitError(null);
 
-    localStorage.setItem(
-      "savingsApplication",
-      JSON.stringify({
-        occupation: formData.occupation,
-        monthly_income: formData.incomeRange,
-        income_source: formData.sourceOfIncome,
-        employment_type: formData.employmentType,
-        is18: formData.isOfAge,
-      })
-    );
+      localStorage.setItem(
+        "savingsApplication",
+        JSON.stringify({
+          occupation: formData.occupation,
+          monthly_income: formData.incomeRange,
+          income_source: formData.sourceOfIncome,
+          employment_type: formData.employmentType,
+          is18: formData.isOfAge,
+        })
+      );
 
-    setStep(2);
-  } catch (error: any) {
-    console.error("Savings application save error:", error);
-    setSubmitError(error.message || "Failed to save savings application.");
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+      setStep(2);
+    } catch (error: any) {
+      console.error("Savings application save error:", error);
+      setSubmitError(error.message || "Failed to save savings application.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   
   const selectedBranchDetails = BRANCHES.find(
-  (branch) => branch.id === preferredBranch
-);
+    (branch) => branch.id === preferredBranch
+  );
 
   const handleFinalSubmit = (e: React.FormEvent) => {
     e.preventDefault();

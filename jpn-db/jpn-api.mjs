@@ -1,15 +1,11 @@
 import * as admin from 'firebase-admin';
 import fs from 'fs';
 import path from "path";
-import { fileURLToPath } from "url";
 import crypto from 'crypto';
 
 function generateHashID(identifier) {
   return crypto.createHash('sha256').update(identifier).digest('hex');
 }
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 let jpnApp;
 let jpnDb;
@@ -24,7 +20,8 @@ function initializeJPN() {
       jpnApp = existingApp;
     } else {
       const serviceAccountPath = path.join(
-        __dirname,
+        process.cwd(),
+        "jpn-db",
         "serviceAccountKey-JPN.json"
       );
 

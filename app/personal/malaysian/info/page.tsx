@@ -117,7 +117,6 @@ export default function PersonalMalaysianInfo() {
     const currentJourneyId = searchParams.get("journeyId") || "";
     const savedJourneyId = localStorage.getItem("journeyId");
 
-    // NEW JOURNEY DETECTED
     if (savedJourneyId && savedJourneyId !== currentJourneyId) {
       localStorage.removeItem("personalInfo");
       localStorage.removeItem("homeAddress");
@@ -126,7 +125,6 @@ export default function PersonalMalaysianInfo() {
       localStorage.removeItem("id_type");
     }
 
-    // SAVE CURRENT JOURNEY
     localStorage.setItem("journeyId", currentJourneyId);
 
     const queryParams = new URLSearchParams(window.location.search);
@@ -141,7 +139,6 @@ export default function PersonalMalaysianInfo() {
       localStorage.getItem("id_num") ||
       "";
 
-    // LOAD SAVED PERSONAL INFO FIRST
     const savedInfo = JSON.parse(
       localStorage.getItem("personalInfo") || "{}"
     );
@@ -173,7 +170,6 @@ export default function PersonalMalaysianInfo() {
       return;
     }
 
-    // OTHERWISE FETCH FROM API
     if (idNum) {
       setFormData((prev) => ({
         ...prev,
@@ -184,73 +180,73 @@ export default function PersonalMalaysianInfo() {
     }
   }, []);
 
- const handleNavigation = async () => {
-   if (isSubmitting) return;
+  const handleNavigation = async () => {
+    if (isSubmitting) return;
 
-   try {
-     setIsSubmitting(true);
-     setSubmitError(null);
+    try {
+      setIsSubmitting(true);
+      setSubmitError(null);
 
-     const monthMap: Record<string, string> = {
-       January: "01",
-       February: "02",
-       March: "03",
-       April: "04",
-       May: "05",
-       June: "06",
-       July: "07",
-       August: "08",
-       September: "09",
-       October: "10",
-       November: "11",
-       December: "12",
-    };
+      const monthMap: Record<string, string> = {
+        January: "01",
+        February: "02",
+        March: "03",
+        April: "04",
+        May: "05",
+        June: "06",
+        July: "07",
+        August: "08",
+        September: "09",
+        October: "10",
+        November: "11",
+        December: "12",
+      };
 
-    const dob = `${formData.dobYear}-${monthMap[formData.dobMonth]}-${formData.dobDay}`;
-    const fullPhone = `${formData.phoneCode}${formData.phoneNumber}`;
+      const dob = `${formData.dobYear}-${monthMap[formData.dobMonth]}-${formData.dobDay}`;
+      const fullPhone = `${formData.phoneCode}${formData.phoneNumber}`;
 
-    localStorage.setItem(
-      "personalInfo",
-      JSON.stringify({
-        id_num: formData.nric,
-        full_name: formData.fullName,
-        id_type: "NRIC",
-        dob,
-        ph_no_1: fullPhone,
-        ph_no_2: null,
-        country: formData.country,
-      })
-    );
+      localStorage.setItem(
+        "personalInfo",
+        JSON.stringify({
+          id_num: formData.nric,
+          full_name: formData.fullName,
+          id_type: "NRIC",
+          dob,
+          ph_no_1: fullPhone,
+          ph_no_2: null,
+          country: formData.country,
+        })
+      );
 
-    localStorage.setItem(
-      "homeAddress",
-      JSON.stringify({
-        add_type: "Home",
-        add_1: formData.add1,
-        add_2: formData.add2,
-        postcode: formData.postal,
-        state: formData.state,
-        country: formData.country,
-      })
-    );
+      localStorage.setItem(
+        "homeAddress",
+        JSON.stringify({
+          add_type: "Home",
+          add_1: formData.add1,
+          add_2: formData.add2,
+          postcode: formData.postal,
+          state: formData.state,
+          country: formData.country,
+        })
+      );
 
-    localStorage.setItem("id_type", "ic");
-    localStorage.setItem("id_num", formData.nric);
-    localStorage.setItem("journeyId", searchParams.get("journeyId") || "");
+      localStorage.setItem("id_type", "ic");
+      localStorage.setItem("id_num", formData.nric);
+      localStorage.setItem("journeyId", searchParams.get("journeyId") || "");
 
 
-    router.push(
-      `/personal/malaysian/mailing_address?id_type=ic&id_num=${encodeURIComponent(
-        formData.nric
-      )}&journeyId=${encodeURIComponent(searchParams.get("journeyId") || "")}`
-    );
-  } catch (error: any) {
-    console.error("Submission error:", error);
-    setSubmitError(error.message || "Failed to save application data.");
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+      router.push(
+        `/personal/malaysian/mailing_address?id_type=ic&id_num=${encodeURIComponent(
+          formData.nric
+        )}&journeyId=${encodeURIComponent(searchParams.get("journeyId") || "")}`
+      );
+    } catch (error: any) {
+      console.error("Submission error:", error);
+      setSubmitError(error.message || "Failed to save application data.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const isFormValid = 
     formData.fullName.trim() !== "" &&

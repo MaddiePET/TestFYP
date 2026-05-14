@@ -76,126 +76,124 @@ export default function PersonalMalaysianAccountCreation() {
   if (!mounted) return null;
 
   const handleFinalSubmit = async () => {
-  try {
-    setIsSubmitting(true);
-    setSubmitError(null);
+    try {
+      setIsSubmitting(true);
+      setSubmitError(null);
 
-    const phoneVerification = JSON.parse(localStorage.getItem("phoneVerification") || "{}");
-    const personalInfo = JSON.parse(localStorage.getItem("personalInfo") || "{}");
-    const storedHomeAddress = JSON.parse(localStorage.getItem("homeAddress") || "{}");
-    const contactInfo = JSON.parse(localStorage.getItem("contactInfo") || "{}");
-    const storedMailingAddress = JSON.parse(localStorage.getItem("mailingAddress") || "{}");
-    const branchInfo = JSON.parse(localStorage.getItem("branchInfo") || "{}");
-    const savingsApplication = JSON.parse(localStorage.getItem("savingsApplication") || "{}");
+      const phoneVerification = JSON.parse(localStorage.getItem("phoneVerification") || "{}");
+      const personalInfo = JSON.parse(localStorage.getItem("personalInfo") || "{}");
+      const storedHomeAddress = JSON.parse(localStorage.getItem("homeAddress") || "{}");
+      const contactInfo = JSON.parse(localStorage.getItem("contactInfo") || "{}");
+      const storedMailingAddress = JSON.parse(localStorage.getItem("mailingAddress") || "{}");
+      const branchInfo = JSON.parse(localStorage.getItem("branchInfo") || "{}");
+      const savingsApplication = JSON.parse(localStorage.getItem("savingsApplication") || "{}");
 
-   // Convert stored address fields into the format required by the savings account API
-   const homeAddress = {
-    add_type: storedHomeAddress.add_type || "Home",
-    add_1:
-      storedHomeAddress.add_1 ||
-      storedHomeAddress.streetAddress1 ||
-      storedHomeAddress.streetAddress ||
-      "",
-    add_2:
-      storedHomeAddress.add_2 ||
-      storedHomeAddress.streetAddress2 ||
-      storedHomeAddress.city ||
-      "",
-    postcode:
-      storedHomeAddress.postcode ||
-      storedHomeAddress.postal ||
-      "",
-    state: storedHomeAddress.state || "",
-    country: storedHomeAddress.country || "Malaysia",
-  };
+      const homeAddress = {
+        add_type: storedHomeAddress.add_type || "Home",
+        add_1:
+          storedHomeAddress.add_1 ||
+          storedHomeAddress.streetAddress1 ||
+          storedHomeAddress.streetAddress ||
+          "",
+        add_2:
+          storedHomeAddress.add_2 ||
+          storedHomeAddress.streetAddress2 ||
+          storedHomeAddress.city ||
+          "",
+        postcode:
+          storedHomeAddress.postcode ||
+          storedHomeAddress.postal ||
+          "",
+        state: storedHomeAddress.state || "",
+        country: storedHomeAddress.country || "Malaysia",
+      };
 
-  const mailingAddress = {
-    add_type: storedMailingAddress.add_type || "Mailing",
-    add_1:
-    storedMailingAddress.add_1 ||
-    storedMailingAddress.streetAddress1 ||
-    storedMailingAddress.streetAddress ||
-    homeAddress.add_1,
-  add_2:
-    storedMailingAddress.add_2 ||
-    storedMailingAddress.streetAddress2 ||
-    storedMailingAddress.city ||
-    homeAddress.add_2,
-  postcode:
-    storedMailingAddress.postcode ||
-    storedMailingAddress.postal ||
-    homeAddress.postcode,
-  state: storedMailingAddress.state || homeAddress.state,
-  country: storedMailingAddress.country || homeAddress.country || "Malaysia",
-};
+      const mailingAddress = {
+        add_type: storedMailingAddress.add_type || "Mailing",
+        add_1:
+        storedMailingAddress.add_1 ||
+        storedMailingAddress.streetAddress1 ||
+        storedMailingAddress.streetAddress ||
+        homeAddress.add_1,
+        add_2:
+        storedMailingAddress.add_2 ||
+        storedMailingAddress.streetAddress2 ||
+        storedMailingAddress.city ||
+        homeAddress.add_2,
+        postcode:
+        storedMailingAddress.postcode ||
+        storedMailingAddress.postal ||
+        homeAddress.postcode,
+        state: storedMailingAddress.state || homeAddress.state,
+        country: storedMailingAddress.country || homeAddress.country || "Malaysia",
+      };
 
-// Stop submission if the required home address fields are missing
-if (
-  !homeAddress.add_1 ||
-  !homeAddress.add_2 ||
-  !homeAddress.postcode ||
-  !homeAddress.state ||
-  !homeAddress.country
-) {
-  throw new Error(
-    "Home address is incomplete. Please go back and fill in the Malaysian address page again."
-  );
-}
+      if (
+        !homeAddress.add_1 ||
+        !homeAddress.add_2 ||
+        !homeAddress.postcode ||
+        !homeAddress.state ||
+        !homeAddress.country
+      ) {
+        throw new Error(
+          "Home address is incomplete. Please go back and fill in the Malaysian address page again."
+        );
+      }
 
-    const payload = {
-      customer: {
-        id_num: personalInfo.id_num,
-        full_name: personalInfo.full_name,
-        id_type: personalInfo.id_type,
-        dob: personalInfo.dob,
-        ph_no_1: phoneVerification.ph_no_1, // Store the verified or updated phone number as the customer's main phone number
-        email: contactInfo.email,
-        country: personalInfo.country,
-      },
-      homeAddress,
-      mailingAddress,
-      savingsAccount: savingsApplication,
-      user: {
-        username,
-        password,
-        status: "Pending",
-        img: profilePreview || null,
-        sec_phrase:securityPhrase,
-        branch: branchInfo.branch,
-      },
-    };
+      const payload = {
+        customer: {
+          id_num: personalInfo.id_num,
+          full_name: personalInfo.full_name,
+          id_type: personalInfo.id_type,
+          dob: personalInfo.dob,
+          ph_no_1: phoneVerification.ph_no_1, // Store the verified or updated phone number as the customer's main phone number
+          email: contactInfo.email,
+          country: personalInfo.country,
+        },
+        homeAddress,
+        mailingAddress,
+        savingsAccount: savingsApplication,
+        user: {
+          username,
+          password,
+          status: "Pending",
+          img: profilePreview || null,
+          sec_phrase:securityPhrase,
+          branch: branchInfo.branch,
+        },
+      };
 
-    const response = await fetch("/api/msian_savings_account", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
+      const response = await fetch("/api/msian_savings_account", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
 
 
-    const result = await response.json();
-    if (!response.ok) {
-      throw new Error(result.error || "Failed to create account.");
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to create account.");
+      }
+
+      console.log("Final submission success:", result.data);
+
+      localStorage.removeItem("phoneVerification");
+      localStorage.removeItem("personalInfo");
+      localStorage.removeItem("homeAddress");
+      localStorage.removeItem("contactInfo");
+      localStorage.removeItem("mailingAddress");
+      localStorage.removeItem("savingsApplication");
+
+      setStep("pending");
+    } catch (error: any) {
+      console.error("Final submission error:", error);
+      setSubmitError(error.message || "Failed to create account.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    console.log("Final submission success:", result.data);
-
-    localStorage.removeItem("phoneVerification");
-    localStorage.removeItem("personalInfo");
-    localStorage.removeItem("homeAddress");
-    localStorage.removeItem("contactInfo");
-    localStorage.removeItem("mailingAddress");
-    localStorage.removeItem("savingsApplication");
-
-    setStep("pending");
-  } catch (error: any) {
-    console.error("Final submission error:", error);
-    setSubmitError(error.message || "Failed to create account.");
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+  };
 
   return (
     <div className="relative flex flex-col items-center justify-center min-h-screen px-4 py-20 bg-[#F9FAFB] dark:bg-gray-950 overflow-hidden">

@@ -8,8 +8,6 @@ import ChevronLeftIcon from "@/icons/chevron-left.svg";
 
 export default function PersonalNonMalaysianInfo() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const journeyId = searchParams.get("journeyId") || "";
 
   const [mounted, setMounted] = useState(false);
   const [formData, setFormData] = useState({
@@ -26,6 +24,10 @@ export default function PersonalNonMalaysianInfo() {
   });
   const [lookupStatus, setLookupStatus] = useState<"idle" | "fetching" | "done" | "not-found">("idle");
   const [lookupError, setLookupError] = useState<string | null>(null);
+
+  const searchParams = useSearchParams();
+  
+  const journeyId = searchParams.get("journeyId") || "";
 
   const formatDateForFields = (value: unknown) => {
     if (!value) return { day: "", month: "January", year: "" };
@@ -111,15 +113,13 @@ export default function PersonalNonMalaysianInfo() {
     const currentJourneyId = searchParams.get("journeyId") || "";
     const savedJourneyId = localStorage.getItem("nonMsianJourneyId");
 
-    //Clears only page specific data that should be reset for a new journey
-    if (currentJourneyId && savedJourneyId && savedJourneyId !== currentJourneyId) {      localStorage.removeItem("nonMsianInfo");
+    if (currentJourneyId && savedJourneyId && savedJourneyId !== currentJourneyId) { localStorage.removeItem("nonMsianInfo");
       localStorage.removeItem("nonMsianAddress");
       localStorage.removeItem("nonMsianApplication");
       localStorage.removeItem("nonMsianIdType");
       localStorage.removeItem("nonMsianIdNum");
     }
 
-    //Only updates the saved Journey ID when the current page still has the valid Journey ID
     if (currentJourneyId) {
       localStorage.setItem("nonMsianJourneyId", currentJourneyId);
     }
@@ -153,7 +153,6 @@ export default function PersonalNonMalaysianInfo() {
   }, []);
 
   const handleNavigation = () => {
-    //convert month name into month number
     const months: Record<string, string> = {
       January: "01",
       February: "02",
@@ -169,7 +168,6 @@ export default function PersonalNonMalaysianInfo() {
       December: "12",
     };
 
-    // save passport and personal details for final submission
     const nonMsianInfo = {
       id_type: "Passport",
       id_num: formData.passportNumber,
@@ -185,7 +183,6 @@ export default function PersonalNonMalaysianInfo() {
     };
 
     localStorage.setItem("nonMsianInfo", JSON.stringify(nonMsianInfo));
-
     localStorage.setItem("nonMsianIdType", "passport");
     localStorage.setItem("nonMsianIdNum", formData.passportNumber);
     localStorage.setItem("nonMsianJourneyId", journeyId);
@@ -206,6 +203,7 @@ export default function PersonalNonMalaysianInfo() {
     formData.expiryDate.trim() !== "";
 
   if (!mounted) return null;
+
   return (
     <div className="relative flex flex-col items-center justify-center min-h-screen px-4 py-20 bg-[#F9FAFB] dark:bg-gray-950 overflow-hidden">
       <div className="absolute top-0 left-0 w-full leading-none z-0 pointer-events-none opacity-20">
