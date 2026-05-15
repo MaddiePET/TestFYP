@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import ChevronLeftIcon from "@/icons/chevron-left.svg";
 import Label from "@/components/form/Label";
 import { useFormData } from "@/context/FormContext";
@@ -24,6 +24,11 @@ export default function BusinessMalaysianPhone() {
   const { formData, setFormData } = useFormData();
 
   const otpInputs = useRef<(HTMLInputElement | null)[]>([]);
+  const searchParams = useSearchParams();
+  const journeyId =
+    searchParams.get("journeyId") ||
+    (typeof window !== "undefined" ? localStorage.getItem("journeyId") : "") ||
+    "";
 
   const activePhoneNumber = isChangedNumberFlow ? newPhoneNumber : originalPhoneNumber;
 
@@ -107,7 +112,7 @@ export default function BusinessMalaysianPhone() {
     },
   }));
 
-  router.push("/business/malaysian/email");
+  router.push(`/business/malaysian/email?journeyId=${encodeURIComponent(journeyId)}`);
 };
 
   return (

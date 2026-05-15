@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import ChevronLeftIcon from "@/icons/chevron-left.svg";
 
 type ScanStatus = "idle" | "scanning" | "success" | "error";
@@ -14,6 +14,11 @@ export default function PersonalMalaysianFaceVerification() {
   const streamRef = useRef<MediaStream | null>(null);
   const isMountedRef = useRef(true);
   const scanIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const searchParams = useSearchParams();
+  const journeyId =
+    searchParams.get("journeyId") ||
+    (typeof window !== "undefined" ? localStorage.getItem("journeyId") : "") ||
+    "";
   
   const [status, setStatus] = useState<ScanStatus>("idle");
   const [progress, setProgress] = useState(0);
@@ -310,10 +315,11 @@ export default function PersonalMalaysianFaceVerification() {
 
           {status === "success" && (
             <>
-              <button 
-                onClick={() => router.push("/personal/malaysian/phone")} 
-                className="inline-flex items-center justify-center w-full px-4 py-3 text-sm font-bold transition rounded-lg shadow-theme-xs relative z-10 bg-[#3D405B] text-white hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d]"
-              >
+              <button onClick={() => 
+                  router.push(
+                    `/personal/malaysian/phone?journeyId=${encodeURIComponent(journeyId)}`
+                  )}
+              className="inline-flex items-center justify-center w-full px-4 py-3 text-sm font-bold transition rounded-lg shadow-theme-xs relative z-10 bg-[#3D405B] text-white hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d]">
                 Continue
               </button>
 

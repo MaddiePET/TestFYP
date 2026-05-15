@@ -184,7 +184,7 @@ export default function PersonalMalaysianInfo() {
     }
   }, []);
 
- const handleNavigation = async () => {
+  const handleNavigation = async () => {
    if (isSubmitting) return;
 
    try {

@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import ChevronLeftIcon from "@/icons/chevron-left.svg";
 import { useFormData } from "@/context/FormContext";
 
@@ -11,13 +11,18 @@ type Step = "input" | "otp";
 
 export default function BusinessMalaysianEmail() {
   const router = useRouter();
-
+  const searchParams = useSearchParams();
+    const journeyId =
+      searchParams.get("journeyId") ||
+      (typeof window !== "undefined" ? localStorage.getItem("journeyId") : "") ||
+      "";
   const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState<Step>("input");
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [isLoading, setIsLoading] = useState(false);
   const [timer, setTimer] = useState(0);
+  const [message, setMessage] = useState("");
 
   const { formData, setFormData } = useFormData();
 
@@ -50,37 +55,118 @@ export default function BusinessMalaysianEmail() {
 
   const handleGlobalBack = () => {
     if (step === "otp") setStep("input");
-    else router.push("/business/malaysian/phone");
+    else router.push(
+      `/business/malaysian/phone?journeyId=${encodeURIComponent(journeyId)}`
+    );
   };
 
-  const handleSendOtp = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    setIsLoading(true);
+ const handleSendOtp = async (e?: React.FormEvent) => {
+  // Prevent the form from refreshing the page.
+  if (e) e.preventDefault();
 
-    setTimeout(() => {
-      setIsLoading(false);
-      setStep("otp");
-      setTimer(60);
-    }, 800);
-  };
+  // Start loading state and clear previous messages.
+  setIsLoading(true);
+  setMessage("");
 
-  const handleVerifyOtp = () => {
+  try {
+    // Call the backend API route that generates and sends the OTP email.
+    const res = await fetch("/api/otp/email/send", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    const data = await res.json();
+
+    // Show an error message if the OTP email fails to send.
+    if (!res.ok) {
+      setMessage(data.error || "Failed to send email OTP.");
+      return;
+    }
+
+    // Move to the OTP input screen only after the email is sent.
+    setStep("otp");
+
+    // Start the resend countdown timer.
+    setTimer(60);
+
+    // Show a success message to the user.
+    setMessage("OTP sent successfully. Please check your email.");
+  } catch (error) {
+    // Log the technical error for debugging and show a user-friendly message.
+    console.error("Send OTP error:", error);
+    setMessage("Something went wrong while sending the OTP.");
+  } finally {
+    // Stop loading state whether the request succeeds or fails.
+    setIsLoading(false);
+  }
+};
+
+  const handleVerifyOtp = async () => {
+    const enteredOtp = otp.join("");
+
     if (!email.trim()) return;
 
     setIsLoading(true);
+    setMessage("");
 
-    setTimeout(() => {
+    try {
+      const res = await fetch("/api/otp/email/verify", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          otp: enteredOtp,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setMessage(data.error || "Invalid OTP. Please try again.");
+        return;
+      }
+
       setFormData((prev: any) => ({
         ...prev,
         contactInfo: {
           ...prev?.contactInfo,
           email: email.trim(),
+          emailVerified: true,
         },
       }));
 
+      const statusRes = await fetch(
+        `/api/ekyc/status?journeyId=${encodeURIComponent(journeyId)}`
+      );
+
+      const statusData = await statusRes.json();
+
+      const icNo =
+        statusData?.id_num ||
+        statusData?.data?.id_num ||
+        statusData?.identity?.id_num ||
+        "";
+
+      if (!icNo) {
+        console.error("Missing IC number from journey status:", statusData);
+        setMessage("IC number missing. Please restart MyKad verification.");
+        return;
+      }
+
+      router.push(
+        `/business/malaysian/info?id_type=ic&id_num=${encodeURIComponent(icNo)}&journeyId=${encodeURIComponent(journeyId)}`
+      );
+    } catch (error) {
+      console.error("Verify OTP error:", error);
+      setMessage("Something went wrong while verifying the OTP.");
+    } finally {
       setIsLoading(false);
-      router.push("/business/malaysian/info");
-    }, 800);
+    }
   };
 
   const handleOtpChange = (value: string, index: number) => {
@@ -253,6 +339,11 @@ export default function BusinessMalaysianEmail() {
               >
                 {isLoading ? "Verifying..." : "Verify"}
               </button>
+              {message && (
+                <p className="text-center text-sm font-medium text-red-600">
+                  {message}
+                </p>
+              )}
             </div>
 
             <div className="text-center mt-6">

@@ -1,10 +1,4 @@
-import path from "path";
-import fs from "fs";
-
 /* eslint-disable @typescript-eslint/no-require-imports */
-import path from "path";
-import fs from "fs";
-
 const admin = require('firebase-admin');
 const fs = require('fs');
 const crypto = require('crypto');
