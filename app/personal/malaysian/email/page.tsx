@@ -146,8 +146,8 @@ export default function PersonalMalaysianEmail() {
         "";
 
       if (!icNo) {
-        console.error("Missing IC number from journey status:", statusData);
-        setMessage("IC number missing. Please restart MyKad verification.");
+        console.error("Missing MyKad number from journey status:", statusData);
+        setMessage("MyKad number missing. Please restart MyKad verification.");
         setMessageType("error");
         setIsLoading(false);
         return;

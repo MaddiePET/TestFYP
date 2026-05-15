@@ -242,6 +242,12 @@ export default function PersonalNonMalaysianAddress() {
     setMounted(true);
   }, []);
 
+  useEffect(() => {
+    if (addressData.mailingAddress.country === "") {
+      updateField("mailingAddress", "country", "Malaysia");
+    }
+  }, [addressData.mailingAddress.country]);
+
   const checkAddressValid = (address: AddressFields) => {
     return (
       address.streetAddress1.trim() !== "" &&

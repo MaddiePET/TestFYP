@@ -85,17 +85,16 @@ export async function POST(req: Request) {
       ]
     );
     const cust_id = customerRes.rows[0].cust_id;
-
-    const profilePreview = data.account?.profilePreview;
-    let profileBuffer: Buffer | string | null = null;
-    if (profilePreview) {
-      profileBuffer = profilePreview.startsWith("data:image")
-        ? Buffer.from(profilePreview.split(",")[1], "base64")
-        : Buffer.from(profilePreview);
-    }
-
+    
     const rawPassword = data.account?.password;
     const hashedPassword = await hashPassword(rawPassword);
+
+    let profileBuffer: Buffer | string | null = null;
+    if (data.account?.img) {
+      profileBuffer = data.account?.img.startsWith("data:image")
+        ? Buffer.from(data.account?.img.split(",")[1], "base64")
+        : Buffer.from(data.account?.img); 
+    }
 
     const userRes = await client.query(
       `

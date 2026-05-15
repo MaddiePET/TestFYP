@@ -281,7 +281,7 @@ export async function POST(req: Request) {
         user.username,
         hashedPassword,
         user.status || "PENDING",
-        user.img || null,
+        profileBuffer || null,
         user.sec_phrase,
         user.branch,
       ]

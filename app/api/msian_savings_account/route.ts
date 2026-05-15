@@ -186,8 +186,14 @@ export async function POST(req: Request) {
     }
 
     const rawPassword = user.password;
-
     const hashedPassword = await hashPassword(rawPassword);
+
+    let profileBuffer: Buffer | string | null = null;
+    if (user.img) {
+      profileBuffer = user.img.startsWith("data:image")
+        ? Buffer.from(user.img.split(",")[1], "base64")
+        : Buffer.from(user.img); 
+    }
 
     const userResult = await client.query(
       `
@@ -209,7 +215,7 @@ export async function POST(req: Request) {
         user.username,
         hashedPassword, 
         user.status || "Pending",
-        user.img || null,
+        profileBuffer || null,
         user.sec_phrase,
         user.branch,
       ]

@@ -147,7 +147,7 @@ export default function PersonalNonMalaysianEmail() {
 
       if (!passportNo) {
         console.error("Missing passport number from journey status:", statusData);
-        setMessage("Passport number missing. Please restart passport verification.");
+        setMessage("Passport number missing. Please restart Passport verification.");
         setMessageType("error");
         setIsLoading(false);
         return;

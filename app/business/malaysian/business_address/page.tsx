@@ -131,20 +131,20 @@ export default function BusinessMalaysianBusinessAddress() {
     }
   };
 
+  const isAddressValid = (address: Address) => {
+    return (
+      address.streetAddress.trim() !== "" &&
+      address.postal.trim() !== "" &&
+      address.city.trim() !== "" &&
+      address.state.trim() !== ""
+    );
+  };
+
   const handleStep1Submit = (): void => {
     if (useBusinessAsMailing === true) {
       setMailingAddress({ ...businessAddress });
       setStep(3);
     } else {
-      if (!mailingAddress.streetAddress) {
-        setMailingAddress({
-          streetAddress: "",
-          postal: "",
-          city: "",
-          state: "",
-          country: "Malaysia",
-        });
-      }
       setStep(2);
     }
   };
@@ -401,7 +401,7 @@ export default function BusinessMalaysianBusinessAddress() {
                   onClick={handleStep1Submit}
                   disabled={useBusinessAsMailing === null}
                   className={`inline-flex items-center justify-center w-full px-4 py-3 text-sm font-bold transition rounded-lg shadow-theme-xs active:scale-[0.98] ${
-                    useBusinessAsMailing !== null
+                    useBusinessAsMailing !== null && isAddressValid(businessAddress)
                       ? "bg-[#3D405B] text-white hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d]"
                       : "bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600"
                   }`}
@@ -542,8 +542,12 @@ export default function BusinessMalaysianBusinessAddress() {
                 </p>
 
                 <button
-                  onClick={handleStep2Submit}
-                  className="inline-flex items-center justify-center w-full px-4 py-3 text-sm font-bold transition rounded-lg shadow-theme-xs bg-[#3D405B] text-white hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d] active:scale-[0.98]"
+                  onClick={handleStep2Submit} 
+                  className={`inline-flex items-center justify-center w-full px-4 py-3 text-sm font-bold transition rounded-lg shadow-theme-xs bg-[#3D405B] text-white hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d] active:scale-[0.98] ${
+                    useBusinessAsMailing !== null && isAddressValid(mailingAddress)
+                      ? "bg-[#3D405B] text-white hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d]"
+                      : "bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600"
+                  }`}
                 >
                   Continue
                 </button>
