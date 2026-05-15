@@ -16,6 +16,7 @@ export default function PersonalMalaysianAccountCreation() {
 
   const [step, setStep] = useState<Step>("profile");
   const [mounted, setMounted] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
   const [username, setUsername] = useState("");
   const [profilePreview, setProfilePreview] = useState<string | null>(null);
   const [profileFile, setProfileFile] = useState<File | null>(null);
@@ -30,6 +31,12 @@ export default function PersonalMalaysianAccountCreation() {
 
   useEffect(() => {
     setMounted(true);
+
+    const savedEmailData = localStorage.getItem("nonMsianEmail");
+    if (savedEmailData) {
+      const parsed = JSON.parse(savedEmailData);
+      setUserEmail(parsed.email || "");
+    }
   }, []);
 
   const avatarOptions: string[] = [
@@ -547,7 +554,7 @@ export default function PersonalMalaysianAccountCreation() {
             </p>
 
             <p className="mb-6 font-bold text-blue-700 dark:text-blue-400">
-              personalemail@example.com
+              {userEmail}
             </p>
 
             <div className="mb-10 p-4 rounded-xl border bg-blue-50 border-blue-200 dark:bg-blue-900/30 dark:border-blue-500/50">
