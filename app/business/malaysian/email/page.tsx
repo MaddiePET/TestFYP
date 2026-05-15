@@ -8,6 +8,7 @@ import ChevronLeftIcon from "@/icons/chevron-left.svg";
 import { useFormData } from "@/context/FormContext";
 
 type Step = "input" | "otp";
+type MessageType = "success" | "error" | "";
 
 export default function BusinessMalaysianEmail() {
   const router = useRouter();
@@ -19,6 +20,7 @@ export default function BusinessMalaysianEmail() {
   const [isLoading, setIsLoading] = useState(false);
   const [timer, setTimer] = useState(0);
   const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState<MessageType>("");
 
   const { formData, setFormData } = useFormData();
 
@@ -51,7 +53,7 @@ export default function BusinessMalaysianEmail() {
 
   const handleGlobalBack = () => {
     if (step === "otp") setStep("input");
-    else router.push("/business/malaysian/phone");
+    else router.push(`/business/malaysian/phone`);
   };
 
   const handleSendOtp = async (e?: React.FormEvent) => {
@@ -59,6 +61,7 @@ export default function BusinessMalaysianEmail() {
 
     setIsLoading(true);
     setMessage("");
+    setMessageType("");
 
     try {
       const res = await fetch("/api/otp/email/send", {
@@ -73,15 +76,19 @@ export default function BusinessMalaysianEmail() {
 
       if (!res.ok) {
         setMessage(data.error || "Failed to send email OTP.");
+        setMessageType("error");
+        setIsLoading(false);
         return;
       }
 
       setStep("otp");
       setTimer(60);
       setMessage("OTP sent successfully. Please check your email.");
+      setMessageType("success");
     } catch (error) {
-      console.error("Send business email OTP error:", error);
+      console.error("Send OTP error:", error);
       setMessage("Something went wrong while sending the OTP.");
+      setMessageType("error");
     } finally {
       setIsLoading(false);
     }
@@ -94,6 +101,7 @@ export default function BusinessMalaysianEmail() {
 
     setIsLoading(true);
     setMessage("");
+    setMessageType("");
 
     try {
       const res = await fetch("/api/otp/email/verify", {
@@ -111,6 +119,8 @@ export default function BusinessMalaysianEmail() {
 
       if (!res.ok) {
         setMessage(data.error || "Invalid OTP. Please try again.");
+        setMessageType("error");
+        setIsLoading(false);
         return;
       }
 
@@ -127,6 +137,7 @@ export default function BusinessMalaysianEmail() {
     } catch (error) {
       console.error("Verify business email OTP error:", error);
       setMessage("Something went wrong while verifying the OTP.");
+      setMessageType("error");
     } finally {
       setIsLoading(false);
     }
@@ -233,7 +244,22 @@ export default function BusinessMalaysianEmail() {
               </p>
             </div>
 
-            <form onSubmit={handleSendOtp} className="space-y-6">
+            {message && (
+              <div
+                className={`mb-4 w-full p-4 rounded-lg border text-xs text-center font-medium shadow-sm ${
+                  messageType === "success"
+                    ? "bg-green-50 border-green-200 text-green-600"
+                    : "bg-red-50 border-red-200 text-red-600"
+                }`}
+              >
+                {message}
+              </div>
+            )}
+
+            <form 
+              onSubmit={handleSendOtp} 
+              className="space-y-6"
+            >
               <div>
                 <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
                   Email Address<span className="text-red-500">*</span>
@@ -260,12 +286,6 @@ export default function BusinessMalaysianEmail() {
               >
                 {isLoading ? "Processing..." : "Continue"}
               </button>
-
-              {message && (
-                <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm text-center">
-                  {message}
-                 </div>
-                )}
             </form>
           </div>
         )}
@@ -281,6 +301,18 @@ export default function BusinessMalaysianEmail() {
                 We've sent a 6-digit code to <span className="font-bold text-gray-900 dark:text-white">{email}</span>. Please provide the code to proceed with the registration.
               </p>
             </div>
+
+            {message && (
+              <div
+                className={`mb-4 w-full p-4 rounded-lg border text-xs text-center font-medium shadow-sm ${
+                  messageType === "success"
+                    ? "bg-green-50 border-green-200 text-green-600"
+                    : "bg-red-50 border-red-200 text-red-600"
+                }`}
+              >
+                {message}
+              </div>
+            )}
 
             <div className="space-y-6">
               <div className="flex justify-center gap-2">
@@ -298,12 +330,6 @@ export default function BusinessMalaysianEmail() {
                   />
                 ))}
               </div>
-
-              {message && (
-               <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm text-center">
-                {message}
-              </div>
-              )}
 
               <button
                 type="button"
