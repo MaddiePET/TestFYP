@@ -12,9 +12,11 @@ type Step = "confirm" | "change" | "otp";
 
 export default function BusinessMalaysianPhone() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
+  const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState<Step>("confirm");
-  const [originalPhoneNumber] = useState("123456789");
+  const [originalPhoneNumber, setOriginalPhoneNumber] = useState("");
   const [newPhoneNumber, setNewPhoneNumber] = useState("");
   const [isChangedNumberFlow, setIsChangedNumberFlow] = useState(false);
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
@@ -22,14 +24,51 @@ export default function BusinessMalaysianPhone() {
   const [timer, setTimer] = useState(0);
 
   const { formData, setFormData } = useFormData();
-
   const otpInputs = useRef<(HTMLInputElement | null)[]>([]);
 
-  const searchParams = useSearchParams();
-  
   const journeyId = searchParams.get("journeyId") || (typeof window !== "undefined" ? localStorage.getItem("journeyId") : "") || "";
+  
+  const idType = searchParams.get("id_type") || (typeof window !== "undefined" ? localStorage.getItem("id_type") : "") || "ic";
+
+  const idNum = searchParams.get("id_num") || (typeof window !== "undefined" ? localStorage.getItem("id_num") : "") || "";
 
   const activePhoneNumber = isChangedNumberFlow ? newPhoneNumber : originalPhoneNumber;
+
+  const fetchIdentity = async (type: string, num: string) => {
+    if (!num) return;
+
+    try {
+      const response = await fetch(`/api/identity/lookup?id_type=${encodeURIComponent(type)}&id_num=${encodeURIComponent(num)}`);
+      const data = await response.json();
+
+      if (response.ok && data.success && data.identity) {
+        const identityData = data.formData || data.identity;
+        const rawPhone = identityData.ph_no_1 || identityData.phone_number || identityData.phoneNumber || "";
+
+        if (rawPhone) {
+          let digitsOnly = rawPhone.replace(/\D/g, "");
+          
+          if (digitsOnly.startsWith("60")) {
+            digitsOnly = digitsOnly.substring(2);
+          } 
+          else if (digitsOnly.startsWith("0")) {
+            digitsOnly = digitsOnly.substring(1);
+          }
+          
+          setOriginalPhoneNumber(digitsOnly);
+        }
+      }
+    } catch (error: any) {
+      console.error("Unable to load identity data.", error);
+    }
+  };
+
+  useEffect(() => {
+    setMounted(true);
+    if (idNum) {
+      fetchIdentity(idType, idNum);
+    }
+  }, [idType, idNum]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -102,17 +141,19 @@ export default function BusinessMalaysianPhone() {
   };
 
   const handleVerifyOtp = () => {
-  setFormData((prev: any) => ({
-    ...prev,
-    phoneVerification: {
-      ...prev?.phoneVerification,
-      phoneNumber: activePhoneNumber,
-      phone_was_changed: isChangedNumberFlow,
-    },
-  }));
+    setFormData((prev: any) => ({
+      ...prev,
+      phoneVerification: {
+        ...prev?.phoneVerification,
+        phoneNumber: activePhoneNumber,
+        phone_was_changed: isChangedNumberFlow,
+      },
+    }));
 
-  router.push(`/business/malaysian/email?journeyId=${encodeURIComponent(journeyId)}`);
-};
+    router.push(`/business/malaysian/email?journeyId=${encodeURIComponent(journeyId)}`);
+  };
+
+  if (!mounted) return null;
 
   return (
     <div className="relative flex flex-col items-center justify-center min-h-screen px-4 py-20 bg-[#F9FAFB] dark:bg-gray-950 overflow-hidden">
@@ -156,7 +197,7 @@ export default function BusinessMalaysianPhone() {
           className="inline-flex items-center text-sm text-gray-600 dark:text-white/80 transition-colors hover:text-gray-900 dark:hover:text-white"
         >
           <ChevronLeftIcon className="w-5 h-5" />
-          
+
           Back
         </button>
 
@@ -193,7 +234,7 @@ export default function BusinessMalaysianPhone() {
 
             <div className="relative p-4 mb-6 rounded-2xl border-2 transition-all duration-300 text-center backdrop-blur-sm border-[#F0CA8E] bg-white/90 shadow-lg ring-4 ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#F0CA8E] dark:ring-[#F0CA8E]/20">
               <p className="text-sm font-bold text-blue-600 dark:text-blue-400">
-                +60 ****** {originalPhoneNumber.slice(-2)}
+                +60 ****** {originalPhoneNumber.slice(-4)}
               </p>
 
               <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -208,8 +249,12 @@ export default function BusinessMalaysianPhone() {
                   setIsChangedNumberFlow(false);
                   handleSendOtp();
                 }}
-                disabled={isLoading}
-                className="inline-flex items-center justify-center w-full px-4 py-3 text-sm font-bold transition rounded-lg bg-[#3D405B] text-white hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d]"
+                disabled={isLoading || !originalPhoneNumber}
+                className={`inline-flex items-center justify-center w-full px-4 py-3 text-sm font-bold transition rounded-lg shadow-theme-xs ${
+                  originalPhoneNumber && !isLoading
+                    ? "bg-[#3D405B] text-white hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d]"
+                    : "bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600"
+                }`}
               >
                 {isLoading ? "Sending Code..." : "Yes, send code"}
               </button>
@@ -221,6 +266,18 @@ export default function BusinessMalaysianPhone() {
               >
                 No, change number
               </button>
+            </div>
+            
+            <div className="mt-5 text-center">
+              <p className="text-sm font-normal">
+                <span className="text-gray-500 dark:text-gray-400">Having trouble? </span>
+                <Link
+                  href="/support"
+                  className="font-semibold text-blue-700 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                >
+                  Contact Support
+                </Link>
+              </p>
             </div>
           </div>
         )}
@@ -286,6 +343,18 @@ export default function BusinessMalaysianPhone() {
                 </button>
               </div>
             </form>
+            
+            <div className="mt-5 text-center">
+              <p className="text-sm font-normal">
+                <span className="text-gray-500 dark:text-gray-400">Having trouble? </span>
+                <Link
+                  href="/support"
+                  className="font-semibold text-blue-700 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                >
+                  Contact Support
+                </Link>
+              </p>
+            </div>
           </div>
         )}
 
@@ -319,6 +388,7 @@ export default function BusinessMalaysianPhone() {
               ))}
             </div>
 
+
             <div className="space-y-4">
               <button
                 type="button"
@@ -348,6 +418,18 @@ export default function BusinessMalaysianPhone() {
                   </button>
                 )}
               </div>
+            </div>
+            
+            <div className="mt-5 text-center">
+              <p className="text-sm font-normal">
+                <span className="text-gray-500 dark:text-gray-400">Having trouble? </span>
+                <Link
+                  href="/support"
+                  className="font-semibold text-blue-700 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                >
+                  Contact Support
+                </Link>
+              </p>
             </div>
           </div>
         )}

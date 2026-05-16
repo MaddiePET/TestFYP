@@ -26,15 +26,9 @@ export default function PersonalMalaysianPhone() {
 
   const journeyId = searchParams.get("journeyId") || "";
   
-  const idType =
-    searchParams.get("id_type") ||
-    (typeof window !== "undefined" ? localStorage.getItem("id_type") : "") ||
-    "ic";
+  const idType = searchParams.get("id_type") || (typeof window !== "undefined" ? localStorage.getItem("id_type") : "") || "ic";
 
-  const idNum =
-    searchParams.get("id_num") ||
-    (typeof window !== "undefined" ? localStorage.getItem("id_num") : "") ||
-    "";
+  const idNum = searchParams.get("id_num") || (typeof window !== "undefined" ? localStorage.getItem("id_num") : "") || "";
 
   const fetchIdentity = async (type: string, num: string) => {
     if (!num) return;
@@ -219,6 +213,7 @@ export default function PersonalMalaysianPhone() {
               <h1 className="mb-3 font-bold text-gray-800 text-title-sm dark:text-white sm:text-title-md">
                 Phone Number Verification
               </h1>
+
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 Is this still your current mobile number?
               </p>
@@ -283,7 +278,12 @@ export default function PersonalMalaysianPhone() {
               </p>
             </div>
 
-            <form onSubmit={(e) => { e.preventDefault(); handleSendOtp(); }}>
+            <form 
+              onSubmit={(e) => { 
+                e.preventDefault(); 
+                handleSendOtp(); 
+              }}
+            >
               <div className="space-y-6">
                 <div>
                   <Label className="block mb-2 text-gray-800 dark:text-white/90">
@@ -297,6 +297,7 @@ export default function PersonalMalaysianPhone() {
                         alt="MY"
                         className="w-5 h-auto rounded-sm shadow-sm"
                       />
+                      
                       <span className="text-sm font-bold text-gray-700 dark:text-gray-300">+60</span>
                     </div>
 
