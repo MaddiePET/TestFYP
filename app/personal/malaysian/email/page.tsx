@@ -25,10 +25,7 @@ export default function PersonalMalaysianEmail() {
 
   const searchParams = useSearchParams();
   
-  const journeyId =
-  searchParams.get("journeyId") ||
-  (typeof window !== "undefined" ? localStorage.getItem("journeyId") : "") ||
-  "";
+  const journeyId = searchParams.get("journeyId") || (typeof window !== "undefined" ? localStorage.getItem("journeyId") : "") || "";
 
   useEffect(() => {
     setMounted(true);
@@ -46,7 +43,8 @@ export default function PersonalMalaysianEmail() {
 
   const handleGlobalBack = () => {
     if (step === "otp") setStep("input");
-    else router.push(
+    else 
+      router.push(
       `/personal/malaysian/phone?journeyId=${encodeURIComponent(journeyId)}`
     );
   };
@@ -59,7 +57,7 @@ export default function PersonalMalaysianEmail() {
     setMessageType("");
   
     if (!journeyId) {
-      setMessage("Journey ID missing. Please restart passport verification.");
+      setMessage("Journey ID missing. Please restart mykad verification.");
       setMessageType("error");
       setIsLoading(false);
       return;
@@ -168,6 +166,7 @@ export default function PersonalMalaysianEmail() {
   const handleOtpChange = (value: string, index: number) => {
     const cleanValue = value.replace(/[^0-9]/g, "");
     const newOtp = [...otp];
+    
     if (cleanValue.length > 1) {
       const pastedChars = cleanValue.slice(0, 6).split("");
       pastedChars.forEach((char, i) => {

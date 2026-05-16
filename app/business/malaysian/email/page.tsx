@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import ChevronLeftIcon from "@/icons/chevron-left.svg";
 import { useFormData } from "@/context/FormContext";
 
@@ -25,7 +25,11 @@ export default function BusinessMalaysianEmail() {
   const { formData, setFormData } = useFormData();
 
   const otpInputs = useRef<(HTMLInputElement | null)[]>([]);
+  
+  const searchParams = useSearchParams();
 
+  const journeyId = searchParams.get("journeyId") || (typeof window !== "undefined" ? localStorage.getItem("journeyId") : "") ||  "";
+  
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -53,7 +57,9 @@ export default function BusinessMalaysianEmail() {
 
   const handleGlobalBack = () => {
     if (step === "otp") setStep("input");
-    else router.push(`/business/malaysian/phone`);
+    else router.push(
+      `/business/malaysian/phone?journeyId=${encodeURIComponent(journeyId)}`
+    );  
   };
 
   const handleSendOtp = async (e?: React.FormEvent) => {
@@ -62,6 +68,13 @@ export default function BusinessMalaysianEmail() {
     setIsLoading(true);
     setMessage("");
     setMessageType("");
+
+    if (!journeyId) {
+      setMessage("Journey ID missing. Please restart mykad verification.");
+      setMessageType("error");
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const res = await fetch("/api/otp/email/send", {
@@ -133,9 +146,30 @@ export default function BusinessMalaysianEmail() {
         },
       }));
 
-      router.push("/business/malaysian/info");
+      const statusRes = await fetch(
+        `/api/ekyc/status?journeyId=${encodeURIComponent(journeyId)}`
+      );
+      
+      const statusData = await statusRes.json();
+      console.log("Status API response:", statusData);
+
+      const icNo =
+        statusData?.id_num ||
+        statusData?.data?.id_num ||
+        statusData?.identity?.id_num ||
+        "";
+
+      if (!icNo) {
+        console.error("Missing MyKad number from journey status:", statusData);
+        setMessage("MyKad number missing. Please restart MyKad verification.");
+        return;
+      }
+
+      router.push(
+        `/business/malaysian/info?id_type=ic&id_num=${encodeURIComponent(icNo)}&journeyId=${encodeURIComponent(journeyId)}`
+      );
     } catch (error) {
-      console.error("Verify business email OTP error:", error);
+      console.error("Verify OTP error:", error);
       setMessage("Something went wrong while verifying the OTP.");
       setMessageType("error");
     } finally {

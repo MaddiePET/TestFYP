@@ -24,10 +24,11 @@ export default function BusinessMalaysianPhone() {
   const { formData, setFormData } = useFormData();
 
   const otpInputs = useRef<(HTMLInputElement | null)[]>([]);
-
   const searchParams = useSearchParams();
-  
-  const journeyId = searchParams.get("journeyId") || (typeof window !== "undefined" ? localStorage.getItem("journeyId") : "") || "";
+  const journeyId =
+    searchParams.get("journeyId") ||
+    (typeof window !== "undefined" ? localStorage.getItem("journeyId") : "") ||
+    "";
 
   const activePhoneNumber = isChangedNumberFlow ? newPhoneNumber : originalPhoneNumber;
 
@@ -160,10 +161,7 @@ export default function BusinessMalaysianPhone() {
           Back
         </button>
 
-        <Link 
-          href="/" 
-          className="flex items-center gap-2"
-        >
+        <Link href="/" className="flex items-center gap-2">
           <Image 
             src="/images/logo/logo-light.svg" 
             alt="Logo" 
@@ -262,9 +260,8 @@ export default function BusinessMalaysianPhone() {
 
                     <input
                       autoFocus
-                      maxLength={10}
                       className="w-full px-4 py-2.5 text-sm font-medium transition-all bg-white border-2 rounded-r-xl outline-none border-gray-200 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:placeholder-gray-400 dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40"
-                      placeholder="Enter your mobile number"
+                      placeholder="123456789"
                       type="tel"
                       value={newPhoneNumber}
                       onChange={(e) => setNewPhoneNumber(e.target.value.replace(/[^0-9]/g, ""))}

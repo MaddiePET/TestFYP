@@ -203,11 +203,8 @@ export default function PersonalMalaysianInfo() {
       localStorage.setItem("id_num", formData.nric);
       localStorage.setItem("journeyId", searchParams.get("journeyId") || "");
 
-
       router.push(
-        `/personal/malaysian/mailing_address?id_type=ic&id_num=${encodeURIComponent(
-          formData.nric
-        )}&journeyId=${encodeURIComponent(searchParams.get("journeyId") || "")}`
+        `/personal/malaysian/mailing_address?id_type=ic&id_num=${encodeURIComponent(formData.nric)}&journeyId=${encodeURIComponent(searchParams.get("journeyId") || "")}`
       );
     } catch (error: any) {
       console.error("Submission error:", error);

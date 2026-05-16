@@ -3,121 +3,226 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import ChevronLeftIcon from "@/icons/chevron-left.svg";
 import { useFormData } from "@/context/FormContext";
 
 export default function BusinessMalaysianInfo() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
-
-  const { formData, setFormData } = useFormData();
-
-  const hasHydrated = useRef(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const [localData, setLocalForm] = useState({
+  const [lookupStatus, setLookupStatus] = useState<"idle" | "fetching" | "done" | "not-found">("idle");
+  const [lookupError, setLookupError] = useState<string | null>(null);
+  const [formData, setFormData] = useState({
     fullName: "",
     nric: "",
     dobDay: "",
     dobMonth: "",
     dobYear: "",
-    streetAddress: "",
+    phoneCode: "+60",
+    phoneNumber: "",
+    add1: "",
+    add2: "",
     postal: "",
-    city: "",
     state: "",
     country: "Malaysia",
   });
 
-  useEffect(() => {
-    if (!mounted || hasHydrated.current) return;
-
-    const savedDob = formData?.personalInfo?.dob || "";
-
-    let dobYear = "";
-    let dobMonth = "";
-    let dobDay = "";
-
-    if (savedDob) {
-      const [year, month, day] = savedDob.split("-");
-      dobYear = year || "";
-      dobMonth = month || "";
-      dobDay = day || "";
+  const formatDateForFields = (value: unknown) => {
+    if (!value) return { day: "", month: "January", year: "" };
+    const date = new Date(String(value));
+    if (!Number.isNaN(date.getTime())) {
+      const monthNames = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December",
+      ];
+      return {
+        day: date.getDate().toString().padStart(2, "0"),
+        month: monthNames[date.getMonth()] || "January",
+        year: date.getFullYear().toString(),
+      };
     }
 
-    setLocalForm({
-      fullName: formData?.personalInfo?.fullName || "",
-      nric: formData?.personalInfo?.id_num || formData?.personalInfo?.nric || "",
-      dobDay,
-      dobMonth,
-      dobYear,
-      streetAddress: formData?.personalInfo?.streetAddress || "",
-      postal: formData?.personalInfo?.postal || "",
-      city: formData?.personalInfo?.city || "",
-      state: formData?.personalInfo?.state || "",
-      country: formData?.personalInfo?.country || "Malaysia",
-    });
+    const isoMatch = String(value).match(/(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
+    if (isoMatch) {
+      const year = isoMatch[1];
+      const month = Number(isoMatch[2]);
+      const day = Number(isoMatch[3]);
+      return {
+        day: day.toString().padStart(2, "0"),
+        month: [
+          "January", "February", "March", "April", "May", "June",
+          "July", "August", "September", "October", "November", "December",
+        ][month - 1] || "January",
+        year,
+      };
+    }
 
-    hasHydrated.current = true;
-  }, [mounted, formData]);
-
-  const displayPhone =
-  formData?.phoneVerification?.phoneNumber|| "";
-
-  const phoneCode = "+60";
-  const hasPhone = String(displayPhone).trim() !== "";
-
-  const isFormValid =
-    localData.fullName.trim() !== "" &&
-    localData.nric.trim() !== "" &&
-    localData.dobDay.trim() !== "" &&
-    localData.dobMonth.trim() !== "" &&
-    localData.dobYear.trim() !== "" &&
-    hasPhone &&
-    localData.streetAddress.trim() !== "" &&
-    localData.postal.trim() !== "" &&
-    localData.city.trim() !== "" &&
-    localData.state.trim() !== "" &&
-    localData.country.trim() !== "";
-
-  console.log("INFO PAGE formData:", formData);
-  console.log("INFO PAGE phoneVerification:", formData?.phoneVerification);
-
-  const handleChange = (field: string, value: string) => {
-    setLocalForm((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+    return { day: "", month: "January", year: "" };
   };
 
-  const handleNavigation = () => {
-    const dob =
-      localData.dobYear && localData.dobMonth && localData.dobDay
-        ? `${localData.dobYear}-${localData.dobMonth.padStart(2, "0")}-${localData.dobDay.padStart(2, "0")}`
-        : "";
+  const normalizeIdentity = (identity: any, idType: string, idNum: string) => {
+    const dob = identity.dob || identity.birth_date || identity.date_of_birth || identity.dob_date || identity.dobDate || "";
+    const { day, month, year } = formatDateForFields(dob);
+    return {
+      fullName: identity.full_name || identity.name || identity.fullName || "",
+      nric: identity.ic_number || identity.nric || identity.id_num || idNum,
+      dobDay: day || "",
+      dobMonth: month,
+      dobYear: year || "",
+      phoneCode: "+60",
+      phoneNumber: identity.ph_no_1 || identity.phone_number || identity.phoneNumber || "",
+      add1: identity.add1 || identity.address_line_1 || identity.address || identity.home_address || "",
+      add2: identity.add2 || identity.address_line_2 || "",
+      postal: identity.postcode || identity.postal_code || identity.postal || "",
+      state: identity.state || "",
+      country: identity.country || "Malaysia",
+    };
+  };
 
-        setFormData((prev: any) => ({
+  const fetchIdentity = async (idType: string, idNum: string) => {
+    if (!idNum) return;
+    setLookupStatus("fetching");
+    setLookupError(null);
+
+    try {
+      const response = await fetch(`/api/identity/lookup?id_type=${encodeURIComponent(idType)}&id_num=${encodeURIComponent(idNum)}`);
+      const data = await response.json();
+
+      if (response.ok && data.success && data.identity) {
+        const identityData = data.formData || data.identity;
+
+        setFormData((prev) => ({
           ...prev,
-          personalInfo: {
-            ...prev?.personalInfo,
-            fullName: localData.fullName,
-            id_num: localData.nric,
-            id_type: "IC",
-            dob,
-            streetAddress: localData.streetAddress,
-            postal: localData.postal,
-            city: localData.city,
-            state: localData.state,
-            country: localData.country || "Malaysia",
-          },
+          ...normalizeIdentity(identityData, idType, idNum),
         }));
-
-    router.push("/business/malaysian/business_particulars");
+        setLookupStatus("done");
+      } else {
+        setLookupStatus("not-found");
+        setLookupError(data.message || "No identity data found.");
+      }
+    } catch (error: any) {
+      setLookupStatus("not-found");
+      setLookupError(error?.message || "Unable to load identity data.");
+    }
   };
+
+  useEffect(() => {
+    setMounted(true);
+  
+    if (typeof window === "undefined") return;
+  
+    const currentJourneyId = searchParams.get("journeyId") || "";
+    const savedJourneyId = localStorage.getItem("journeyId");
+  
+    if (savedJourneyId && savedJourneyId !== currentJourneyId) {
+      localStorage.removeItem("personalInfo");
+      localStorage.removeItem("homeAddress");
+      localStorage.removeItem("mailingAddress");
+      localStorage.removeItem("id_num");
+      localStorage.removeItem("id_type");
+    }
+  
+    localStorage.setItem("journeyId", currentJourneyId);
+  
+    const queryParams = new URLSearchParams(window.location.search);
+  
+    const idType =
+      queryParams.get("id_type") ||
+      localStorage.getItem("id_type") ||
+      "ic";
+  
+    const idNum =
+      queryParams.get("id_num") ||
+      localStorage.getItem("id_num") ||
+      "";
+  
+    if (idNum) {
+      setFormData((prev) => ({
+        ...prev,
+        nric: idNum,
+      }));
+  
+      fetchIdentity(idType, idNum);
+    }
+  }, []); 
+
+  const handleNavigation = async () => {
+   if (isSubmitting) return;
+
+   try {
+     setIsSubmitting(true);
+     setSubmitError(null);
+
+     const monthMap: Record<string, string> = {
+       January: "01",
+       February: "02",
+       March: "03",
+       April: "04",
+       May: "05",
+       June: "06",
+       July: "07",
+       August: "08",
+       September: "09",
+       October: "10",
+       November: "11",
+       December: "12",
+    };
+
+    const dob = `${formData.dobYear}-${monthMap[formData.dobMonth]}-${formData.dobDay}`;
+    const fullPhone = `${formData.phoneCode}${formData.phoneNumber}`;
+
+    localStorage.setItem(
+      "personalInfo",
+      JSON.stringify({
+        id_num: formData.nric,
+        full_name: formData.fullName,
+        id_type: "NRIC",
+        dob,
+        ph_no_1: fullPhone,
+        ph_no_2: null,
+        country: formData.country,
+      })
+    );
+
+    localStorage.setItem(
+      "homeAddress",
+      JSON.stringify({
+        add_type: "Home",
+        add_1: formData.add1,
+        add_2: formData.add2,
+        postcode: formData.postal,
+        state: formData.state,
+        country: formData.country,
+      })
+    );
+
+    localStorage.setItem("id_type", "ic");
+    localStorage.setItem("id_num", formData.nric);
+    localStorage.setItem("journeyId", searchParams.get("journeyId") || "");
+
+    router.push(
+      `/business/malaysian/business_particulars?id_type=ic&id_num=${encodeURIComponent(formData.nric)}&journeyId=${encodeURIComponent(searchParams.get("journeyId") || "")}`
+    );
+  } catch (error: any) {
+    console.error("Submission error:", error);
+    setSubmitError(error.message || "Failed to save application data.");
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
+  const isFormValid = 
+    formData.fullName.trim() !== "" &&
+    formData.nric.trim() !== "" &&
+    formData.phoneNumber.trim() !== "" &&
+    formData.add1.trim() !== "" &&
+    formData.postal.trim() !== "" &&
+    formData.add2.trim() !== "" &&
+    formData.state.trim() !== "";
 
   if (!mounted) return null;
 
@@ -215,7 +320,7 @@ export default function BusinessMalaysianInfo() {
             <div className="space-y-6">
               <div>
                 <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-                  Full Name <span className="text-red-500">*</span>
+                  Full Name<span className="text-red-500">*</span>
                 </label>
 
                 <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
@@ -223,7 +328,7 @@ export default function BusinessMalaysianInfo() {
                     type="text"
                     readOnly
                     className="text-sm font-bold text-gray-700 dark:text-gray-200"
-                    value={localData.fullName}
+                    value={formData.fullName}
                   />
 
                   <svg 
@@ -252,7 +357,7 @@ export default function BusinessMalaysianInfo() {
                     type="text"
                     readOnly
                     className="text-sm font-bold text-gray-700 dark:text-gray-200"
-                    value={localData.nric}
+                    value={formData.nric}
                   />
 
                   <svg 
@@ -275,14 +380,14 @@ export default function BusinessMalaysianInfo() {
                 <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
                   Date of Birth<span className="text-red-500">*</span>
                 </label>
-                
+
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
                     <input
                       type="text"
                       readOnly
                       className="w-full min-w-0 bg-transparent text-sm font-bold text-gray-700 dark:text-gray-200 outline-none cursor-not-allowed"
-                      value={localData.dobDay}
+                      value={formData.dobDay}
                     />
                     
                     <svg
@@ -305,7 +410,7 @@ export default function BusinessMalaysianInfo() {
                       type="text"
                       readOnly
                       className="w-full min-w-0 bg-transparent text-sm font-bold text-gray-700 dark:text-gray-200 outline-none cursor-not-allowed"
-                      value={localData.dobMonth}
+                      value={formData.dobMonth}
                     />
                     
                     <svg
@@ -328,7 +433,7 @@ export default function BusinessMalaysianInfo() {
                       type="text"
                       readOnly
                       className="w-full min-w-0 bg-transparent text-sm font-bold text-gray-700 dark:text-gray-200 outline-none cursor-not-allowed"
-                      value={localData.dobYear}
+                      value={formData.dobYear}
                     />
 
                     <svg
@@ -355,13 +460,13 @@ export default function BusinessMalaysianInfo() {
 
                 <div className="flex mt-2">
                   <div className="flex items-center gap-2 px-4 border-2 border-r-0 rounded-l-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20">
-                    <img
-                      src="https://purecatamphetamine.github.io/country-flag-icons/3x2/MY.svg"
-                      alt="MY"
-                      className="w-5 h-auto rounded-sm"
+                    <img 
+                      src={`https://purecatamphetamine.github.io/country-flag-icons/3x2/MY.svg`} 
+                      alt="MY" 
+                      className="w-5 h-auto rounded-sm" 
                     />
 
-                    <span className="text-sm font-bold text-gray-700 dark:text-gray-200">{phoneCode}</span>
+                    <span className="text-sm font-bold text-gray-700 dark:text-gray-200">{formData.phoneCode}</span>
                   </div>
 
                   <div className="flex-1 flex items-center gap-2 px-4 py-2.5 border-2 rounded-r-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
@@ -369,7 +474,7 @@ export default function BusinessMalaysianInfo() {
                       type="text"
                       readOnly
                       className="w-full min-w-0 bg-transparent text-sm font-bold text-gray-700 dark:text-gray-200 outline-none cursor-not-allowed"
-                      value={displayPhone}
+                      value={formData.phoneNumber}
                     />
 
                     <svg
@@ -393,7 +498,7 @@ export default function BusinessMalaysianInfo() {
             <div className="space-y-6">
               <div>
                 <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-                  Street Address<span className="text-red-500">*</span>
+                  Address 1<span className="text-red-500">*</span>
                 </label>
 
                 <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
@@ -401,7 +506,36 @@ export default function BusinessMalaysianInfo() {
                     type="text"
                     readOnly
                     className="w-full min-w-0 bg-transparent text-sm font-bold text-gray-700 dark:text-gray-200 outline-none cursor-not-allowed"
-                    value={localData.streetAddress}
+                    value={formData.add1}
+                  />
+
+                  <svg
+                    className="w-4 h-4 shrink-0 text-gray-400 ml-auto"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                    />
+                  </svg>
+                </div>
+              </div>
+            
+              <div>
+                <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
+                  Address 2<span className="text-red-500">*</span>
+                </label>
+
+                <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
+                  <input
+                    type="text"
+                    readOnly
+                    className="w-full min-w-0 bg-transparent text-sm font-bold text-gray-700 dark:text-gray-200 outline-none cursor-not-allowed"
+                    value={formData.add2}
                   />
 
                   <svg
@@ -431,7 +565,7 @@ export default function BusinessMalaysianInfo() {
                       type="text"
                       readOnly
                       className="w-full min-w-0 bg-transparent text-sm font-bold text-gray-700 dark:text-gray-200 outline-none cursor-not-allowed"
-                      value={localData.postal}
+                      value={formData.postal}
                     />
 
                     <svg
@@ -452,45 +586,15 @@ export default function BusinessMalaysianInfo() {
 
                 <div>
                   <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-                    City<span className="text-red-500">*</span>
+                    State<span className="text-red-500">*</span>
                   </label>
 
                   <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
-                    <input
-                      type="text"
-                      readOnly
-                      className="w-full min-w-0 bg-transparent text-sm font-bold text-gray-700 dark:text-gray-200 outline-none cursor-not-allowed"
-                      value={localData.city}
-                    />
-
-                    <svg
-                      className="w-4 h-4 shrink-0 text-gray-400 ml-auto"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                      />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-                  State<span className="text-red-500">*</span>
-                </label>
-
-                <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
                   <input
                     type="text"
                     readOnly
                     className="w-full min-w-0 bg-transparent text-sm font-bold text-gray-700 dark:text-gray-200 outline-none cursor-not-allowed"
-                    value={localData.state}
+                    value={formData.state}
                   />
 
                   <svg
@@ -507,6 +611,7 @@ export default function BusinessMalaysianInfo() {
                     />
                   </svg>
                 </div>
+                </div>
               </div>
 
               <div>
@@ -514,13 +619,11 @@ export default function BusinessMalaysianInfo() {
                   Country<span className="text-red-500">*</span>
                 </label>
 
-                <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed justify-between">
-                  <span className="text-sm font-bold text-gray-700 dark:text-gray-200">
-                    {localData.country}
-                  </span>
+                <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl cursor-not-allowed bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400">
+                  <span className="text-sm font-bold text-gray-700 dark:text-gray-200">{formData.country}</span>
 
                   <svg 
-                    className="w-4 h-4 text-gray-400" 
+                    className="w-4 h-4 text-gray-400 ml-auto" 
                     fill="none" 
                     stroke="currentColor" 
                     viewBox="0 0 24 24"
@@ -540,14 +643,14 @@ export default function BusinessMalaysianInfo() {
               <p className="mb-6 text-xs text-gray-500 dark:text-gray-400 text-center">
                 By clicking continue, you confirm that the information provided is accurate and belongs to you.
               </p>
-
-              <button
-                onClick={handleNavigation}
+              
+              <button 
+                onClick={handleNavigation} 
                 disabled={!isFormValid}
                 className={`inline-flex items-center justify-center w-full px-4 py-3 text-sm font-bold transition rounded-lg shadow-theme-xs active:scale-[0.98] ${
-                  isFormValid
-                    ? "bg-[#3D405B] text-white hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d]"
-                    : "bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600"
+                  isFormValid 
+                    ? 'bg-[#3D405B] text-white hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d]' 
+                    : 'bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600'
                 }`}
               >
                 Continue
@@ -556,9 +659,9 @@ export default function BusinessMalaysianInfo() {
               <div className="mt-5 text-center">
                 <p className="text-sm">
                   <span className="text-gray-500 dark:text-gray-400">Having trouble? </span>
-                  
-                  <Link
-                    href="/support"
+
+                  <Link 
+                    href="/support" 
                     className="font-semibold text-blue-700 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
                   >
                     Contact Support
