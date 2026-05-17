@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import ChevronLeftIcon from "@/icons/chevron-left.svg";
 import { useFormData } from "@/context/FormContext";
 
@@ -11,7 +11,11 @@ type Step = "input" | "otp";
 
 export default function BusinessMalaysianEmail() {
   const router = useRouter();
-
+  const searchParams = useSearchParams();
+    const journeyId =
+      searchParams.get("journeyId") ||
+      (typeof window !== "undefined" ? localStorage.getItem("journeyId") : "") ||
+      "";
   const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState<Step>("input");
   const [email, setEmail] = useState("");
@@ -51,7 +55,9 @@ export default function BusinessMalaysianEmail() {
 
   const handleGlobalBack = () => {
     if (step === "otp") setStep("input");
-    else router.push("/business/malaysian/phone");
+    else router.push(
+      `/business/malaysian/phone?journeyId=${encodeURIComponent(journeyId)}`
+    );
   };
 
   const handleSendOtp = async (e?: React.FormEvent) => {
@@ -135,17 +141,34 @@ export default function BusinessMalaysianEmail() {
       },
     }));
 
-    // Move to the next business Malaysian step only after successful verification.
-    router.push("/business/malaysian/info");
-  } catch (error) {
-    // Log the technical error for debugging and show a user-friendly message.
-    console.error("Verify business email OTP error:", error);
-    setMessage("Something went wrong while verifying the OTP.");
-  } finally {
-    // Stop loading state whether verification succeeds or fails.
-    setIsLoading(false);
-  }
-};
+      const statusRes = await fetch(
+        `/api/ekyc/status?journeyId=${encodeURIComponent(journeyId)}`
+      );
+
+      const statusData = await statusRes.json();
+
+      const icNo =
+        statusData?.id_num ||
+        statusData?.data?.id_num ||
+        statusData?.identity?.id_num ||
+        "";
+
+      if (!icNo) {
+        console.error("Missing IC number from journey status:", statusData);
+        setMessage("IC number missing. Please restart MyKad verification.");
+        return;
+      }
+
+      router.push(
+        `/business/malaysian/info?id_type=ic&id_num=${encodeURIComponent(icNo)}&journeyId=${encodeURIComponent(journeyId)}`
+      );
+    } catch (error) {
+      console.error("Verify OTP error:", error);
+      setMessage("Something went wrong while verifying the OTP.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleOtpChange = (value: string, index: number) => {
     const cleanValue = value.replace(/[^0-9]/g, "");
@@ -329,6 +352,11 @@ export default function BusinessMalaysianEmail() {
               >
                 {isLoading ? "Verifying..." : "Verify"}
               </button>
+              {message && (
+                <p className="text-center text-sm font-medium text-red-600">
+                  {message}
+                </p>
+              )}
             </div>
 
             <div className="text-center mt-6">

@@ -1,6 +1,7 @@
 import * as admin from "firebase-admin";
 import fs from "fs";
 import path from "path";
+
 import crypto from "crypto";
 
 function generateHashID(identifier) {
@@ -20,9 +21,11 @@ function initializeJIM() {
     if (existingApp) {
       jimApp = existingApp;
     } else {
-      const serviceAccountPath =
-        process.env.FIREBASE_JIM_SERVICE_ACCOUNT_PATH ||
-        path.join(process.cwd(), "jim-db", "serviceAccountKey-JIM.json");
+      const serviceAccountPath = path.join(
+        process.cwd(),
+        "jim-db",
+        "serviceAccountKey-JIM.json"
+      );
 
       const serviceAccount = JSON.parse(
         fs.readFileSync(serviceAccountPath, "utf8")

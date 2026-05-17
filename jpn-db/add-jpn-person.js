@@ -16,12 +16,12 @@ const db = admin.firestore();
 
 // The person data you provided
 const personData = {
-  ic_number: "X3852717",
-  full_name: "GABRIELLA TIO PARDEDE",
-  date_of_birth: "2004-10-12",
-  phone_registered: "1114321023",
-  add1: "Saujana Residency Jalan SS16/1",
-  add2: "47500, Subang Jaya, Selangor",
+  ic_number: "011226101829",
+  full_name: "JAIND RAAJ SINGH A/L RAJINDER SINGH",
+  date_of_birth: "2001-12-26",
+  phone_registered: "1111890138",
+  add1: "186 JALAN SS 14",
+  add2: "47500, Subang Jaya",
   postcode: "47500",
   state: "Selangor",
   ic_photo: "\\xffd8ffe000104a464946",

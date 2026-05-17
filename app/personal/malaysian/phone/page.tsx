@@ -23,7 +23,10 @@ export default function PersonalMalaysianPhone() {
   const otpInputs = useRef<(HTMLInputElement | null)[]>([]);
 
   const searchParams = useSearchParams();
-  const journeyId = searchParams.get("journeyId") || "";
+  const journeyId =
+    searchParams.get("journeyId") ||
+    (typeof window !== "undefined" ? localStorage.getItem("journeyId") : "") ||
+    "";
   
   useEffect(() => {
     let interval: NodeJS.Timeout;

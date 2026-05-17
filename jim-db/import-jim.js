@@ -1,7 +1,4 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
-import path from "path";
-import fs from "fs";
-
 const admin = require('firebase-admin');
 const fs = require('fs');
 const crypto = require('crypto');
@@ -16,6 +13,9 @@ const keyPath = path.join(
 const serviceAccount = JSON.parse(
   fs.readFileSync(keyPath, 'utf8')
 );
+
+const keyPath = path.join(process.cwd(), 'jim-db', 'serviceAccountKey-JIM.json');
+const serviceAccount = JSON.parse(fs.readFileSync(keyPath, 'utf8'));
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)

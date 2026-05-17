@@ -11,6 +11,12 @@ const keyPath = path.join(
   'serviceAccountKey-JPN.json'
 );
 
+const jsonPath = path.join(
+  process.cwd(),
+  'jpn-db',
+  'JPN_json.json'
+);
+
 const serviceAccount = JSON.parse(
   fs.readFileSync(keyPath, 'utf8')
 );
@@ -27,7 +33,7 @@ const db = admin.firestore();
 
 async function uploadJPN() {
   try {
-    const rawData = JSON.parse(fs.readFileSync('JPN_json.json', 'utf8'));
+    const rawData = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
     const jpnSchema = JSON.parse(rawData[0].jpn_schema_export);
     const citizens = jpnSchema.jpn_citizens;
     const templates = jpnSchema.face_templates;
