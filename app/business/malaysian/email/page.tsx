@@ -4,10 +4,12 @@ import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import ChevronLeftIcon from "@/icons/chevron-left.svg";
 import { useFormData } from "@/context/FormContext";
 
 type Step = "input" | "otp";
+type MessageType = "success" | "error" | "";
 
 export default function BusinessMalaysianEmail() {
   const router = useRouter();
@@ -23,11 +25,16 @@ export default function BusinessMalaysianEmail() {
   const [isLoading, setIsLoading] = useState(false);
   const [timer, setTimer] = useState(0);
   const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState<MessageType>("");
 
   const { formData, setFormData } = useFormData();
 
   const otpInputs = useRef<(HTMLInputElement | null)[]>([]);
+  
+  const searchParams = useSearchParams();
 
+  const journeyId = searchParams.get("journeyId") || (typeof window !== "undefined" ? localStorage.getItem("journeyId") : "") ||  "";
+  
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -57,60 +64,62 @@ export default function BusinessMalaysianEmail() {
     if (step === "otp") setStep("input");
     else router.push(
       `/business/malaysian/phone?journeyId=${encodeURIComponent(journeyId)}`
-    );
+    );  
   };
 
- const handleSendOtp = async (e?: React.FormEvent) => {
-  // Prevent the form from refreshing the page.
-  if (e) e.preventDefault();
-
-  // Start loading state and clear previous messages.
-  setIsLoading(true);
-  setMessage("");
-
-  try {
-    // Call the backend API route that generates and sends the OTP email.
-    const res = await fetch("/api/otp/email/send", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email }),
-    });
-
-    const data = await res.json();
-
-    // Show an error message if the OTP email fails to send.
-    if (!res.ok) {
-      setMessage(data.error || "Failed to send email OTP.");
-      return;
-    }
-
-    // Move to the OTP input screen only after the email is sent.
-    setStep("otp");
-
-    // Start the resend countdown timer.
-    setTimer(60);
-
-    // Show a success message to the user.
-    setMessage("OTP sent successfully. Please check your email.");
-  } catch (error) {
-    // Log the technical error for debugging and show a user-friendly message.
-    console.error("Send OTP error:", error);
-    setMessage("Something went wrong while sending the OTP.");
-  } finally {
-    // Stop loading state whether the request succeeds or fails.
-    setIsLoading(false);
-  }
-};
-
-  const handleVerifyOtp = async () => {
-    const enteredOtp = otp.join("");
-
-    if (!email.trim()) return;
+  const handleSendOtp = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
 
     setIsLoading(true);
     setMessage("");
+    setMessageType("");
+
+    if (!journeyId) {
+      setMessage("Journey ID missing. Please restart mykad verification.");
+      setMessageType("error");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/otp/email/send", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setMessage(data.error || "Failed to send email OTP.");
+        setMessageType("error");
+        setIsLoading(false);
+        return;
+      }
+
+      setStep("otp");
+      setTimer(60);
+      setMessage("OTP sent successfully. Please check your email.");
+      setMessageType("success");
+    } catch (error) {
+      console.error("Send OTP error:", error);
+      setMessage("Something went wrong while sending the OTP.");
+      setMessageType("error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!email.trim()) return;
+
+    const enteredOtp = otp.join("");
+
+    setIsLoading(true);
+    setMessage("");
+    setMessageType("");
 
     try {
       const res = await fetch("/api/otp/email/verify", {
@@ -119,7 +128,7 @@ export default function BusinessMalaysianEmail() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          email,
+          email: email.trim(),
           otp: enteredOtp,
         }),
       });
@@ -128,6 +137,8 @@ export default function BusinessMalaysianEmail() {
 
       if (!res.ok) {
         setMessage(data.error || "Invalid OTP. Please try again.");
+        setMessageType("error");
+        setIsLoading(false);
         return;
       }
 
@@ -143,8 +154,9 @@ export default function BusinessMalaysianEmail() {
       const statusRes = await fetch(
         `/api/ekyc/status?journeyId=${encodeURIComponent(journeyId)}`
       );
-
+      
       const statusData = await statusRes.json();
+      console.log("Status API response:", statusData);
 
       const icNo =
         statusData?.id_num ||
@@ -153,8 +165,8 @@ export default function BusinessMalaysianEmail() {
         "";
 
       if (!icNo) {
-        console.error("Missing IC number from journey status:", statusData);
-        setMessage("IC number missing. Please restart MyKad verification.");
+        console.error("Missing MyKad number from journey status:", statusData);
+        setMessage("MyKad number missing. Please restart MyKad verification.");
         return;
       }
 
@@ -164,6 +176,7 @@ export default function BusinessMalaysianEmail() {
     } catch (error) {
       console.error("Verify OTP error:", error);
       setMessage("Something went wrong while verifying the OTP.");
+      setMessageType("error");
     } finally {
       setIsLoading(false);
     }
@@ -239,7 +252,10 @@ export default function BusinessMalaysianEmail() {
           Back
         </button>
 
-        <Link href="/" className="flex items-center gap-2">
+        <Link 
+          href="/" 
+          className="flex items-center gap-2"
+        >
           <Image 
             src="/images/logo/logo-light.svg" 
             alt="Logo" 
@@ -267,7 +283,22 @@ export default function BusinessMalaysianEmail() {
               </p>
             </div>
 
-            <form onSubmit={handleSendOtp} className="space-y-6">
+            {message && (
+              <div
+                className={`mb-4 w-full p-4 rounded-lg border text-xs text-center font-medium shadow-sm ${
+                  messageType === "success"
+                    ? "bg-green-50 border-green-200 text-green-600"
+                    : "bg-red-50 border-red-200 text-red-600"
+                }`}
+              >
+                {message}
+              </div>
+            )}
+
+            <form 
+              onSubmit={handleSendOtp} 
+              className="space-y-6"
+            >
               <div>
                 <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
                   Email Address<span className="text-red-500">*</span>
@@ -276,10 +307,10 @@ export default function BusinessMalaysianEmail() {
                 <input
                   type="email"
                   required
-                  placeholder="name@example.com"
+                  placeholder="Enter your email"
                   className="w-full px-4 py-2.5 text-sm transition-all bg-white border-2 rounded-xl outline-none border-gray-200 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:placeholder-gray-400 dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => setEmail(e.target.value.replace(/[^a-zA-Z0-9@.]/g, ""))} 
                 />
               </div>
 
@@ -309,6 +340,18 @@ export default function BusinessMalaysianEmail() {
                 We've sent a 6-digit code to <span className="font-bold text-gray-900 dark:text-white">{email}</span>. Please provide the code to proceed with the registration.
               </p>
             </div>
+
+            {message && (
+              <div
+                className={`mb-4 w-full p-4 rounded-lg border text-xs text-center font-medium shadow-sm ${
+                  messageType === "success"
+                    ? "bg-green-50 border-green-200 text-green-600"
+                    : "bg-red-50 border-red-200 text-red-600"
+                }`}
+              >
+                {message}
+              </div>
+            )}
 
             <div className="space-y-6">
               <div className="flex justify-center gap-2">

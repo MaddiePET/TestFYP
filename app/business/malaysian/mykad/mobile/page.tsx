@@ -6,9 +6,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 
 function BusinessMalaysianMobileMyKadCapture() {
+  const MAX_ATTEMPTS = 3;
+
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const journeyId = searchParams.get('journeyId');
 
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -17,11 +17,13 @@ function BusinessMalaysianMobileMyKadCapture() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [failCount, setFailCount] = useState(0);
   
-  const MAX_ATTEMPTS = 3;
-
   const frontInputRef = useRef<HTMLInputElement>(null);
   const backInputRef = useRef<HTMLInputElement>(null);
 
+  const searchParams = useSearchParams();
+
+  const journeyId = searchParams.get('journeyId');
+  
   useEffect(() => {
     const checkInitialStatus = async () => {
       if (!journeyId) return;
@@ -69,9 +71,14 @@ function BusinessMalaysianMobileMyKadCapture() {
     try {
       const frontIdRes = await fetch("/api/ekyc/okayid", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ journeyId, base64ImageString: fImg }),
+        headers: { 
+          "Content-Type": "application/json" 
+        },
+        body: JSON.stringify({ 
+          journeyId, base64ImageString: fImg 
+        }),
       });
+
       const frontIdData = await frontIdRes.json();
       if (frontIdData.status !== "success") {
         throw new Error(frontIdData.message || "unrecognized");
@@ -138,9 +145,7 @@ function BusinessMalaysianMobileMyKadCapture() {
 
       if (remaining > 0) {
         setErrorMessage(
-          `Your image is an ${reason}. Please try again. You have ${remaining} attempt${
-            remaining > 1 ? "s" : ""
-          } remaining.`
+          `Verification failed: ${reason}. You have ${remaining} attempt${remaining > 1 ? 's' : ''} left.`
         );
       } else {
         setErrorMessage(
@@ -149,8 +154,12 @@ function BusinessMalaysianMobileMyKadCapture() {
         
         await fetch("/api/ekyc/status", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ journeyId, status: "failed" })
+          headers: { 
+            "Content-Type": "application/json" 
+          },
+          body: JSON.stringify({ 
+            journeyId, status: "failed" 
+          })
         });
       }
 
@@ -223,7 +232,6 @@ function BusinessMalaysianMobileMyKadCapture() {
       </div>
 
       <header className="absolute top-6 left-0 w-full px-8 flex justify-end items-center max-w-7xl mx-auto z-20">
-        <Link href="/" className="flex items-center gap-2">
           <Image 
             src="/images/logo/logo-light.svg" 
             alt="Logo" 
@@ -235,7 +243,6 @@ function BusinessMalaysianMobileMyKadCapture() {
           <h1 className="text-2xl font-bold uppercase tracking-tight text-gray-800 dark:text-white">
             DTCOB
           </h1>
-        </Link>
       </header>
 
       <main className="relative w-full max-w-2xl z-10 flex flex-col items-center">

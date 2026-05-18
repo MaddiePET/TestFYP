@@ -35,19 +35,28 @@ const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => 
 const CustomSelect = ({ label, value, onChange, options, required = false }: CustomSelectProps) => (
   <div className="relative">
     <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-      {label} {required && <span className="text-red-500">*</span>}
+      {label} 
+      {required && <span className="text-red-500">*</span>}
     </label>
+
     <div className="relative">
       <select 
         required={required} 
-        className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none" 
+        className={`w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none ${
+          !value ? "!text-gray-400" : ""
+        }`} 
         value={value} 
         onChange={onChange}
       >
-        <option value="">
+        <option value="" disabled className="text-gray-400">
           Please Select
         </option>
-        {options.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value} className="text-gray-800 dark:text-white">
+            {opt.label}
+          </option>
+        ))}
       </select>
 
       <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
@@ -88,6 +97,13 @@ export default function PersonalMalaysianApplication() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  const isFormValid = 
+  formData.occupation !== "" &&
+  formData.incomeRange !== "" &&
+  formData.employmentType !== "" &&
+  formData.sourceOfIncome !== "" &&
+  formData.isOfAge === true;
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -127,36 +143,36 @@ export default function PersonalMalaysianApplication() {
   });
 
   
- const handleNextStep = async (e: React.FormEvent) => {
-  e.preventDefault();
+  const handleNextStep = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-  try {
-    setIsSubmitting(true);
-    setSubmitError(null);
+    try {
+      setIsSubmitting(true);
+      setSubmitError(null);
 
-    localStorage.setItem(
-      "savingsApplication",
-      JSON.stringify({
-        occupation: formData.occupation,
-        monthly_income: formData.incomeRange,
-        income_source: formData.sourceOfIncome,
-        employment_type: formData.employmentType,
-        is18: formData.isOfAge,
-      })
-    );
+      localStorage.setItem(
+        "savingsApplication",
+        JSON.stringify({
+          occupation: formData.occupation,
+          monthly_income: formData.incomeRange,
+          income_source: formData.sourceOfIncome,
+          employment_type: formData.employmentType,
+          is18: formData.isOfAge,
+        })
+      );
 
-    setStep(2);
-  } catch (error: any) {
-    console.error("Savings application save error:", error);
-    setSubmitError(error.message || "Failed to save savings application.");
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+      setStep(2);
+    } catch (error: any) {
+      console.error("Savings application save error:", error);
+      setSubmitError(error.message || "Failed to save savings application.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   
   const selectedBranchDetails = BRANCHES.find(
-  (branch) => branch.id === preferredBranch
-);
+    (branch) => branch.id === preferredBranch
+  );
 
   const handleFinalSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -231,7 +247,10 @@ export default function PersonalMalaysianApplication() {
           Back
         </button>
 
-        <Link href="/" className="flex items-center gap-2">
+        <Link 
+          href="/" 
+          className="flex items-center gap-2"
+        >
           <Image 
             src="/images/logo/logo-light.svg" 
             alt="Logo" 
@@ -328,8 +347,8 @@ export default function PersonalMalaysianApplication() {
                       <input 
                         type="radio" 
                         name="age" 
-                        checked={formData.isOfAge === false} 
                         className="w-4 h-4 accent-[#3D405B]" 
+                        checked={formData.isOfAge === false} 
                         onChange={() => setFormData({...formData, isOfAge: false})}
                       /> 
                       
@@ -354,7 +373,7 @@ export default function PersonalMalaysianApplication() {
 
                   <button 
                     type="submit" 
-                    disabled={!formData.isOfAge} 
+                    disabled={!isFormValid} 
                     className="inline-flex items-center justify-center w-full px-4 py-3 text-sm font-bold transition rounded-lg bg-[#3D405B] text-white hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d] disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed dark:disabled:bg-gray-800 dark:disabled:text-gray-600 shadow-theme-xs"
                   >
                     Continue

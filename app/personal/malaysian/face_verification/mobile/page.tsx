@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 
-function PersonalNonMalaysianMobilePassportCapture() {
+function PersonalMalaysianMobileFaceCapture() {
   const MAX_ATTEMPTS = 3;
 
   const router = useRouter();
@@ -18,7 +18,7 @@ function PersonalNonMalaysianMobilePassportCapture() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const searchParams = useSearchParams();
-    
+
   const journeyId = searchParams.get("journeyId") || "";
 
   useEffect(() => {
@@ -29,13 +29,11 @@ function PersonalNonMalaysianMobilePassportCapture() {
         const res = await fetch(`/api/ekyc/status?journeyId=${journeyId}`);
         const data = await res.json();
 
-        if (data.status === "failed") {
+        if (data.status === "face_failed") {
           setFailCount(MAX_ATTEMPTS);
 
-          setErrorMessage(
-            "Too many failed attempts. Please refer to your desktop screen."
-          );
-        } else if (data.status === "verified") {
+          setErrorMessage("Too many failed attempts. Please refer to your desktop screen.");
+        } else if (data.status === "face_verified") {
           setSuccess(true);
         }
       } catch (e) {
@@ -46,121 +44,56 @@ function PersonalNonMalaysianMobilePassportCapture() {
     checkInitialStatus();
   }, [journeyId]);
 
-  const compressImage = (base64: string, quality = 0.6): Promise<string> => {
-    return new Promise((resolve) => {
-      const img = new window.Image(); 
-      img.src = `data:image/jpeg;base64,${base64}`;
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        const scale = Math.min(800 / img.width, 1);
-        canvas.width = img.width * scale;
-        canvas.height = img.height * scale;
-        const ctx = canvas.getContext("2d");
-        ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL("image/jpeg", quality).split(",")[1]);
-      };
-    });
-  };
-
-  const handleCapture = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleCapture = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (failCount >= MAX_ATTEMPTS) return;
 
-    const file = event.target.files?.[0];
+    const selfieFile = event.target.files?.[0];
+    if (!selfieFile || !journeyId) return;
 
-    if (!file || !journeyId) return;
+    const idCardBase64 = localStorage.getItem("ekyc_id_image");
+    if (!idCardBase64) {
+      setErrorMessage("ID Document not found. Please rescan your MyKad first.");
+      return;
+    }
 
     setIsLoading(true);
     setErrorMessage(null);
 
     try {
       const reader = new FileReader();
-
-      const base64Promise = new Promise<string>((resolve) => {
-        reader.onloadend = () => {
-          resolve((reader.result as string).split(",")[1]);
-        };
+      reader.readAsDataURL(selfieFile);
+      const selfieBase64 = await new Promise<string>((resolve) => {
+        reader.onloadend = () => resolve((reader.result as string).split(",")[1]);
       });
 
-      reader.readAsDataURL(file);
-
-      const base64String = await base64Promise;
-
-      const okayidResponse = await fetch("/api/ekyc/okayid", {
+      const faceApiRes = await fetch("/api/ekyc/okayface", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          journeyId,
-          base64ImageString: base64String,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ journeyId, selfieBase64, idCardBase64 }),
       });
 
-      const okayidResult = await okayidResponse.json();
+      const faceResult = await faceApiRes.json();
 
-      const passportNo =
-        okayidResult?.extracted?.passport_no ||
-        okayidResult?.passport_no ||
-        okayidResult?.data?.passport_no ||
-        "";
-
-      console.log("Extracted passport number:", passportNo);
-
-      if (!passportNo) {
-        throw new Error("Passport number could not be extracted");
+      if (faceResult.status === "success") {
+        await fetch("/api/ekyc/status", {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json" 
+          },
+          body: JSON.stringify({ 
+            journeyId, status: "face_verified" 
+          }),
+        });
+        
+        setSuccess(true);
+      } else {
+        throw new Error(faceResult.message || "Face could not be verified");
       }
 
-
-      if (okayidResult.status !== "success") {
-        throw new Error(okayidResult.message || "unrecognized");
-      }
-
-      const okaydocResponse = await fetch("/api/ekyc/okaydoc", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          journeyId,
-          type: "passport",
-          country: okayidResult.country || "OTHER",
-          halfSizeImage: base64String,
-          fullSizeImage: base64String,
-        }),
-      });
-
-      const okaydocResult = await okaydocResponse.json();
-
-      if (okaydocResult.status !== "success") {
-        throw new Error("not meeting quality standards");
-      }
-
-      const compressedBase64 = await compressImage(base64String); 
-      localStorage.setItem("ekyc_id_image", compressedBase64);
-      
-      await fetch("/api/ekyc/status", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          journeyId,
-          status: "verified",
-          id_type: "passport",
-          id_num: passportNo,
-        }),
-      });
-
-      setSuccess(true);
     } catch (error: any) {
       const newFailCount = failCount + 1;
-
       setFailCount(newFailCount);
-
       const remaining = MAX_ATTEMPTS - newFailCount;
-
       const reason = error.message.toLowerCase();
 
       if (remaining > 0) {
@@ -174,13 +107,13 @@ function PersonalNonMalaysianMobilePassportCapture() {
 
         await fetch("/api/ekyc/status", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            journeyId,
-            status: "failed",
-          }),
+          headers: { 
+            "Content-Type": "application/json" 
+            },
+            body: JSON.stringify({ 
+                journeyId, 
+                status: "face_failed" 
+            }),
         });
       }
 
@@ -228,12 +161,12 @@ function PersonalNonMalaysianMobilePassportCapture() {
       </div>
 
       <header className="absolute top-6 left-0 w-full px-8 flex justify-end items-center max-w-7xl mx-auto z-20">
-          <Image
-            src="/images/logo/logo-light.svg"
-            alt="Logo"
-            width={40}
-            height={40}
-            className="block dark:invert-0 invert"
+          <Image 
+            src="/images/logo/logo-light.svg" 
+            alt="Logo" 
+            width={40} 
+            height={40} 
+            className="block dark:invert-0 invert" 
           />
 
           <h1 className="text-2xl font-bold uppercase tracking-tight text-gray-800 dark:text-white">
@@ -245,17 +178,17 @@ function PersonalNonMalaysianMobilePassportCapture() {
         {success ? (
           <div className="flex flex-col items-center w-full max-w-md animate-in fade-in zoom-in duration-500">
             <div className="w-20 h-20 mb-6 bg-green-100 text-green-500 rounded-full flex items-center justify-center shadow-md">
-              <svg
-                className="w-10 h-10"
-                fill="none"
-                stroke="currentColor"
+              <svg 
+                className="w-10 h-10" 
+                fill="none" 
+                stroke="currentColor" 
                 viewBox="0 0 24 24"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="3"
-                  d="M5 13l4 4L19 7"
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth="3" 
+                  d="M5 13l4 4L19 7" 
                 />
               </svg>
             </div>
@@ -266,7 +199,7 @@ function PersonalNonMalaysianMobilePassportCapture() {
               </h1>
 
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Your passport has been securely verified.
+                Your face has been securely matched with your MyKad.
               </p>
             </div>
 
@@ -280,11 +213,11 @@ function PersonalNonMalaysianMobilePassportCapture() {
           <div className="flex flex-col items-center w-full max-w-md animate-in fade-in zoom-in duration-500">
             <div className="mb-6 text-center">
               <h1 className="mb-3 font-bold text-gray-800 text-title-sm dark:text-white sm:text-title-md">
-                Verify Your Passport
+                Verify Your Face
               </h1>
-
+              
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Please take a clear photo of your passport bio-data page for verification.
+                Please position your face clearly in the frame.
               </p>
             </div>
 
@@ -297,7 +230,7 @@ function PersonalNonMalaysianMobilePassportCapture() {
             <input
               type="file"
               accept="image/*"
-              capture="environment"
+              capture="user"
               ref={fileInputRef}
               onChange={handleCapture}
               className="hidden"
@@ -313,34 +246,30 @@ function PersonalNonMalaysianMobilePassportCapture() {
               }`}
             >
               <span className="font-semibold text-sm">
-                {isLoading
-                  ? "Verifying..."
-                  : failCount > 0
-                  ? "Try Again"
-                  : "Open Camera"}
+                {isLoading ? "Verifying..." : failCount > 0 ? "Try Again" : "Open Camera"}
               </span>
 
               {isLoading ? (
                 <div className="animate-spin w-6 h-6 border-4 border-gray-300 border-t-gray-600 dark:border-gray-600 dark:border-t-gray-300 rounded-full" />
               ) : (
-                <svg
-                  className="w-6 h-6 text-[#3D405B] dark:text-gray-300"
-                  fill="none"
-                  stroke="currentColor"
+                <svg 
+                  className="w-6 h-6 text-[#3D405B] dark:text-gray-300" 
+                  fill="none" 
+                  stroke="currentColor" 
                   viewBox="0 0 24 24"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="1.5"
-                    d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth="1.5" 
+                    d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" 
                   />
 
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="1.5"
-                    d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z"
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth="1.5" 
+                    d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" 
                   />
                 </svg>
               )}
@@ -352,9 +281,9 @@ function PersonalNonMalaysianMobilePassportCapture() {
           <div className="text-center">
             <p className="text-sm font-normal">
               <span className="text-gray-500 dark:text-gray-400">Having trouble? </span>
-
-              <Link
-                href="/support"
+              
+              <Link 
+                href="/support" 
                 className="font-semibold text-blue-700 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
               >
                 Contact Support
@@ -364,17 +293,17 @@ function PersonalNonMalaysianMobilePassportCapture() {
 
           <div className="mt-6 space-y-4">
             <div className="p-4 rounded-xl flex gap-3 border transition-all backdrop-blur-sm bg-amber-50/80 border-amber-200 dark:bg-amber-900/20 dark:border-amber-500/40">
-              <svg
-                className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5"
-                fill="none"
-                stroke="currentColor"
+              <svg 
+                className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" 
+                fill="none" 
+                stroke="currentColor" 
                 viewBox="0 0 24 24"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth="2" 
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" 
                 />
               </svg>
 
@@ -382,15 +311,10 @@ function PersonalNonMalaysianMobilePassportCapture() {
                 <p className="font-bold mb-1 text-amber-800 dark:text-amber-300">
                   Important Notice:
                 </p>
-
+                
                 <ul className="list-disc ml-4 space-y-1">
-                  <li>
-                    Ensure the MRZ code (bottom two lines) is clearly visible.
-                  </li>
-
-                  <li>
-                    Avoid fingers or shadows covering any information.
-                  </li>
+                  <li>Ensure your entire face is visible and in focus.</li>
+                  <li>Please remove any hats, sunglasses, or masks.</li>
                 </ul>
               </div>
             </div>
@@ -405,7 +329,7 @@ function PersonalNonMalaysianMobilePassportCapture() {
   );
 }
 
-export default function PersonalNonMalaysianMobilePassportCapturePage() {
+export default function PersonalMalaysianMobileFaceCapturePage() {
   return (
     <React.Suspense
       fallback={
@@ -414,7 +338,7 @@ export default function PersonalNonMalaysianMobilePassportCapturePage() {
         </div>
       }
     >
-      <PersonalNonMalaysianMobilePassportCapture />
+      <PersonalMalaysianMobileFaceCapture />
     </React.Suspense>
   );
 }

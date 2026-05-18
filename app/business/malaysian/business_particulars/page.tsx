@@ -32,10 +32,13 @@ export default function BusinessMalaysianBusinessParticulars() {
   const [formData, setFormData] = useState({
     businessName: "",
     brn: "",
+    msicCode: "",
+    msicName: "",
     day: "",
     month: "",
     year: "",
     businessType: "",
+    role: ""
   });
 
   useEffect(() => {
@@ -50,10 +53,13 @@ export default function BusinessMalaysianBusinessParticulars() {
         setFormData({
           businessName: biz.name,
           brn: biz.brn,
+          msicCode: "",
+          msicName: "",
           day: d,
           month: m,
           year: y,
           businessType: biz.type,
+          role: ""
         });
       }
     }
@@ -79,16 +85,14 @@ export default function BusinessMalaysianBusinessParticulars() {
         brn: formData.brn,
         startDate: `${formData.year}-${formData.month.padStart(2, "0")}-${formData.day.padStart(2, "0")}`,
         businessType: formData.businessType,
+        role: formData.role,
+        msicCode: formData.msicCode,
+        msicName: formData.msicName
       },
     });
 
     router.push("/business/malaysian/business_address");
   };
-
-  const inputClasses =
-    "w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none";
-  const readOnlyClasses =
-    "w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-gray-50 border-gray-200 text-gray-500 cursor-not-allowed dark:bg-gray-800/50 dark:border-gray-700 dark:text-gray-400";
 
   if (!mounted) return null;
 
@@ -138,7 +142,10 @@ export default function BusinessMalaysianBusinessParticulars() {
           Back
         </button>
 
-        <Link href="/" className="flex items-center gap-2">
+        <Link 
+          href="/" 
+          className="flex items-center gap-2"
+        >
           <Image 
             src="/images/logo/logo-light.svg" 
             alt="Logo" 
@@ -250,9 +257,12 @@ export default function BusinessMalaysianBusinessParticulars() {
 
                   <input
                     type="text"
-                    className={inputClasses}
+                    placeholder="Enter your business name"
+                    className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
                     value={formData.businessName}
-                    onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
+                    onChange={(e) => setFormData({ 
+                    ...formData, 
+                    businessName: e.target.value.replace(/[^a-zA-Z\s]/g, "") })}
                   />
                 </div>
 
@@ -261,12 +271,63 @@ export default function BusinessMalaysianBusinessParticulars() {
                     Business Registration Number (BRN)<span className="text-red-500">*</span>
                   </label>
 
-                  <input 
-                    type="text" 
-                    className={readOnlyClasses} 
-                    value={formData.brn} 
-                    readOnly 
-                  />
+                  <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
+                    <input 
+                      type="text"
+                      readOnly 
+                      className="text-sm font-bold text-gray-700 dark:text-gray-200" 
+                      value={formData.brn} 
+                    />
+
+                    <svg 
+                      className="w-4 h-4 text-gray-400 ml-auto" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                        strokeWidth="2" 
+                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" 
+                      />
+                    </svg>
+                  </div>
+                </div>
+
+                <div className="md:col-span-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
+                      MSIC Code<span className="text-red-500">*</span>
+                    </label>
+
+                    <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
+                      MSIC Name<span className="text-red-500">*</span>
+                    </label>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="string"
+                      maxLength={5}
+                      placeholder="Enter your msic code"
+                      className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
+                      value={formData.msicCode}
+                      onChange={(e) => setFormData({ 
+                      ...formData, 
+                      msicCode: e.target.value.replace(/[^0-9]/g, "") })}
+                    />
+
+                    <input
+                      type="string"
+                      placeholder="Enter your msic name"
+                      className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
+                      value={formData.msicName}
+                      onChange={(e) => setFormData({ 
+                      ...formData, 
+                      msicName: e.target.value.replace(/[^a-zA-Z&.'(),\-\/\s]/g, "") })}
+                    />
+                  </div>
                 </div>
 
                 <div className="md:col-span-2">
@@ -280,9 +341,11 @@ export default function BusinessMalaysianBusinessParticulars() {
                       min="1"
                       max="31"
                       placeholder="DD"
-                      className={inputClasses}
+                      className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
                       value={formData.day}
-                      onChange={(e) => setFormData({...formData, day: e.target.value.replace(/[^0-9]/g, "").slice(0, 2),})}
+                      onChange={(e) => setFormData({ 
+                      ...formData, 
+                      day: e.target.value.replace(/[^0-9]/g, "").slice(0, 2), })}
                     />
 
                     <input
@@ -290,9 +353,11 @@ export default function BusinessMalaysianBusinessParticulars() {
                       min="1"
                       max="12"
                       placeholder="MM"
-                      className={inputClasses}
+                      className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
                       value={formData.month}
-                      onChange={(e) => setFormData({...formData, month: e.target.value.replace(/[^0-9]/g, "").slice(0, 2),})}
+                      onChange={(e) => setFormData({ 
+                      ...formData, 
+                      month: e.target.value.replace(/[^0-9]/g, "").slice(0, 2), })}                    
                     />
 
                     <input
@@ -300,59 +365,108 @@ export default function BusinessMalaysianBusinessParticulars() {
                       min="1900"
                       max="2100"
                       placeholder="YYYY"
-                      className={inputClasses}
+                      className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
                       value={formData.year}
-                      onChange={(e) => setFormData({...formData, year: e.target.value.replace(/[^0-9]/g, "").slice(0, 4),})}
+                      onChange={(e) => setFormData({ 
+                      ...formData, 
+                      year: e.target.value.replace(/[^0-9]/g, "").slice(0, 4), })}                    
                     />
                   </div>
                 </div>
 
-                <div className="md:col-span-2">
-                  <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-                    Business Type<span className="text-red-500">*</span>
-                  </label>
 
-                  <div className="relative">
-                    <select
-                      value={formData.businessType}
-                      onChange={(e) => setFormData({ ...formData, businessType: e.target.value })}
-                      className={inputClasses}
-                    >
-                      <option 
-                        value="" 
-                        disabled
-                      >
-                        Select Type
-                      </option>
-                      {[
-                        "Sole Proprietorship",
-                        "Partnership",
-                        "Private Limited (Sdn Bhd)",
-                        "Limited Liability Partnership (LLP)",
-                      ].map((type) => (
-                        <option 
-                          key={type} 
-                          value={type}
+                <div className="md:col-span-2">
+                  <div className="grid grid-cols-2 gap-2">
+
+                    <div>
+                      <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
+                        Business Type<span className="text-red-500">*</span>
+                      </label>
+
+                      <div className="relative">
+                        <select
+                          value={formData.businessType}
+                          className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
+                          onChange={(e) =>
+                            setFormData({ ...formData, businessType: e.target.value })
+                          }
                         >
-                          {type}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
-                      <svg 
-                        className="w-4 h-4 text-gray-400" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
-                      >
-                        <path 
-                          strokeLinecap="round" 
-                          strokeLinejoin="round" 
-                          strokeWidth="2" 
-                          d="M19 9l-7 7-7-7" 
-                        />
-                      </svg>
+                          <option value="" disabled>
+                            Select Business Type
+                          </option>
+
+                          {[
+                            "Sole Proprietorship",
+                            "Partnership",
+                            "Private Limited (Sdn Bhd)",
+                            "Limited Liability Partnership (LLP)",
+                          ].map((type) => (
+                            <option key={type} value={type}>
+                              {type}
+                            </option>
+                          ))}
+                        </select>
+
+                        <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
+                          <svg
+                            className="w-4 h-4 text-gray-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
+                        </div>
+                      </div>
                     </div>
+
+                    <div>
+                      <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
+                        Role<span className="text-red-500">*</span>
+                      </label>
+
+                      <div className="relative">
+                        <select
+                          value={formData.role}
+                          className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
+                          onChange={(e) =>
+                            setFormData({ ...formData, role: e.target.value })
+                          }
+                        >
+                          <option value="" disabled>
+                            Select Role
+                          </option>
+
+                          {["Checker", "Maker", "Both"].map((role) => (
+                            <option key={role} value={role}>
+                              {role}
+                            </option>
+                          ))}
+                        </select>
+
+                        <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
+                          <svg
+                            className="w-4 h-4 text-gray-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+
                   </div>
                 </div>
               </div>
@@ -368,10 +482,14 @@ export default function BusinessMalaysianBusinessParticulars() {
                     onClick={handleFinalSubmit}
                     disabled={
                       !formData.businessName ||
+                      !formData.brn ||
+                      !formData.msicCode ||
+                      !formData.msicName ||
                       !formData.day ||
                       !formData.month ||
                       !formData.year ||
-                      !formData.businessType
+                      !formData.businessType ||
+                      !formData.role
                     }
                     className="inline-flex items-center justify-center w-full px-4 py-3 text-sm font-bold transition rounded-lg shadow-theme-xs bg-[#3D405B] text-white hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d] disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed dark:disabled:bg-gray-800 dark:disabled:text-gray-600 active:scale-[0.98]"
                   >

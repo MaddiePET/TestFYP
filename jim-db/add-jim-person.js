@@ -2,8 +2,6 @@
 const admin = require('firebase-admin');
 const crypto = require('crypto');
 const fs = require('fs');
-
-// Initialize Firebase Admin
 const serviceAccount = require('./serviceAccountKey-JIM.json');
 
 if (!admin.apps.length) {
@@ -14,7 +12,6 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
-// The person data you provided
 const personData = {
   "passport_no": "A62595296",
   "full_name": "ASHLEY TANG WAY YAN",
@@ -32,7 +29,6 @@ const personData = {
 
 async function addSinglePerson() {
   try {
-    // 1. Generate the same Deterministic Hash ID used in your migration script
     const hashedID = crypto
       .createHash('sha256')
       .update(personData.passport_no)
@@ -41,7 +37,6 @@ async function addSinglePerson() {
     console.log(`Generating secure ID for ${personData.passport_no}...`);
     console.log(`Hash ID: ${hashedID}`);
 
-    // 2. Insert into the jim_nonresidents collection
     await db.collection('jim_nonresidents').doc(hashedID).set(personData);
 
     console.log(`Successfully added ${personData.full_name} to JIM database!`);

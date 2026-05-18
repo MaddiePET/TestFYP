@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 
-// Create a new digital banking user linked to an existing customer
 export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
     const body = await req.json();

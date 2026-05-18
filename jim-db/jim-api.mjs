@@ -15,7 +15,6 @@ function initializeJIM() {
   if (!jimDb) {
     const appName = "jim-api-app";
 
-    // Reuse existing Firebase app if already initialized
     const existingApp = admin.apps.find((app) => app?.name === appName);
 
     if (existingApp) {
@@ -84,7 +83,6 @@ async function lookupJIMIdentity(idNum) {
 
   if (!idNum) return null;
 
-  // Hash the incoming idNum to match the database IDs
   const hashedID = generateHashID(idNum);
 
   const docRef = db.collection(JIM_NONRESIDENTS_COLLECTION).doc(hashedID);

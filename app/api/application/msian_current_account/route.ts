@@ -2,6 +2,16 @@ import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { hashPassword } from "@/hashpw";
 
+function generateAccountNumber() {
+  let accountNo = "";
+
+  for (let i = 0; i < 16; i++) {
+    accountNo += Math.floor(Math.random() * 10).toString();
+  }
+
+  return accountNo;
+}
+
 export async function POST(req: Request) {
   const data = await req.json();
   const client = await pool.connect();
@@ -28,7 +38,6 @@ export async function POST(req: Request) {
 
     if (!personalAddress.add_1) throw new Error("Personal address line 1 is missing");
 
-    // 1. Insert personal/home address first
     const homeAddressRes = await client.query(
       `
       INSERT INTO banka."Address" (
@@ -51,7 +60,6 @@ export async function POST(req: Request) {
     );
     const home_add = homeAddressRes.rows[0].add_id;
 
-    // 2. Insert Customer using home_add FK
     const customerRes = await client.query(
       `
       INSERT INTO banka."Customer" (
@@ -77,19 +85,17 @@ export async function POST(req: Request) {
       ]
     );
     const cust_id = customerRes.rows[0].cust_id;
-
-    const profilePreview = data.account?.profilePreview;
-    let profileBuffer: Buffer | string | null = null;
-    if (profilePreview) {
-      profileBuffer = profilePreview.startsWith("data:image")
-        ? Buffer.from(profilePreview.split(",")[1], "base64")
-        : Buffer.from(profilePreview);
-    }
-
+    
     const rawPassword = data.account?.password;
     const hashedPassword = await hashPassword(rawPassword);
 
-    // 3. Insert User
+    let profileBuffer: Buffer | string | null = null;
+    if (data.account?.img) {
+      profileBuffer = data.account?.img.startsWith("data:image")
+        ? Buffer.from(data.account?.img.split(",")[1], "base64")
+        : Buffer.from(data.account?.img); 
+    }
+
     const userRes = await client.query(
       `
       INSERT INTO banka."User" (
@@ -116,7 +122,6 @@ export async function POST(req: Request) {
     );
     const user_id = userRes.rows[0].user_id;
 
-    // 4. Insert business address
     const businessAddress = {
       add_1:
         data.businessAddress?.businessAddress?.streetAddress ||
@@ -167,7 +172,6 @@ export async function POST(req: Request) {
     );
     const bus_add_id = businessAddressRes.rows[0].add_id;
 
-    // 5. Insert mailing address only if different
     let mail_add_id = bus_add_id;
     if (!isMailingSameAsBusiness) {
       const mailingAddressRes = await client.query(
@@ -193,38 +197,62 @@ export async function POST(req: Request) {
       mail_add_id = mailingAddressRes.rows[0].add_id;
     }
 
-    // 6. Insert Current_account
+    let accountNo = generateAccountNumber();
+    let accountExists = true;
+
+    while (accountExists) {
+      const checkAccount = await client.query(
+        `
+        SELECT account_no
+        FROM banka."Current_account"
+        WHERE account_no = $1
+        `,
+        [accountNo]
+      );
+
+      if (checkAccount.rows.length === 0) {
+        accountExists = false;
+      } else {
+        accountNo = generateAccountNumber();
+      }
+    }
+
     await client.query(
       `
       INSERT INTO banka."Current_account" (
-        user_id, 
-        reg_no, 
-        bus_name, 
+        account_no,
+        user_id,
+        reg_no,
+        bus_name,
         bus_type,
         role, 
         bus_ph_no, 
         bus_email, 
         start_date,
-        bus_add_id, 
-        mail_add_id
+        bus_add_id,
+        mail_add_id,
+        MSIC_code,
+        MSIC_name
       )
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
       `,
       [
+        accountNo,
         user_id,
         data.businessParticulars?.brn || data.businessParticulars?.reg_no || null,
         data.businessParticulars?.businessName || data.businessParticulars?.bus_name || null,
         data.businessParticulars?.businessType || data.businessParticulars?.bus_type || null,
-        data.businessParticulars?.role || "notyet",
+        data.businessParticulars?.role,
         data.businessContact?.bus_ph_no || null,
         data.businessContact?.bus_email || null,
         data.businessParticulars?.startDate || null,
         bus_add_id,
         mail_add_id,
+        data.businessParticulars?.msicCode,
+        data.businessParticulars?.msicName
       ]
     );
 
-    // 7. Insert supporting documents
     const supportingDocs = data.supportingDocuments || [];
     for (const doc of supportingDocs) {
       if (!doc?.name || !doc?.fileBase64) continue;

@@ -28,11 +28,14 @@ export default function PersonalUserVerification() {
       }
       
       localStorage.setItem("journeyId", journeyData.journeyId);
+
       setSelectedOption('new');
       setIsLoading(false);
     } catch (error) {
       console.error("Error creating journey:", error);
+
       alert("Error creating journey. Please try again.");
+      
       setIsLoading(false);
     }
   };
@@ -91,7 +94,10 @@ export default function PersonalUserVerification() {
           Home
         </button>
 
-        <Link href="/" className="flex items-center gap-2">
+        <Link 
+          href="/" 
+          className="flex items-center gap-2"
+        >
           <Image 
             src="/images/logo/logo-light.svg" 
             alt="Logo" 
