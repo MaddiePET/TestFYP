@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from 'next/link';
 import Label from "@/components/form/Label";
+import NavigationIcon from "@/icons/navigation.svg";
 import { useState, useEffect } from 'react';
 
 export default function Home() {
@@ -83,17 +84,62 @@ export default function Home() {
             </div>
 
             <div className="hidden lg:flex">
-              <Link href="/login" className={`inline-flex items-center justify-center px-6 py-2.5 text-sm font-bold transition-all border-2 rounded-lg hover:shadow-lg active:scale-95 ${
-                isScrolled 
-                  ? 'bg-transparent text-[#3D405B] border-[#3D405B] hover:bg-[#3D405B] hover:text-white dark:text-white dark:border-white dark:hover:bg-white dark:hover:text-[#3D405B]' 
-                  : 'bg-transparent text-[#F0CA8E] border-[#F0CA8E] hover:bg-[#F0CA8E] hover:text-[#3D405B]'
-              }`}>
+              <Link
+                href="/login"
+                className={`inline-flex items-center justify-center px-6 py-2.5 text-sm font-bold transition-all border-2 rounded-lg hover:shadow-lg active:scale-95 ${
+                  isScrolled
+                    ? 'bg-transparent text-[#3D405B] border-[#3D405B] hover:bg-[#3D405B] hover:text-white dark:text-white dark:border-white dark:hover:bg-white dark:hover:text-[#3D405B]'
+                    : 'bg-transparent text-[#F0CA8E] border-[#F0CA8E] hover:bg-[#F0CA8E] hover:text-[#3D405B]'
+                }`}
+              >
                 Member Login
               </Link>
             </div>
+
+            <button
+              className={`lg:hidden flex items-center justify-center w-11 h-11 rounded-lg transition-all ${
+                isScrolled
+                  ? 'hover:bg-gray-100 dark:hover:bg-white/10'
+                  : 'hover:bg-white/10'
+              }`}
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            >
+              <NavigationIcon
+                className={`w-7 h-7 transition-transform duration-300 ${
+                  isMobileMenuOpen ? "rotate-90" : ""
+                } ${
+                  isScrolled
+                    ? "text-[#3D405B] dark:text-white"
+                    : "text-white"
+                }`}
+              />
+            </button>
           </div>
         </div>
       </nav>
+
+      {isMobileMenuOpen && (
+        <div className="fixed top-20 left-0 w-full bg-[#3D405B] z-40 flex flex-col items-center gap-6 py-8 lg:hidden shadow-xl">
+          {['Home', 'Core Values', 'Testimonials', 'Compliances', 'Contact Us'].map((item, index) => (
+            <a
+              key={index}
+              href={`#section_${index + 1}`}
+              className="text-white text-lg font-semibold hover:text-[#F0CA8E] transition-colors"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              {item}
+            </a>
+          ))}
+
+          <Link
+            href="/login"
+            className="px-6 py-3 border-2 border-[#F0CA8E] text-[#F0CA8E] rounded-lg font-bold hover:bg-[#F0CA8E] hover:text-[#3D405B] transition-all"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            Member Login
+          </Link>
+        </div>
+      )}
 
       <section id="section_1" className="relative pt-32 pb-32 lg:pt-36 lg:pb-48 bg-[#3D405B] dark:bg-[#3D405B] overflow-hidden text-white transition-colors duration-500">
         <svg className="absolute top-0 left-0 w-full h-24 sm:h-32 md:h-48 lg:h-64 pointer-events-none" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320">
