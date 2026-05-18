@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter, useSearchParams, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
 
 import ChevronLeftIcon from "@/icons/chevron-left.svg";
@@ -12,7 +12,6 @@ export default function PersonalMalaysianFaceQRCode() {
   const router = useRouter();
 
   const [mobileUrl, setMobileUrl] = useState<string>("");
-  const [journeyId, setJourneyId] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const journeyId =
     searchParams.get("journeyId") ||
@@ -21,8 +20,6 @@ export default function PersonalMalaysianFaceQRCode() {
   const [isVerified, setIsVerified] = useState<boolean>(false);
   const [isFailed, setIsFailed] = useState<boolean>(false);
   const [hostWarning, setHostWarning] = useState<string | null>(null);
-
-  const searchParams = useSearchParams();
 
   useEffect(() => {
     const jId = searchParams.get("journeyId") || localStorage.getItem("journeyId");
