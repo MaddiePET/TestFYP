@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { lookupJPNIdentity } from "../../../../jpn-db/jpn-api.js";
-import { lookupJIMIdentity } from "../../../../jim-db/jim-api.js";
+import { lookupJPNIdentity } from "../../../../jpn-db/jpn-api";
+import { lookupJIMIdentity } from "../../../../jim-db/jim-api";
 
 async function lookupIdentity(idType: string, idNum: string) {
   if (!idNum) return null;
