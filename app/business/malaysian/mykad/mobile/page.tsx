@@ -123,6 +123,18 @@ function BusinessMalaysianMobileMyKadCapture() {
         throw new Error("IC number could not be extracted");
       }
 
+      const identityRes = await fetch(
+        `/api/identity/lookup?id_type=ic&id_num=${encodeURIComponent(icNo)}`
+      );
+
+      const identityData = await identityRes.json();
+
+      if (!identityRes.ok || !identityData.success) {
+        throw new Error(
+          "Identity was not found in government records"
+        );
+      }
+
       await fetch("/api/ekyc/status", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
