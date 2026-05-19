@@ -16,6 +16,7 @@ export default function PersonalMalaysianAccountCreation() {
 
   const [step, setStep] = useState<Step>("profile");
   const [mounted, setMounted] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
   const [username, setUsername] = useState("");
   const [profilePreview, setProfilePreview] = useState<string | null>(null);
   const [profileFile, setProfileFile] = useState<File | null>(null);
@@ -30,6 +31,12 @@ export default function PersonalMalaysianAccountCreation() {
 
   useEffect(() => {
     setMounted(true);
+
+    const savedEmailData = localStorage.getItem("nonMsianEmail");
+    if (savedEmailData) {
+      const parsed = JSON.parse(savedEmailData);
+      setUserEmail(parsed.email || "");
+    }
   }, []);
 
   const avatarOptions: string[] = [
@@ -38,13 +45,22 @@ export default function PersonalMalaysianAccountCreation() {
     "https://api.dicebear.com/7.x/initials/svg?seed=DT&backgroundColor=0ea5e9",
   ];
 
-  const phraseOptions: string[] = ["see you", "dear rich", "ash trevino"];
+  const phraseOptions: string[] = ["Whale Hello There!", "Sofa So Good..", "Donut Worry Be Happy!"];
+  const isPasswordValid = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*\W)(?!.* ).{8,}/.test(password);
+  const score = (password.length >= 8 ? 1 : 0) + (/[0-9]/.test(password) ? 1 : 0) + (/[A-Z]/.test(password) ? 1 : 0) + (/[^A-Za-z0-9]/.test(password) ? 1 : 0);
 
   const getPasswordStrength = (): string => {
     if (password.length === 0) return "";
-    if (password.length < 6) return "Weak";
-    if (password.length < 10) return "Medium";
-    if (password.length < 14) return "Strong";
+    
+    let score = 0;
+    if (password.length >= 8) score++;
+    if (/[0-9]/.test(password)) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/[^A-Za-z0-9]/.test(password)) score++;
+
+    if (score <= 1) return "Weak";
+    if (score === 2) return "Medium";
+    if (score === 3) return "Strong";
     return "Very Strong";
   };
 
@@ -75,126 +91,123 @@ export default function PersonalMalaysianAccountCreation() {
   if (!mounted) return null;
 
   const handleFinalSubmit = async () => {
-  try {
-    setIsSubmitting(true);
-    setSubmitError(null);
+    try {
+      setIsSubmitting(true);
+      setSubmitError(null);
 
-    const phoneVerification = JSON.parse(localStorage.getItem("phoneVerification") || "{}");
-    const personalInfo = JSON.parse(localStorage.getItem("personalInfo") || "{}");
-    const storedHomeAddress = JSON.parse(localStorage.getItem("homeAddress") || "{}");
-    const contactInfo = JSON.parse(localStorage.getItem("contactInfo") || "{}");
-    const storedMailingAddress = JSON.parse(localStorage.getItem("mailingAddress") || "{}");
-    const branchInfo = JSON.parse(localStorage.getItem("branchInfo") || "{}");
-    const savingsApplication = JSON.parse(localStorage.getItem("savingsApplication") || "{}");
+      const phoneVerification = JSON.parse(localStorage.getItem("phoneVerification") || "{}");
+      const personalInfo = JSON.parse(localStorage.getItem("personalInfo") || "{}");
+      const storedHomeAddress = JSON.parse(localStorage.getItem("homeAddress") || "{}");
+      const contactInfo = JSON.parse(localStorage.getItem("contactInfo") || "{}");
+      const storedMailingAddress = JSON.parse(localStorage.getItem("mailingAddress") || "{}");
+      const branchInfo = JSON.parse(localStorage.getItem("branchInfo") || "{}");
+      const savingsApplication = JSON.parse(localStorage.getItem("savingsApplication") || "{}");
 
-   // Convert stored address fields into the format required by the savings account API
-   const homeAddress = {
-    add_type: storedHomeAddress.add_type || "Home",
-    add_1:
-      storedHomeAddress.add_1 ||
-      storedHomeAddress.streetAddress1 ||
-      storedHomeAddress.streetAddress ||
-      "",
-    add_2:
-      storedHomeAddress.add_2 ||
-      storedHomeAddress.streetAddress2 ||
-      storedHomeAddress.city ||
-      "",
-    postcode:
-      storedHomeAddress.postcode ||
-      storedHomeAddress.postal ||
-      "",
-    state: storedHomeAddress.state || "",
-    country: storedHomeAddress.country || "Malaysia",
-  };
+      const homeAddress = {
+        add_type: storedHomeAddress.add_type || "Home",
+        add_1:
+          storedHomeAddress.add_1 ||
+          storedHomeAddress.streetAddress1 ||
+          storedHomeAddress.streetAddress ||
+          "",
+        add_2:
+          storedHomeAddress.add_2 ||
+          storedHomeAddress.streetAddress2 ||
+          storedHomeAddress.city ||
+          "",
+        postcode:
+          storedHomeAddress.postcode ||
+          storedHomeAddress.postal ||
+          "",
+        state: storedHomeAddress.state || "",
+        country: storedHomeAddress.country || "Malaysia",
+      };
 
-  const mailingAddress = {
-    add_type: storedMailingAddress.add_type || "Mailing",
-    add_1:
-    storedMailingAddress.add_1 ||
-    storedMailingAddress.streetAddress1 ||
-    storedMailingAddress.streetAddress ||
-    homeAddress.add_1,
-  add_2:
-    storedMailingAddress.add_2 ||
-    storedMailingAddress.streetAddress2 ||
-    storedMailingAddress.city ||
-    homeAddress.add_2,
-  postcode:
-    storedMailingAddress.postcode ||
-    storedMailingAddress.postal ||
-    homeAddress.postcode,
-  state: storedMailingAddress.state || homeAddress.state,
-  country: storedMailingAddress.country || homeAddress.country || "Malaysia",
-};
+      const mailingAddress = {
+        add_type: storedMailingAddress.add_type || "Mailing",
+        add_1:
+        storedMailingAddress.add_1 ||
+        storedMailingAddress.streetAddress1 ||
+        storedMailingAddress.streetAddress ||
+        homeAddress.add_1,
+        add_2:
+        storedMailingAddress.add_2 ||
+        storedMailingAddress.streetAddress2 ||
+        storedMailingAddress.city ||
+        homeAddress.add_2,
+        postcode:
+        storedMailingAddress.postcode ||
+        storedMailingAddress.postal ||
+        homeAddress.postcode,
+        state: storedMailingAddress.state || homeAddress.state,
+        country: storedMailingAddress.country || homeAddress.country || "Malaysia",
+      };
 
-// Stop submission if the required home address fields are missing
-if (
-  !homeAddress.add_1 ||
-  !homeAddress.add_2 ||
-  !homeAddress.postcode ||
-  !homeAddress.state ||
-  !homeAddress.country
-) {
-  throw new Error(
-    "Home address is incomplete. Please go back and fill in the Malaysian address page again."
-  );
-}
+      if (
+        !homeAddress.add_1 ||
+        !homeAddress.add_2 ||
+        !homeAddress.postcode ||
+        !homeAddress.state ||
+        !homeAddress.country
+      ) {
+        throw new Error(
+          "Home address is incomplete. Please go back and fill in the Malaysian address page again."
+        );
+      }
 
-    const payload = {
-      customer: {
-        id_num: personalInfo.id_num,
-        full_name: personalInfo.full_name,
-        id_type: personalInfo.id_type,
-        dob: personalInfo.dob,
-        ph_no_1: phoneVerification.ph_no_1, // Store the verified or updated phone number as the customer's main phone number
-        email: contactInfo.email,
-        country: personalInfo.country,
-      },
-      homeAddress,
-      mailingAddress,
-      savingsAccount: savingsApplication,
-      user: {
-        username,
-        password,
-        status: "Pending",
-        img: profilePreview || null,
-        sec_phrase:securityPhrase,
-        branch: branchInfo.branch,
-      },
-    };
+      const payload = {
+        customer: {
+          id_num: personalInfo.id_num,
+          full_name: personalInfo.full_name,
+          id_type: personalInfo.id_type,
+          dob: personalInfo.dob,
+          ph_no_1: phoneVerification.ph_no_1, 
+          country: personalInfo.country,
+        },
+        homeAddress,
+        mailingAddress,
+        savingsAccount: savingsApplication,
+        user: {
+          username,
+          password,
+          status: "Pending",
+          img: profilePreview || null,
+          sec_phrase:securityPhrase,
+          branch: branchInfo.branch,
+        },
+      };
 
-    const response = await fetch("/api/msian_savings_account", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
+      const response = await fetch("/api/msian_savings_account", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
 
 
-    const result = await response.json();
-    if (!response.ok) {
-      throw new Error(result.error || "Failed to create account.");
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to create account.");
+      }
+
+      console.log("Final submission success:", result.data);
+
+      localStorage.removeItem("phoneVerification");
+      localStorage.removeItem("personalInfo");
+      localStorage.removeItem("homeAddress");
+      localStorage.removeItem("contactInfo");
+      localStorage.removeItem("mailingAddress");
+      localStorage.removeItem("savingsApplication");
+
+      setStep("pending");
+    } catch (error: any) {
+      console.error("Final submission error:", error);
+      setSubmitError(error.message || "Failed to create account.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    console.log("Final submission success:", result.data);
-
-    localStorage.removeItem("phoneVerification");
-    localStorage.removeItem("personalInfo");
-    localStorage.removeItem("homeAddress");
-    localStorage.removeItem("contactInfo");
-    localStorage.removeItem("mailingAddress");
-    localStorage.removeItem("savingsApplication");
-
-    setStep("pending");
-  } catch (error: any) {
-    console.error("Final submission error:", error);
-    setSubmitError(error.message || "Failed to create account.");
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+  };
 
   return (
     <div className="relative flex flex-col items-center justify-center min-h-screen px-4 py-20 bg-[#F9FAFB] dark:bg-gray-950 overflow-hidden">
@@ -242,7 +255,10 @@ if (
           Back
         </button>
 
-        <Link href="/" className="flex items-center gap-2">
+        <Link 
+          href="/" 
+          className="flex items-center gap-2"
+        >
           <Image 
             src="/images/logo/logo-light.svg" 
             alt="Logo" 
@@ -283,7 +299,7 @@ if (
                   {profilePreview ? (
                     <>
                       <img 
-                        src={`data:${profileFile?.type};base64,${profilePreview}`} 
+                        src={profilePreview} 
                         className="w-full h-full object-cover" 
                         alt="Profile" 
                       />
@@ -354,16 +370,19 @@ if (
 
                 <input
                   className="w-full px-4 py-2.5 text-sm transition-all bg-white border-2 rounded-xl outline-none border-gray-200 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:placeholder-gray-400 dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40"
-                  placeholder="e.g. dearrich"
+                  placeholder="Enter your username"
                   value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  onChange={(e) => {
+                    const sanitized = e.target.value.replace(/[^a-zA-Z0-9]/g, "");
+                    setUsername(sanitized);
+                  }}
                 />
               </div>
 
               <button
                 type="button"
                 onClick={handleNext}
-                disabled={!username || !profilePreview}
+                disabled={!username || username.length < 5 || !profilePreview}
                 className="inline-flex items-center justify-center w-full px-4 py-3 text-sm font-bold text-white transition rounded-lg bg-[#3D405B] shadow-theme-xs hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d] disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed dark:disabled:bg-gray-800 dark:disabled:text-gray-600"
               >
                 Continue
@@ -392,9 +411,12 @@ if (
 
                 <input
                   className="w-full px-4 py-2.5 text-sm transition-all bg-white border-2 rounded-xl outline-none border-gray-200 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:placeholder-gray-400 dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40"
-                  placeholder="e.g. see you rich rich dear"
+                  placeholder="Enter your security phrase"
                   value={securityPhrase}
-                  onChange={(e) => setSecurityPhrase(e.target.value)}
+                  onChange={(e) => {
+                    const sanitized = e.target.value.replace(/[^a-zA-Z!,.\s]/g, "");
+                    setSecurityPhrase(sanitized);
+                  }}
                 />
 
                 <div className="mt-3 flex flex-wrap gap-2">
@@ -434,22 +456,37 @@ if (
                   </button>
                 </div>
 
+                {password.length > 0 && !isPasswordValid && (
+                  <div className="mt-2 text-[10px] space-y-1 animate-in slide-in-from-top-1 fade-in duration-300">
+                    <p className={password.length >= 8 ? "text-green-500" : "text-gray-400"}>
+                      {password.length >= 8 ? "✓" : "○"} At least 8 characters
+                    </p>
+                    <p className={/[0-9]/.test(password) ? "text-green-500" : "text-gray-400"}>
+                      {/[0-9]/.test(password) ? "✓" : "○"} At least one number
+                    </p>
+                    <p className={/[A-Z]/.test(password) ? "text-green-500" : "text-gray-400"}>
+                      {/[A-Z]/.test(password) ? "✓" : "○"} At least one capital letter
+                    </p>
+                    <p className={/[^A-Za-z0-9]/.test(password) ? "text-green-500" : "text-gray-400"}>
+                      {/[^A-Za-z0-9]/.test(password) ? "✓" : "○"} At least one special character
+                    </p>
+                  </div>
+                )}
+
                 <div className="h-1 w-full bg-gray-200 dark:bg-gray-800 rounded-full mt-3 overflow-hidden">
-                  <div
-                    className={`h-full transition-all duration-500 ${
-                      password.length === 0 ? "w-0" :
-                      password.length < 6 ? "w-1/4 bg-red-500" :
-                      password.length < 10 ? "w-2/4 bg-yellow-500" :
-                      password.length < 14 ? "w-3/4 bg-blue-400" : "w-full bg-green-500"
-                    }`}
+                  <div className={`h-full transition-all duration-500 ${
+                      password.length === 0 ? 'w-0' :
+                      score <= 1 ? 'w-1/4 bg-red-500' :
+                      score === 2 ? 'w-2/4 bg-yellow-500' :
+                      score === 3 ? 'w-3/4 bg-blue-400' : 'w-full bg-green-500'
+                    }`} 
                   />
                 </div>
                 
                 <p className={`text-[10px] mt-1 italic font-bold uppercase transition-colors ${
-                  password.length === 0 ? "text-gray-400" :
-                  password.length < 6 ? "text-red-500" :
-                  password.length < 10 ? "text-yellow-600" :
-                  password.length < 14 ? "text-blue-400" : "text-green-500"
+                  score <= 1 ? 'text-red-500' :
+                  score === 2 ? 'text-yellow-600' :
+                  score === 3 ? 'text-blue-400' : 'text-green-500'
                 }`}>
                   {getPasswordStrength()}
                 </p>
@@ -478,7 +515,7 @@ if (
               <button
                 type="button"
                 onClick={handleFinalSubmit}
-                disabled={!password || !securityPhrase || password !== confirmPassword || isSubmitting}
+                disabled={!password || !securityPhrase || password !== confirmPassword || !isPasswordValid}  
                 className="inline-flex items-center justify-center w-full px-4 py-3 text-sm font-bold text-white transition rounded-lg bg-[#3D405B] shadow-theme-xs hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d] disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed dark:disabled:bg-gray-800 dark:disabled:text-gray-600"
               >
                 {isSubmitting ? "Creating..." : "Create Account"}
@@ -516,7 +553,7 @@ if (
             </p>
 
             <p className="mb-6 font-bold text-blue-700 dark:text-blue-400">
-              personalemail@example.com
+              {userEmail}
             </p>
 
             <div className="mb-10 p-4 rounded-xl border bg-blue-50 border-blue-200 dark:bg-blue-900/30 dark:border-blue-500/50">

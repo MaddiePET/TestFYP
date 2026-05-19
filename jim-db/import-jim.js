@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 const admin = require('firebase-admin');
 const fs = require('fs');
+const path = require('path');
 const crypto = require('crypto');
 const path = require('path');
 
@@ -29,8 +30,6 @@ function generateHashID(identifier) {
 async function uploadJIM() {
   try {
     const rawData = JSON.parse(fs.readFileSync('JIM_json.json', 'utf8'));
-    
-    // Parse the JIM specific schema string
     const jimSchema = JSON.parse(rawData[0].jim_schema_export);
     const residents = jimSchema.jim_nonresidents;
     const templates = jimSchema.face_templates;
@@ -39,14 +38,12 @@ async function uploadJIM() {
 
     const batch = db.batch();
 
-    // 1. Upload Non-residents (using HashID of passport_no as Document ID)
     residents.forEach((person) => {
       const hashedID = generateHashID(person.passport_no);
       const docRef = db.collection('jim_nonresidents').doc(hashedID);
       batch.set(docRef, person);
     });
 
-    // 2. Upload Face Templates using Hashed Passport No as Document ID
     templates.forEach((template) => {
       const hashedID = generateHashID(template.passport_no);
       const docRef = db.collection('face_templates_jim').doc(hashedID);

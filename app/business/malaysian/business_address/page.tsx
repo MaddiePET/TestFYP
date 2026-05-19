@@ -217,6 +217,15 @@ export default function BusinessMalaysianBusinessAddress() {
     }
   };
 
+    const isAddressValid = (address: Address) => {
+    return (
+      address.addressLine1.trim() !== "" &&
+      address.addressLine2.trim() !== "" &&
+      address.postcode.trim() !== "" &&
+      address.state.trim() !== ""
+    );
+  };
+
   const handleStep1Submit = (): void => {
     if (useBusinessAsMailing === null) return;
 
@@ -305,13 +314,18 @@ export default function BusinessMalaysianBusinessAddress() {
           Back
         </button>
 
-        <Link href="/" className="flex items-center gap-2">
-          <Image
-            src="/images/logo/logo-light.svg"
-            alt="Logo"
-            width={40}
-            height={40}
-            className="block dark:invert-0 invert"
+
+        
+          <Link 
+            href="/" 
+            className="flex items-center gap-2"
+          >
+          <Image 
+            src="/images/logo/logo-light.svg" 
+            alt="Logo" 
+            width={40} 
+            height={40} 
+            className="block dark:invert-0 invert" 
           />
 
           <h1 className="text-2xl font-bold uppercase tracking-tight text-gray-800 dark:text-white">
@@ -470,8 +484,6 @@ export default function BusinessMalaysianBusinessAddress() {
 
                     No
                   </label>
-
-                  <p>  </p>
                 
                 </div>
                     

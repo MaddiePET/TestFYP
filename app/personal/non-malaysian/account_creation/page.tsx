@@ -16,6 +16,7 @@ export default function PersonalNonMalaysianAccountCreation() {
 
   const [step, setStep] = useState<Step>("profile");
   const [mounted, setMounted] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
   const [username, setUsername] = useState("");
   const [profilePreview, setProfilePreview] = useState<string | null>(null);
   const [profileFile, setProfileFile] = useState<File | null>(null);
@@ -23,11 +24,18 @@ export default function PersonalNonMalaysianAccountCreation() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setMounted(true);
+
+    const savedEmailData = localStorage.getItem("nonMsianEmail");
+    if (savedEmailData) {
+      const parsed = JSON.parse(savedEmailData);
+      setUserEmail(parsed.email || "");
+    }
   }, []);
 
   const avatarOptions: string[] = [
@@ -36,16 +44,26 @@ export default function PersonalNonMalaysianAccountCreation() {
     "https://api.dicebear.com/7.x/initials/svg?seed=DT&backgroundColor=0ea5e9",
   ];
 
-  const phraseOptions: string[] = ["see you", "dear rich", "ash trevino"];
+  const phraseOptions: string[] = ["Whale Hello There!", "Sofa So Good..", "Donut Worry Be Happy!"];
+  const isPasswordValid = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*\W)(?!.* ).{8,}/.test(password);
+  const score = (password.length >= 8 ? 1 : 0) + (/[0-9]/.test(password) ? 1 : 0) + (/[A-Z]/.test(password) ? 1 : 0) + (/[^A-Za-z0-9]/.test(password) ? 1 : 0);
 
+  
   const getPasswordStrength = (): string => {
     if (password.length === 0) return "";
-    if (password.length < 6) return "Weak";
-    if (password.length < 10) return "Medium";
-    if (password.length < 14) return "Strong";
+    
+    let score = 0;
+    if (password.length >= 8) score++;
+    if (/[0-9]/.test(password)) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/[^A-Za-z0-9]/.test(password)) score++;
+
+    if (score <= 1) return "Weak";
+    if (score === 2) return "Medium";
+    if (score === 3) return "Strong";
     return "Very Strong";
   };
-
+  
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -59,98 +77,98 @@ export default function PersonalNonMalaysianAccountCreation() {
     }
   };
 
-   //Collects everything saved from earlier pages with localStorage and makes a POST request to POstGReSQL
-   //Submits the completed non-Msiab savings account application to backend
   const handleFinalSubmit = async () => {
-  try {
-    //Retrieve data saved from the earlier steps in the non-Msian application flow
-    const savedPhone = JSON.parse(localStorage.getItem("nonMsianPhone") || "{}");
-    const savedEmail = JSON.parse(localStorage.getItem("nonMsianEmail") || "{}");
-    const savedInfo = JSON.parse(localStorage.getItem("nonMsianInfo") || "{}");
-    const savedAddress = JSON.parse(localStorage.getItem("nonMsianAddress") || "{}");
-    const savedApplication = JSON.parse(localStorage.getItem("nonMsianApplication") || "{}");
-    const branchInfo = JSON.parse(localStorage.getItem("branchInfo") || "{}");
+    try {
+      const savedPhone = JSON.parse(localStorage.getItem("nonMsianPhone") || "{}");
+      const savedEmail = JSON.parse(localStorage.getItem("nonMsianEmail") || "{}");
+      const savedInfo = JSON.parse(localStorage.getItem("nonMsianInfo") || "{}");
+      const savedAddress = JSON.parse(localStorage.getItem("nonMsianAddress") || "{}");
+      const savedApplication = JSON.parse(localStorage.getItem("nonMsianApplication") || "{}");
+      const branchInfo = JSON.parse(localStorage.getItem("branchInfo") || "{}");
 
-    //Combine all saved page data into the structure expected by APO route
-    const finalData = {
-      id_type: savedInfo.id_type || "Passport",
-      id_num: savedInfo.id_num,
-      full_name: savedInfo.full_name,
-      dob: savedInfo.dob,
+      console.log("savedPhone:", savedPhone);
+      console.log("savedEmail:", savedEmail);
+      console.log("savedInfo:", savedInfo);
+      console.log("savedAddress:", savedAddress);
+      console.log("savedApplication:", savedApplication);
 
-      ph_no_1: savedPhone.ph_no_1,
-      email: savedEmail.email,
+      if (!savedPhone.ph_no) {
+        throw new Error("Phone number is missing from localStorage");
+      }
 
-      address: savedAddress.address,
+      if (!savedEmail.email) {
+        throw new Error("Email is missing from localStorage");
+      }
 
-      non_msian_details: savedInfo.non_msian_details,
+      if (!savedInfo.id_num || !savedInfo.full_name || !savedInfo.dob) {
+        throw new Error("Passport information is missing from localStorage");
+      }
 
-      non_msian_supporting_docs:
-        savedApplication.non_msian_supporting_docs || [],
+      const finalData = {
+        id_type: savedInfo.id_type || "Passport",
+        id_num: savedInfo.id_num,
+        full_name: savedInfo.full_name,
+        dob: savedInfo.dob,
 
-      user: {
-        username,
-        password,
-        status: "Pending",
-        img: profilePreview,
-        sec_phrase: securityPhrase,
-        branch: branchInfo.branch || savedApplication.preferredBranch,
-      },
+        ph_no: savedPhone.ph_no,
+        email: savedEmail.email,
 
-      savings_account: savedApplication.savings_account,
-    };
-    console.log(
-     "NON-MSIAN SUPPORTING DOCS BEFORE SUBMIT:",
-     savedApplication.non_msian_supporting_docs
-    );
+        address: savedAddress.address,
 
-   console.log("FINAL NON-MSIAN DATA:", finalData); // helps with debugging by showing final payload before sending to backend 
-   console.log("NON-MSIAN USER DATA BEFORE SUBMIT:", finalData.user);
-   console.log("BRANCH INFO:", branchInfo);
-   console.log("SAVED APPLICATION:", savedApplication);
+        non_msian_details: savedInfo.non_msian_details,
 
-    //sends the complete non-msian application data to backend route for db insert
-    const response = await fetch("/api/non_msian_savings_account", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(finalData),
-    });
+        non_msian_supporting_docs: savedApplication.non_msian_supporting_docs || [],
 
-    const result = await response.json();
-    //Show the response returned by the API route
-    //console.log("NON-MSIAN SUBMIT RESULT:", result);
+        user: {
+          username,
+          password,
+          status: "PENDING",
+          img: profilePreview,
+          sec_phrase: securityPhrase,
+          branch: branchInfo.branch || savedApplication.preferredBranch,
+        },
 
-    //stops the process if backends runs into error
-    if (!response.ok) {
-      throw new Error(result.error || "Failed to submit application");
+        savings_account: savedApplication.savings_account,
+      };
+
+      console.log(
+        "NON-MSIAN SUPPORTING DOCS BEFORE SUBMIT:", savedApplication.non_msian_supporting_docs
+      );
+
+      const response = await fetch("/api/non_msian_savings_account", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(finalData),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to submit application");
+      }
+
+      localStorage.removeItem("nonMsianPhone");
+      localStorage.removeItem("nonMsianEmail");
+      localStorage.removeItem("nonMsianInfo");
+      localStorage.removeItem("nonMsianAddress");
+      localStorage.removeItem("nonMsianApplication");
+
+      setStep("pending");
+    } catch (error) {
+      console.error("Final submit error:", error);
+      alert(error instanceof Error ? error.message : "Failed to submit application");
     }
+  };
 
-     // Clear temporary localStorage data after the application is successfully saved.
-    localStorage.removeItem("nonMsianPhone");
-    localStorage.removeItem("nonMsianEmail");
-    localStorage.removeItem("nonMsianInfo");
-    localStorage.removeItem("nonMsianAddress");
-    localStorage.removeItem("nonMsianApplication");
-
-  // Show the pending approval page after successful submission.
-    setStep("pending");
-  } catch (error) {
-    console.error("Final submit error:", error);
-    alert(error instanceof Error ? error.message : "Failed to submit application");
-  }
-};
-
-// Controls movement between the account creation steps.
-// The final submit only happens after the password step is completed.
-const handleNext = () => {
-  if (step === "profile") {
-    setStep("password");
-  } else if (step === "password") {
-    handleFinalSubmit();
-  }
-};
+  const handleNext = () => {
+    if (step === "profile") {
+      setStep("password");
+    } else if (step === "password") {
+      handleFinalSubmit();
+    }
+  };
 
   const handleBack = () => {
     if (step === "password") setStep("profile");
@@ -206,7 +224,10 @@ const handleNext = () => {
           Back
         </button>
 
-        <Link href="/" className="flex items-center gap-2">
+        <Link 
+          href="/" 
+          className="flex items-center gap-2"
+        >
           <Image 
             src="/images/logo/logo-light.svg" 
             alt="Logo" 
@@ -314,16 +335,19 @@ const handleNext = () => {
 
                 <input
                   className="w-full px-4 py-2.5 text-sm transition-all bg-white border-2 rounded-xl outline-none border-gray-200 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:placeholder-gray-400 dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40"
-                  placeholder="e.g. dearrich"
+                  placeholder="Enter your username"
                   value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  onChange={(e) => {
+                    const sanitized = e.target.value.replace(/[^a-zA-Z0-9]/g, "");
+                    setUsername(sanitized);
+                  }}
                 />
               </div>
 
               <button 
                 type="button" 
                 onClick={handleNext} 
-                disabled={!username || !profilePreview} 
+                disabled={!username || username.length < 5 || !profilePreview} 
                 className="inline-flex items-center justify-center w-full px-4 py-3 text-sm font-bold text-white transition rounded-lg bg-[#3D405B] shadow-theme-xs hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d] disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed dark:disabled:bg-gray-800 dark:disabled:text-gray-600"
               >
                 Continue
@@ -352,9 +376,12 @@ const handleNext = () => {
 
                 <input
                   className="w-full px-4 py-2.5 text-sm transition-all bg-white border-2 rounded-xl outline-none border-gray-200 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:placeholder-gray-400 dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40"
-                  placeholder="e.g. see you rich rich dear"
+                  placeholder="Enter your security phrase"
                   value={securityPhrase}
-                  onChange={(e) => setSecurityPhrase(e.target.value)}
+                  onChange={(e) => {
+                    const sanitized = e.target.value.replace(/[^a-zA-Z!,.\s]/g, "");
+                    setSecurityPhrase(sanitized);
+                  }}
                 />
 
                 <div className="mt-3 flex flex-wrap gap-2">
@@ -393,46 +420,81 @@ const handleNext = () => {
                     {showPassword ? <EyeIcon className="w-5 h-5" /> : <EyeCloseIcon className="w-5 h-5" />}
                   </button>
                 </div>
+
+                {password.length > 0 && !isPasswordValid && (
+                  <div className="mt-2 text-[10px] space-y-1 animate-in slide-in-from-top-1 fade-in duration-300">
+                    <p className={password.length >= 8 ? "text-green-500" : "text-gray-400"}>
+                      {password.length >= 8 ? "✓" : "○"} At least 8 characters
+                    </p>
+                    <p className={/[0-9]/.test(password) ? "text-green-500" : "text-gray-400"}>
+                      {/[0-9]/.test(password) ? "✓" : "○"} At least one number
+                    </p>
+                    <p className={/[A-Z]/.test(password) ? "text-green-500" : "text-gray-400"}>
+                      {/[A-Z]/.test(password) ? "✓" : "○"} At least one capital letter
+                    </p>
+                    <p className={/[a-z]/.test(password) ? "text-green-500" : "text-gray-400"}>
+                      {/[a-z]/.test(password) ? "✓" : "○"} At least one lowercase letter
+                    </p>
+                    <p className={!/\s/.test(password) ? "text-green-500" : "text-gray-400"}>
+                      {!/\s/.test(password) ? "✓" : "○"} No spaces
+                    </p>
+                    <p className={/[^A-Za-z0-9]/.test(password) ? "text-green-500" : "text-gray-400"}>
+                      {/[^A-Za-z0-9]/.test(password) ? "✓" : "○"} At least one special character
+                    </p>
+                  </div>
+                )}
                 
                 <div className="h-1 w-full bg-gray-200 dark:bg-gray-800 rounded-full mt-3 overflow-hidden">
-                  <div 
-                    className={`h-full transition-all duration-500 ${
+                  <div className={`h-full transition-all duration-500 ${
                       password.length === 0 ? 'w-0' :
-                      password.length < 6 ? 'w-1/4 bg-red-500' :
-                      password.length < 10 ? 'w-2/4 bg-yellow-500' :
-                      password.length < 14 ? 'w-3/4 bg-blue-400' : 'w-full bg-green-500'
+                      score <= 1 ? 'w-1/4 bg-red-500' :
+                      score === 2 ? 'w-2/4 bg-yellow-500' :
+                      score === 3 ? 'w-3/4 bg-blue-400' : 'w-full bg-green-500'
                     }`} 
                   />
                 </div>
                 
                 <p className={`text-[10px] mt-1 italic font-bold uppercase transition-colors ${
-                  password.length === 0 ? 'text-gray-400' :
-                  password.length < 6 ? 'text-red-500' :
-                  password.length < 10 ? 'text-yellow-600' :
-                  password.length < 14 ? 'text-blue-400' : 'text-green-500'
+                  score <= 1 ? 'text-red-500' :
+                  score === 2 ? 'text-yellow-600' :
+                  score === 3 ? 'text-blue-400' : 'text-green-500'
                 }`}>
                   {getPasswordStrength()}
                 </p>
               </div>
 
-              <div>
-                <Label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-                  Confirm Password<span className="text-error-500">*</span>
-                </Label>
-
+              <div className="relative">
                 <input
-                  type="password"
+                  type={showConfirmPassword ? "text" : "password"}
                   className="w-full px-4 py-2.5 text-sm transition-all bg-white border-2 rounded-xl outline-none border-gray-200 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:placeholder-gray-400 dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40"
                   placeholder="Confirm your password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                 />
+
+                {confirmPassword.length > 0 && password !== confirmPassword && (
+                  <p className="mt-2 text-[10px] text-red-500">
+                    Passwords do not match
+                  </p>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
+                >
+                  {showConfirmPassword ? (
+                    <EyeIcon className="w-5 h-5" />
+                  ) : (
+                    <EyeCloseIcon className="w-5 h-5" />
+                  )}
+                </button>
               </div>
 
               <button 
                 type="button"
                 onClick={handleNext} 
-                disabled={!password || !securityPhrase || password !== confirmPassword} 
+                disabled={!password || !securityPhrase || password !== confirmPassword || !isPasswordValid}  
                 className="inline-flex items-center justify-center w-full px-4 py-3 text-sm font-bold text-white transition rounded-lg bg-[#3D405B] shadow-theme-xs hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d] disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed dark:disabled:bg-gray-800 dark:disabled:text-gray-600"
               >
                 Create Account
@@ -470,7 +532,7 @@ const handleNext = () => {
             </p>
 
             <p className="mb-6 font-bold text-blue-700 dark:text-blue-400">
-              personalemail@example.com
+              {userEmail}
             </p>
             
             <div className="mb-10 p-4 rounded-xl border bg-blue-50 border-blue-200 dark:bg-blue-900/30 dark:border-blue-500/50">

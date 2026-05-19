@@ -258,7 +258,10 @@ export default function BusinessMalaysianBusinessParticulars() {
           Back
         </button>
 
-        <Link href="/" className="flex items-center gap-2">
+        <Link 
+          href="/" 
+          className="flex items-center gap-2"
+        >
           <Image 
             src="/images/logo/logo-light.svg" 
             alt="Logo" 
@@ -565,10 +568,14 @@ export default function BusinessMalaysianBusinessParticulars() {
                     onClick={handleFinalSubmit}
                     disabled={
                       !formData.businessName ||
+                      !formData.brn ||
+                      !formData.msicCode ||
+                      !formData.msicName ||
                       !formData.day ||
                       !formData.month ||
                       !formData.year ||
-                      !formData.businessType
+                      !formData.businessType ||
+                      !formData.role
                     }
                     className="inline-flex items-center justify-center w-full px-4 py-3 text-sm font-bold transition rounded-lg shadow-theme-xs bg-[#3D405B] text-white hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d] disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed dark:disabled:bg-gray-800 dark:disabled:text-gray-600 active:scale-[0.98]"
                   >

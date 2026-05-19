@@ -20,12 +20,13 @@ export default function PersonalMalaysianInfo() {
     nric: "",
     dobDay: "",
     dobMonth: "",
+    dobMonth: "",
     dobYear: "",
     phoneCode: "+60",
     phoneNumber: "",
     add1: "",
-    postal: "",
     add2: "",
+    postal: "",
     state: "",
     country: "Malaysia",
   });
@@ -75,8 +76,8 @@ export default function PersonalMalaysianInfo() {
       phoneCode: "+60",
       phoneNumber: identity.ph_no_1 || identity.phone_number || identity.phoneNumber || "",
       add1: identity.add1 || identity.address_line_1 || identity.address || identity.home_address || "",
-      postal: identity.postcode || identity.postal_code || identity.postal || "",
       add2: identity.add2 || identity.address_line_2 || "",
+      postal: identity.postcode || identity.postal_code || identity.postal || "",
       state: identity.state || "",
       country: identity.country || "Malaysia",
     };
@@ -117,7 +118,6 @@ export default function PersonalMalaysianInfo() {
     const currentJourneyId = searchParams.get("journeyId") || "";
     const savedJourneyId = localStorage.getItem("journeyId");
 
-    // NEW JOURNEY DETECTED
     if (savedJourneyId && savedJourneyId !== currentJourneyId) {
       localStorage.removeItem("personalInfo");
       localStorage.removeItem("homeAddress");
@@ -126,7 +126,6 @@ export default function PersonalMalaysianInfo() {
       localStorage.removeItem("id_type");
     }
 
-    // SAVE CURRENT JOURNEY
     localStorage.setItem("journeyId", currentJourneyId);
 
     const queryParams = new URLSearchParams(window.location.search);
@@ -141,39 +140,6 @@ export default function PersonalMalaysianInfo() {
       localStorage.getItem("id_num") ||
       "";
 
-    // LOAD SAVED PERSONAL INFO FIRST
-    const savedInfo = JSON.parse(
-      localStorage.getItem("personalInfo") || "{}"
-    );
-
-    const savedHome = JSON.parse(
-      localStorage.getItem("homeAddress") || "{}"
-    );
-
-    if (savedInfo.full_name || savedHome.add_1) {
-      const dob = savedInfo.dob
-        ? formatDateForFields(savedInfo.dob)
-        : { day: "", month: "January", year: "" };
-
-      setFormData({
-        fullName: savedInfo.full_name || "",
-        nric: savedInfo.id_num || idNum,
-        dobDay: dob.day,
-        dobMonth: dob.month,
-        dobYear: dob.year,
-        phoneCode: "+60",
-        phoneNumber: savedInfo.ph_no_1?.replace("+60", "") || "",
-        add1: savedHome.add_1 || "",
-        add2: savedHome.add_2 || "",
-        postal: savedHome.postcode || "",
-        state: savedHome.state || "",
-        country: savedHome.country || "Malaysia",
-      });
-
-      return;
-    }
-
-    // OTHERWISE FETCH FROM API
     if (idNum) {
       setFormData((prev) => ({
         ...prev,
@@ -182,75 +148,72 @@ export default function PersonalMalaysianInfo() {
 
       fetchIdentity(idType, idNum);
     }
-  }, []);
+  }, []); 
 
   const handleNavigation = async () => {
    if (isSubmitting) return;
 
-   try {
-     setIsSubmitting(true);
-     setSubmitError(null);
+    try {
+      setIsSubmitting(true);
+      setSubmitError(null);
 
-     const monthMap: Record<string, string> = {
-       January: "01",
-       February: "02",
-       March: "03",
-       April: "04",
-       May: "05",
-       June: "06",
-       July: "07",
-       August: "08",
-       September: "09",
-       October: "10",
-       November: "11",
-       December: "12",
-    };
+      const monthMap: Record<string, string> = {
+        January: "01",
+        February: "02",
+        March: "03",
+        April: "04",
+        May: "05",
+        June: "06",
+        July: "07",
+        August: "08",
+        September: "09",
+        October: "10",
+        November: "11",
+        December: "12",
+      };
 
-    const dob = `${formData.dobYear}-${monthMap[formData.dobMonth]}-${formData.dobDay}`;
-    const fullPhone = `${formData.phoneCode}${formData.phoneNumber}`;
+      const dob = `${formData.dobYear}-${monthMap[formData.dobMonth]}-${formData.dobDay}`;
+      const fullPhone = `${formData.phoneCode}${formData.phoneNumber}`;
 
-    localStorage.setItem(
-      "personalInfo",
-      JSON.stringify({
-        id_num: formData.nric,
-        full_name: formData.fullName,
-        id_type: "NRIC",
-        dob,
-        ph_no_1: fullPhone,
-        ph_no_2: null,
-        country: formData.country,
-      })
-    );
+      localStorage.setItem(
+        "personalInfo",
+        JSON.stringify({
+          id_num: formData.nric,
+          full_name: formData.fullName,
+          id_type: "NRIC",
+          dob,
+          ph_no_1: fullPhone,
+          ph_no_2: null,
+          country: formData.country,
+        })
+      );
 
-    localStorage.setItem(
-      "homeAddress",
-      JSON.stringify({
-        add_type: "Home",
-        add_1: formData.add1,
-        add_2: formData.add2,
-        postcode: formData.postal,
-        state: formData.state,
-        country: formData.country,
-      })
-    );
+      localStorage.setItem(
+        "homeAddress",
+        JSON.stringify({
+          add_type: "Home",
+          add_1: formData.add1,
+          add_2: formData.add2,
+          postcode: formData.postal,
+          state: formData.state,
+          country: formData.country,
+        })
+      );
 
-    localStorage.setItem("id_type", "ic");
-    localStorage.setItem("id_num", formData.nric);
-    localStorage.setItem("journeyId", searchParams.get("journeyId") || "");
+      localStorage.setItem("id_type", "ic");
+      localStorage.setItem("id_num", formData.nric);
+      localStorage.setItem("journeyId", searchParams.get("journeyId") || "");
 
-
-    router.push(
-      `/personal/malaysian/mailing_address?id_type=ic&id_num=${encodeURIComponent(
-        formData.nric
-      )}&journeyId=${encodeURIComponent(searchParams.get("journeyId") || "")}`
-    );
-  } catch (error: any) {
-    console.error("Submission error:", error);
-    setSubmitError(error.message || "Failed to save application data.");
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+      router.push(
+        `/personal/malaysian/mailing_address?id_type=ic&id_num=${encodeURIComponent(formData.nric)}&journeyId=${encodeURIComponent(searchParams.get("journeyId") || "")}`
+      );
+    } catch (error: any) {
+      console.error("Submission error:", error);
+      setSubmitError(error.message || "Failed to save application data.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const isFormValid = 
     formData.fullName.trim() !== "" &&
@@ -309,7 +272,10 @@ export default function PersonalMalaysianInfo() {
           Back
         </button>
 
-        <Link href="/" className="flex items-center gap-2">
+        <Link   
+          href="/" 
+          className="flex items-center gap-2"
+        >
           <Image 
             src="/images/logo/logo-light.svg" 
             alt="Logo" 
@@ -343,13 +309,28 @@ export default function PersonalMalaysianInfo() {
                   Full Name<span className="text-red-500">*</span>
                 </label>
 
-                <input 
-                  type="text" 
-                  readOnly
-                  className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none cursor-not-allowed" 
-                  value={formData.fullName} 
-                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })} 
-                />
+                <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
+                  <input
+                    type="text"
+                    readOnly
+                    className="text-sm font-bold text-gray-700 dark:text-gray-200"
+                    value={formData.fullName}
+                  />
+
+                  <svg 
+                    className="w-4 h-4 text-gray-400 ml-auto" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth="2" 
+                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" 
+                    />
+                  </svg>
+                </div>
               </div>
 
               <div>
@@ -357,13 +338,28 @@ export default function PersonalMalaysianInfo() {
                   NRIC<span className="text-red-500">*</span>
                 </label>
 
-                <input 
-                  type="text" 
-                  readOnly 
-                  className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none cursor-not-allowed" 
-                  value={formData.nric} 
-                  onChange={(e) => setFormData({ ...formData, nric: e.target.value })} 
-                />
+                <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
+                  <input
+                    type="text"
+                    readOnly
+                    className="text-sm font-bold text-gray-700 dark:text-gray-200"
+                    value={formData.nric}
+                  />
+
+                  <svg 
+                    className="w-4 h-4 text-gray-400 ml-auto" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth="2" 
+                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" 
+                    />
+                  </svg>
+                </div>
               </div>
 
               <div>
@@ -371,86 +367,74 @@ export default function PersonalMalaysianInfo() {
                   Date of Birth<span className="text-red-500">*</span>
                 </label>
 
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="relative">
-                    <select 
-                      value={formData.dobDay} 
-                      disabled
-                      onChange={(e) => setFormData({ ...formData, dobDay: e.target.value })} 
-                      className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none cursor-not-allowed"
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
+                    <input
+                      type="text"
+                      readOnly
+                      className="w-full min-w-0 bg-transparent text-sm font-bold text-gray-700 dark:text-gray-200 outline-none cursor-not-allowed"
+                      value={formData.dobDay}
+                    />
+                    
+                    <svg
+                      className="w-4 h-4 shrink-0 text-gray-400 ml-auto"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
                     >
-                      {Array.from({ length: 31 }, (_, i) => (i + 1).toString().padStart(2, "0")).map((opt) => (<option key={opt} value={opt}>{opt}</option>))}
-                    </select>
-
-                    <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
-                      <svg 
-                        className="w-4 h-4 text-gray-400" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
-                      >
-                        <path 
-                          strokeLinecap="round" 
-                          strokeLinejoin="round" 
-                          strokeWidth="2" 
-                          d="M19 9l-7 7-7-7" 
-                        />
-                      </svg>
-                    </div>
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                      />
+                    </svg>
                   </div>
 
-                  <div className="relative">
-                    <select 
-                      value={formData.dobMonth} 
-                      disabled
-                      onChange={(e) => setFormData({ ...formData, dobMonth: e.target.value })} 
-                      className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none cursor-not-allowed"
+                  <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
+                    <input
+                      type="text"
+                      readOnly
+                      className="w-full min-w-0 bg-transparent text-sm font-bold text-gray-700 dark:text-gray-200 outline-none cursor-not-allowed"
+                      value={formData.dobMonth}
+                    />
+                    
+                    <svg
+                      className="w-4 h-4 shrink-0 text-gray-400 ml-auto"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
                     >
-                      {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map((opt) => (<option key={opt} value={opt}>{opt}</option>))}
-                    </select>
-
-                    <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
-                      <svg 
-                        className="w-4 h-4 text-gray-400" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
-                      >
-                        <path 
-                          strokeLinecap="round" 
-                          strokeLinejoin="round" 
-                          strokeWidth="2" 
-                          d="M19 9l-7 7-7-7" 
-                        />
-                      </svg>
-                    </div>
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                      />
+                    </svg>
                   </div>
 
-                  <div className="relative">
-                    <select 
-                      value={formData.dobYear} 
-                      disabled
-                      onChange={(e) => setFormData({ ...formData, dobYear: e.target.value })} 
-                      className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none cursor-not-allowed"
-                    >
-                      {Array.from({ length: 100 }, (_, i) => (2025 - i).toString()).map((opt) => (<option key={opt} value={opt}>{opt}</option>))}
-                    </select>
+                  <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
+                    <input
+                      type="text"
+                      readOnly
+                      className="w-full min-w-0 bg-transparent text-sm font-bold text-gray-700 dark:text-gray-200 outline-none cursor-not-allowed"
+                      value={formData.dobYear}
+                    />
 
-                    <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
-                      <svg 
-                        className="w-4 h-4 text-gray-400" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
-                      >
-                        <path 
-                          strokeLinecap="round" 
-                          strokeLinejoin="round" 
-                          strokeWidth="2" 
-                          d="M19 9l-7 7-7-7" 
-                        />
-                      </svg>
-                    </div>
+                    <svg
+                      className="w-4 h-4 shrink-0 text-gray-400 ml-auto"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                      />
+                    </svg>
                   </div>
                 </div>
               </div>
@@ -471,13 +455,28 @@ export default function PersonalMalaysianInfo() {
                     <span className="text-sm font-bold text-gray-700 dark:text-gray-200">{formData.phoneCode}</span>
                   </div>
 
-                  <input 
-                    type="text" 
-                    readOnly
-                    className="w-full px-4 py-2.5 text-sm font-medium transition-all bg-white border-2 rounded-r-xl outline-none border-gray-200 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:placeholder-gray-400 dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 cursor-not-allowed" 
-                    value={formData.phoneNumber} 
-                    onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })} 
-                  />
+                  <div className="flex-1 flex items-center gap-2 px-4 py-2.5 border-2 rounded-r-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
+                    <input
+                      type="text"
+                      readOnly
+                      className="w-full min-w-0 bg-transparent text-sm font-bold text-gray-700 dark:text-gray-200 outline-none cursor-not-allowed"
+                      value={formData.phoneNumber}
+                    />
+
+                    <svg
+                      className="w-4 h-4 shrink-0 text-gray-400 ml-auto"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                      />
+                    </svg>
+                  </div>
                 </div>
               </div>
             </div>
@@ -488,28 +487,58 @@ export default function PersonalMalaysianInfo() {
                   Address 1<span className="text-red-500">*</span>
                 </label>
 
-                <input 
-                  type="text" 
-                  readOnly
-                  className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none cursor-not-allowed" 
-                  value={formData.add1} 
-                  onChange={(e) => setFormData({ ...formData, add1: e.target.value })} 
-                />
+                <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
+                  <input
+                    type="text"
+                    readOnly
+                    className="w-full min-w-0 bg-transparent text-sm font-bold text-gray-700 dark:text-gray-200 outline-none cursor-not-allowed"
+                    value={formData.add1}
+                  />
+
+                  <svg
+                    className="w-4 h-4 shrink-0 text-gray-400 ml-auto"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                    />
+                  </svg>
+                </div>
               </div>
             
-            <div>
+              <div>
                 <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
                   Address 2<span className="text-red-500">*</span>
                 </label>
 
-                <input 
-                  type="text" 
-                  readOnly
-                  className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none cursor-not-allowed" 
-                  value={formData.add2} 
-                  onChange={(e) => setFormData({ ...formData, add2: e.target.value })} 
-                />
-            </div>
+                <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
+                  <input
+                    type="text"
+                    readOnly
+                    className="w-full min-w-0 bg-transparent text-sm font-bold text-gray-700 dark:text-gray-200 outline-none cursor-not-allowed"
+                    value={formData.add2}
+                  />
+
+                  <svg
+                    className="w-4 h-4 shrink-0 text-gray-400 ml-auto"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                    />
+                  </svg>
+                </div>
+              </div>
 
               <div className="grid grid-cols-2 gap-5">
                 <div>
@@ -517,28 +546,58 @@ export default function PersonalMalaysianInfo() {
                     Postal Code<span className="text-red-500">*</span>
                   </label>
 
-                  <input 
-                    type="text" 
-                    readOnly
-                    className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none cursor-not-allowed" 
-                    value={formData.postal} 
-                    onChange={(e) => setFormData({ ...formData, postal: e.target.value })} 
-                  />
+                  <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
+                    <input
+                      type="text"
+                      readOnly
+                      className="w-full min-w-0 bg-transparent text-sm font-bold text-gray-700 dark:text-gray-200 outline-none cursor-not-allowed"
+                      value={formData.postal}
+                    />
+
+                    <svg
+                      className="w-4 h-4 shrink-0 text-gray-400 ml-auto"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                      />
+                    </svg>
+                  </div>
                 </div>
 
                 <div>
-                <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-                  State<span className="text-red-500">*</span>
-                </label>
+                  <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
+                    State<span className="text-red-500">*</span>
+                  </label>
 
-                <input 
-                  type="text" 
-                  readOnly
-                  className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none cursor-not-allowed" 
-                  value={formData.state} 
-                  onChange={(e) => setFormData({ ...formData, state: e.target.value })} 
-                />
-              </div>
+                  <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
+                  <input
+                    type="text"
+                    readOnly
+                    className="w-full min-w-0 bg-transparent text-sm font-bold text-gray-700 dark:text-gray-200 outline-none cursor-not-allowed"
+                    value={formData.state}
+                  />
+
+                  <svg
+                    className="w-4 h-4 shrink-0 text-gray-400 ml-auto"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                    />
+                  </svg>
+                </div>
+                </div>
               </div>
 
               <div>
@@ -546,11 +605,11 @@ export default function PersonalMalaysianInfo() {
                   Country<span className="text-red-500">*</span>
                 </label>
 
-                <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400">
+                <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl cursor-not-allowed bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400">
                   <span className="text-sm font-bold text-gray-700 dark:text-gray-200">{formData.country}</span>
 
                   <svg 
-                    className="w-4 h-4 text-gray-400" 
+                    className="w-4 h-4 text-gray-400 ml-auto" 
                     fill="none" 
                     stroke="currentColor" 
                     viewBox="0 0 24 24"

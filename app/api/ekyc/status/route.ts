@@ -23,19 +23,23 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing data" }, { status: 400 });
     }
 
-    statusStore.set(journeyId, {
-      status,
-      id_type,
-      id_num,
-    });
+    const existingData = statusStore.get(journeyId) || {};
+
+    const updatedData = {
+      ...existingData,
+      status, 
+      ...(id_type !== undefined && { id_type }),
+      ...(id_num !== undefined && { id_num }),
+    };
+
+    statusStore.set(journeyId, updatedData);
 
     return NextResponse.json({
       success: true,
-      status,
-      id_type,
-      id_num,
+      ...updatedData,
     });
-  } catch {
+  } catch (error) {
+    console.error("Status API Error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

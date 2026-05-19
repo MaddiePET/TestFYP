@@ -8,14 +8,15 @@ import ChevronLeftIcon from "@/icons/chevron-left.svg";
 import { useFormData } from "@/context/FormContext";
 
 type Step = "input" | "otp";
+type MessageType = "success" | "error" | "";
 
 export default function BusinessMalaysianEmail() {
   const router = useRouter();
   const searchParams = useSearchParams();
-    const journeyId =
-      searchParams.get("journeyId") ||
-      (typeof window !== "undefined" ? localStorage.getItem("journeyId") : "") ||
-      "";
+  const journeyId =
+    searchParams.get("journeyId") ||
+    (typeof window !== "undefined" ? localStorage.getItem("journeyId") : "") ||
+    "";
   const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState<Step>("input");
   const [email, setEmail] = useState("");
@@ -23,11 +24,12 @@ export default function BusinessMalaysianEmail() {
   const [isLoading, setIsLoading] = useState(false);
   const [timer, setTimer] = useState(0);
   const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState<MessageType>("");
 
   const { formData, setFormData } = useFormData();
 
   const otpInputs = useRef<(HTMLInputElement | null)[]>([]);
-
+ 
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -57,79 +59,83 @@ export default function BusinessMalaysianEmail() {
     if (step === "otp") setStep("input");
     else router.push(
       `/business/malaysian/phone?journeyId=${encodeURIComponent(journeyId)}`
-    );
+    );  
   };
 
   const handleSendOtp = async (e?: React.FormEvent) => {
-  // Prevent the form from refreshing the page.
-  if (e) e.preventDefault();
+    if (e) e.preventDefault();
 
-  // Start loading state and clear previous messages.
-  setIsLoading(true);
-  setMessage("");
+    setIsLoading(true);
+    setMessage("");
+    setMessageType("");
 
-  try {
-    // Call the shared email OTP backend route to generate and send the OTP.
-    const res = await fetch("/api/otp/email/send", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email: email.trim() }),
-    });
-
-    const data = await res.json();
-
-    // Stop the flow if the OTP email fails to send.
-    if (!res.ok) {
-      setMessage(data.error || "Failed to send email OTP.");
+    if (!journeyId) {
+      setMessage("Journey ID missing. Please restart mykad verification.");
+      setMessageType("error");
+      setIsLoading(false);
       return;
     }
 
-    // Move to the OTP screen only after the email is sent successfully.
-    setStep("otp");
-    setTimer(60);
-    setMessage("OTP sent successfully. Please check your email.");
-  } catch (error) {
-    // Log the technical error for debugging and show a user-friendly message.
-    console.error("Send business email OTP error:", error);
-    setMessage("Something went wrong while sending the OTP.");
-  } finally {
-    // Stop loading state whether the request succeeds or fails.
-    setIsLoading(false);
-  }
-};
+    try {
+      const res = await fetch("/api/otp/email/send", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setMessage(data.error || "Failed to send email OTP.");
+        setMessageType("error");
+        setIsLoading(false);
+        return;
+      }
+
+      setStep("otp");
+      setTimer(60);
+      setMessage("OTP sent successfully. Please check your email.");
+      setMessageType("success");
+    } catch (error) {
+      console.error("Send OTP error:", error);
+      setMessage("Something went wrong while sending the OTP.");
+      setMessageType("error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleVerifyOtp = async () => {
-  // Stop if the email field is empty.
-  if (!email.trim()) return;
+    if (!email.trim()) return;
 
-  // Combine the 6 separate OTP boxes into one OTP string.
-  const enteredOtp = otp.join("");
+    const enteredOtp = otp.join("");
 
-  // Start loading state and clear previous messages.
-  setIsLoading(true);
-  setMessage("");
+    setIsLoading(true);
+    setMessage("");
+    setMessageType("");
 
-  try {
-    // Call the shared email OTP backend route to verify the entered OTP.
-    const res = await fetch("/api/otp/email/verify", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email: email.trim(),
-        otp: enteredOtp,
-      }),
-    });
+    try {
+      const res = await fetch("/api/otp/email/verify", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: email.trim(),
+          otp: enteredOtp,
+        }),
+      });
 
     const data = await res.json();
 
-    // Stop the flow if the OTP is incorrect, expired, or missing.
-    if (!res.ok) {
-      setMessage(data.error || "Invalid OTP. Please try again.");
-      return;
-    }
+      if (!res.ok) {
+        setMessage(data.error || "Invalid OTP. Please try again.");
+        setMessageType("error");
+        setIsLoading(false);
+        return;
+      }
 
     // Save the verified business email into the shared form context.
     setFormData((prev: any) => ({
@@ -144,8 +150,9 @@ export default function BusinessMalaysianEmail() {
       const statusRes = await fetch(
         `/api/ekyc/status?journeyId=${encodeURIComponent(journeyId)}`
       );
-
+      
       const statusData = await statusRes.json();
+      console.log("Status API response:", statusData);
 
       const icNo =
         statusData?.id_num ||
@@ -154,8 +161,8 @@ export default function BusinessMalaysianEmail() {
         "";
 
       if (!icNo) {
-        console.error("Missing IC number from journey status:", statusData);
-        setMessage("IC number missing. Please restart MyKad verification.");
+        console.error("Missing MyKad number from journey status:", statusData);
+        setMessage("MyKad number missing. Please restart MyKad verification.");
         return;
       }
 
@@ -165,6 +172,7 @@ export default function BusinessMalaysianEmail() {
     } catch (error) {
       console.error("Verify OTP error:", error);
       setMessage("Something went wrong while verifying the OTP.");
+      setMessageType("error");
     } finally {
       setIsLoading(false);
     }
@@ -240,7 +248,10 @@ export default function BusinessMalaysianEmail() {
           Back
         </button>
 
-        <Link href="/" className="flex items-center gap-2">
+        <Link 
+          href="/" 
+          className="flex items-center gap-2"
+        >
           <Image 
             src="/images/logo/logo-light.svg" 
             alt="Logo" 
@@ -268,7 +279,22 @@ export default function BusinessMalaysianEmail() {
               </p>
             </div>
 
-            <form onSubmit={handleSendOtp} className="space-y-6">
+            {message && (
+              <div
+                className={`mb-4 w-full p-4 rounded-lg border text-xs text-center font-medium shadow-sm ${
+                  messageType === "success"
+                    ? "bg-green-50 border-green-200 text-green-600"
+                    : "bg-red-50 border-red-200 text-red-600"
+                }`}
+              >
+                {message}
+              </div>
+            )}
+
+            <form 
+              onSubmit={handleSendOtp} 
+              className="space-y-6"
+            >
               <div>
                 <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
                   Email Address<span className="text-red-500">*</span>
@@ -277,10 +303,10 @@ export default function BusinessMalaysianEmail() {
                 <input
                   type="email"
                   required
-                  placeholder="name@example.com"
+                  placeholder="Enter your email"
                   className="w-full px-4 py-2.5 text-sm transition-all bg-white border-2 rounded-xl outline-none border-gray-200 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:placeholder-gray-400 dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => setEmail(e.target.value.replace(/[^a-zA-Z0-9@.]/g, ""))} 
                 />
               </div>
 
@@ -317,6 +343,18 @@ export default function BusinessMalaysianEmail() {
               </p>
             </div>
 
+            {message && (
+              <div
+                className={`mb-4 w-full p-4 rounded-lg border text-xs text-center font-medium shadow-sm ${
+                  messageType === "success"
+                    ? "bg-green-50 border-green-200 text-green-600"
+                    : "bg-red-50 border-red-200 text-red-600"
+                }`}
+              >
+                {message}
+              </div>
+            )}
+
             <div className="space-y-6">
               <div className="flex justify-center gap-2">
                 {otp.map((digit, index) => (
@@ -352,11 +390,6 @@ export default function BusinessMalaysianEmail() {
               >
                 {isLoading ? "Verifying..." : "Verify"}
               </button>
-              {message && (
-                <p className="text-center text-sm font-medium text-red-600">
-                  {message}
-                </p>
-              )}
             </div>
 
             <div className="text-center mt-6">

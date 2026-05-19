@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 const admin = require('firebase-admin');
 const fs = require('fs');
+const path = require('path');
 const crypto = require('crypto');
 
 const path = require('path');
@@ -31,6 +32,10 @@ admin.initializeApp({
 
 const db = admin.firestore();
 
+function generateHashID(identifier) {
+  return crypto.createHash('sha256').update(identifier).digest('hex');
+}
+
 async function uploadJPN() {
   try {
     const rawData = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
@@ -40,10 +45,8 @@ async function uploadJPN() {
 
     console.log(`Found ${citizens.length} citizens and ${templates.length} templates.`);
 
-    // Use a batch to upload multiple records efficiently
     const batch = db.batch();
 
-    // Upload Citizens with Deterministic Hashed IDs
     citizens.forEach((citizen, index) => {
       if (!citizen.ic_number) {
         console.error(`Citizen at index ${index} is missing ic_number!`);
@@ -61,7 +64,6 @@ async function uploadJPN() {
       );
     });
 
-    // Upload Face Templates with Deterministic Hashed IDs
     templates.forEach((template, index) => {
       if (!template.ic_number) {
         console.error(`Template at index ${index} is missing ic_number!`);

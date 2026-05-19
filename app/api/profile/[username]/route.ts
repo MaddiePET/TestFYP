@@ -7,14 +7,13 @@ export async function GET(
 ) {
   try {
     const { username } = await context.params;
-    console.log("PROFILE QUERY USERNAME:", username);
 
     const query = `
       SELECT
         u.username,
         u.img,
         c.full_name,
-        c.ph_no_1,
+        c.ph_no,
         c.email,
         sa.occupation,
         a.add_1,

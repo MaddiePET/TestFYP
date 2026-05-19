@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import ChevronLeftIcon from "@/icons/chevron-left.svg";
 import { QRCodeSVG } from "qrcode.react";
 
-export default function BusinessMalaysianMyKadQRCode() {
+export default function PersonalMalaysianMyKadQRCode() {
   const router = useRouter();
 
   const [mobileUrl, setMobileUrl] = useState<string>("");
@@ -152,7 +152,10 @@ export default function BusinessMalaysianMyKadQRCode() {
           Back
         </button>
 
-        <Link href="/" className="flex items-center gap-2">
+        <Link 
+          href="/" 
+          className="flex items-center gap-2"
+        >
           <Image
             src="/images/logo/logo-light.svg"
             alt="Logo"
