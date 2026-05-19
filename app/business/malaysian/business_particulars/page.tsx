@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import ChevronLeftIcon from "@/icons/chevron-left.svg";
 import { useFormData } from "@/context/FormContext";
 
@@ -12,22 +12,47 @@ interface Business {
   name: string;
   type: string;
   start_date: string;
+  msicCode: string;
+  msicName: string;
+
+  address?: {
+    addressLine1: string;
+    addressLine2: string;
+    postcode: string;
+    state: string;
+    country: string;
+  };
 }
 
-const linked_businesses: Business[] = [
-  { id: "bus_1", brn: "202112345678", name: "GoGo Sdn Bhd", type: "Sole Proprietorship", start_date: "2011-01-01" },
-  { id: "bus_2", brn: "202212345678", name: "Boleh Sdn Bhd", type: "Partnership", start_date: "2012-02-02" },
-  { id: "bus_3", brn: "202312345678", name: "Ash Trevino Sdn Bhd", type: "Sole Proprietorship", start_date: "2013-03-03" },
-];
 
 export default function BusinessMalaysianBusinessParticulars() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const journeyId =
+    searchParams.get("journeyId") ||
+    (typeof window !== "undefined" ? localStorage.getItem("journeyId") : "") ||
+    "";
+
+  const idType =
+    searchParams.get("id_type") ||
+    (typeof window !== "undefined" ? localStorage.getItem("id_type") : "") ||
+    "ic";
+
+  const idNum =
+    searchParams.get("id_num") ||
+    (typeof window !== "undefined" ? localStorage.getItem("id_num") : "") ||
+    "";
   
   const [mounted, setMounted] = useState<boolean>(false);
   const [step, setStep] = useState<number>(1);
   const [selectedBusinessId, setSelectedBusinessId] = useState<string>("");
 
   const { formData: globalFormData, setFormData: setGlobalFormData } = useFormData();
+
+  const [linkedBusinesses, setLinkedBusinesses] = useState<Business[]>([]);
+  const [loadingBusinesses, setLoadingBusinesses] = useState<boolean>(true);
+  const [businessError, setBusinessError] = useState<string>("");
 
   const [formData, setFormData] = useState({
     businessName: "",
@@ -38,28 +63,84 @@ export default function BusinessMalaysianBusinessParticulars() {
     month: "",
     year: "",
     businessType: "",
-    role: ""
+    role: "",
+    businessAddress: {
+      addressLine1: "",
+      addressLine2: "",
+      postcode: "",
+      state: "",
+      country: "Malaysia",
+    },
+    
   });
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+
+    if (typeof window === "undefined") return;
+
+    if (journeyId) localStorage.setItem("journeyId", journeyId);
+    if (idType) localStorage.setItem("id_type", idType);
+    if (idNum) localStorage.setItem("id_num", idNum);
+  }, [journeyId, idType, idNum]);
+
+  useEffect(() => {
+    async function fetchLinkedBusinesses() {
+      try {
+        if (!idNum) {
+          setBusinessError("IC number is missing. Please return to the previous step.");
+          setLoadingBusinesses(false);
+          return;
+        }
+
+        const response = await fetch(
+          `/api/identity/lookup?lookup=ssm_businesses&id_num=${encodeURIComponent(idNum)}`
+        );
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          setBusinessError(data.message || "Failed to retrieve linked businesses.");
+          setLoadingBusinesses(false);
+          return;
+        }
+
+        setLinkedBusinesses(data.businesses || []);
+      } catch (error) {
+        console.error(error);
+        setBusinessError("Unable to load linked businesses.");
+      } finally {
+        setLoadingBusinesses(false);
+      }
+    }
+
+    fetchLinkedBusinesses();
+  }, [idNum]);
 
   useEffect(() => {
     if (selectedBusinessId) {
-      const biz = linked_businesses.find((b) => b.id === selectedBusinessId);
+      const biz = linkedBusinesses.find((b) => b.id === selectedBusinessId);
       if (biz) {
         const [y, m, d] = biz.start_date.split("-");
         setFormData({
           businessName: biz.name,
           brn: biz.brn,
-          msicCode: "",
-          msicName: "",
+          msicCode: biz.msicCode,
+          msicName: biz.msicName,
           day: d,
           month: m,
           year: y,
           businessType: biz.type,
-          role: ""
+          role: "",
+
+          businessAddress: biz.address || {
+            addressLine1: "",
+            addressLine2: "",
+            postcode: "",
+            state: "",
+            country: "Malaysia",
+          },
+
         });
       }
     }
@@ -67,7 +148,13 @@ export default function BusinessMalaysianBusinessParticulars() {
 
   const handleBack = () => {
     if (step === 1) {
-      router.push("/business/malaysian/info");
+      router.push(
+      `/business/malaysian/business_address?id_type=${encodeURIComponent(
+        idType
+      )}&id_num=${encodeURIComponent(idNum)}&journeyId=${encodeURIComponent(
+        journeyId
+      )}`
+    );
     } else {
       setStep(1);
     }
@@ -78,20 +165,44 @@ export default function BusinessMalaysianBusinessParticulars() {
   };
 
   const handleFinalSubmit = () => {
-    setGlobalFormData({
-      ...globalFormData,
-      businessParticulars: {
-        businessName: formData.businessName,
-        brn: formData.brn,
-        startDate: `${formData.year}-${formData.month.padStart(2, "0")}-${formData.day.padStart(2, "0")}`,
-        businessType: formData.businessType,
-        role: formData.role,
-        msicCode: formData.msicCode,
-        msicName: formData.msicName
-      },
+    
+      setGlobalFormData({
+        ...globalFormData,
+        journeyId,
+        idType,
+        idNum,
+        businessParticulars: {
+          businessName: formData.businessName,
+          brn: formData.brn,
+          startDate: `${formData.year}-${formData.month.padStart(2, "0")}-${formData.day.padStart(2, "0")}`,
+          businessType: formData.businessType,
+          role: formData.role,
+          msicCode: formData.msicCode,
+          msicName: formData.msicName,
+        },
+
+        businessAddress: {
+            businessAddress: formData.businessAddress,
+            mailingAddress: {
+              addressLine1: "",
+              addressLine2: "",
+              postcode: "",
+              state: "",
+              country: "Malaysia",
+            },
+            isMailingSameAsBusiness: null,
+            preferredBranch: "",
+        },   
+      
     });
 
-    router.push("/business/malaysian/business_address");
+    router.push(
+      `/business/malaysian/business_address?id_type=${encodeURIComponent(
+        idType
+      )}&id_num=${encodeURIComponent(idNum)}&journeyId=${encodeURIComponent(
+        journeyId
+      )}`
+    );
   };
 
   const inputClasses =
@@ -176,7 +287,26 @@ export default function BusinessMalaysianBusinessParticulars() {
             </div>
 
             <div className="space-y-4">
-              {linked_businesses.map((business) => {
+              
+              {loadingBusinesses && (
+                <p className="text-sm text-center text-gray-500 dark:text-gray-400">
+                  Loading linked businesses...
+                </p>
+              )}
+
+              {businessError && (
+                <p className="text-sm text-center text-red-500">
+                  {businessError}
+                </p>
+              )}
+
+              {!loadingBusinesses && !businessError && linkedBusinesses.length === 0 && (
+                <p className="text-sm text-center text-gray-500 dark:text-gray-400">
+                  No registered business linked with your IC number.
+                </p>
+              )}
+
+              {linkedBusinesses.map((business) => {
                 const isSelected = selectedBusinessId === business.id;
                 return (
                   <div
@@ -213,14 +343,24 @@ export default function BusinessMalaysianBusinessParticulars() {
             </div>
 
             <div className="mt-8 flex flex-col items-center">
-              <button
-                type="button"
-                onClick={handleNextStep1}
-                disabled={!selectedBusinessId}
-                className="inline-flex items-center justify-center w-full px-4 py-3 text-sm font-bold transition rounded-lg shadow-theme-xs bg-[#3D405B] text-white hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d] disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed dark:disabled:bg-gray-800 dark:disabled:text-gray-600 active:scale-[0.98]"
-              >
-                Continue
-              </button>
+              {!loadingBusinesses && !businessError && linkedBusinesses.length === 0 ? (
+                <button
+                  type="button"
+                  onClick={() => router.push("/")}
+                  className="inline-flex items-center justify-center w-full px-4 py-3 text-sm font-bold transition rounded-lg shadow-theme-xs bg-[#3D405B] text-white hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d] active:scale-[0.98]"
+                >
+                  Cancel Process
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleNextStep1}
+                  disabled={!selectedBusinessId || loadingBusinesses}
+                  className="inline-flex items-center justify-center w-full px-4 py-3 text-sm font-bold transition rounded-lg shadow-theme-xs bg-[#3D405B] text-white hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d] disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed dark:disabled:bg-gray-800 dark:disabled:text-gray-600 active:scale-[0.98]"
+                >
+                  Continue
+                </button>
+              )}
 
               <div className="mt-5 text-center">
                 <p className="text-sm">
@@ -254,20 +394,20 @@ export default function BusinessMalaysianBusinessParticulars() {
               <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                 <div className="md:col-span-2">
                   <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-                    Business Name<span className="text-red-500">*</span>
+                    Business Name
                   </label>
 
                   <input
                     type="text"
-                    className={inputClasses}
+                    className={readOnlyClasses}
                     value={formData.businessName}
-                    onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
+                    readOnly 
                   />
                 </div>
 
                 <div className="md:col-span-2">
                   <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-                    Business Registration Number (BRN)<span className="text-red-500">*</span>
+                    Business Registration Number (BRN)
                   </label>
 
                   <input 
@@ -281,11 +421,11 @@ export default function BusinessMalaysianBusinessParticulars() {
                 <div className="md:col-span-2">
                   <div className="grid grid-cols-2 gap-2">
                     <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-                      MSIC Code<span className="text-red-500">*</span>
+                      MSIC Code                     
                     </label>
 
                     <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-                      MSIC Name<span className="text-red-500">*</span>
+                      MSIC Name                    
                     </label>
                   </div>
 
@@ -293,17 +433,17 @@ export default function BusinessMalaysianBusinessParticulars() {
                     <input
                       type="string"
                       placeholder="00000"
-                      className={inputClasses}
+                      className={readOnlyClasses}
                       value={formData.msicCode}
-                      onChange={(e) => setFormData({...formData, msicCode: e.target.value})}
+                      readOnly 
                     />
 
                     <input
                       type="string"
                       placeholder="Title"
-                      className={inputClasses}
+                      className={readOnlyClasses}
                       value={formData.msicName}
-                      onChange={(e) => setFormData({...formData, msicName: e.target.value})}
+                      readOnly 
                     />
                   </div>
                 </div>
@@ -315,33 +455,25 @@ export default function BusinessMalaysianBusinessParticulars() {
 
                   <div className="grid grid-cols-3 gap-3">
                     <input
-                      type="number"
-                      min="1"
-                      max="31"
-                      placeholder="DD"
-                      className={inputClasses}
+                      type="string"
+                      className={readOnlyClasses}
                       value={formData.day}
-                      onChange={(e) => setFormData({...formData, day: e.target.value.replace(/[^0-9]/g, "").slice(0, 2),})}
+                      readOnly 
                     />
 
                     <input
-                      type="number"
-                      min="1"
-                      max="12"
-                      placeholder="MM"
-                      className={inputClasses}
+                      type="string"
+                      className={readOnlyClasses}
                       value={formData.month}
-                      onChange={(e) => setFormData({...formData, month: e.target.value.replace(/[^0-9]/g, "").slice(0, 2),})}
+                      readOnly 
                     />
+                    
 
                     <input
-                      type="number"
-                      min="1900"
-                      max="2100"
-                      placeholder="YYYY"
-                      className={inputClasses}
+                      type="string"
+                      className={readOnlyClasses}
                       value={formData.year}
-                      onChange={(e) => setFormData({...formData, year: e.target.value.replace(/[^0-9]/g, "").slice(0, 4),})}
+                      readOnly 
                     />
                   </div>
                 </div>
@@ -356,28 +488,13 @@ export default function BusinessMalaysianBusinessParticulars() {
                       </label>
 
                       <div className="relative">
-                        <select
-                          value={formData.businessType}
-                          onChange={(e) =>
-                            setFormData({ ...formData, businessType: e.target.value })
-                          }
-                          className={inputClasses}
-                        >
-                          <option value="" disabled>
-                            Select Type
-                          </option>
 
-                          {[
-                            "Sole Proprietorship",
-                            "Partnership",
-                            "Private Limited (Sdn Bhd)",
-                            "Limited Liability Partnership (LLP)",
-                          ].map((type) => (
-                            <option key={type} value={type}>
-                              {type}
-                            </option>
-                          ))}
-                        </select>
+                        <input
+                          type="string"
+                          className={readOnlyClasses}
+                          value={formData.businessType}
+                          readOnly 
+                        />
 
                         <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
                           <svg
@@ -386,12 +503,6 @@ export default function BusinessMalaysianBusinessParticulars() {
                             stroke="currentColor"
                             viewBox="0 0 24 24"
                           >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="2"
-                              d="M19 9l-7 7-7-7"
-                            />
                           </svg>
                         </div>
                       </div>

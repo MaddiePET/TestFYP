@@ -10,6 +10,7 @@ import { useFormData } from "@/context/FormContext";
 export default function BusinessMalaysianInfo() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { formData: globalFormData, setFormData: setGlobalFormData } = useFormData();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -30,6 +31,7 @@ export default function BusinessMalaysianInfo() {
     state: "",
     country: "Malaysia",
   });
+
 
   const formatDateForFields = (value: unknown) => {
     if (!value) return { day: "", month: "January", year: "" };
@@ -116,6 +118,7 @@ export default function BusinessMalaysianInfo() {
     if (typeof window === "undefined") return;
 
     const currentJourneyId = searchParams.get("journeyId") || "";
+    
     const savedJourneyId = localStorage.getItem("journeyId");
 
     // NEW JOURNEY DETECTED
@@ -210,6 +213,31 @@ export default function BusinessMalaysianInfo() {
     const dob = `${formData.dobYear}-${monthMap[formData.dobMonth]}-${formData.dobDay}`;
     const fullPhone = `${formData.phoneCode}${formData.phoneNumber}`;
 
+    const personalInfo = {
+        id_num: formData.nric,
+        fullName: formData.fullName,
+        full_name: formData.fullName,
+        id_type: "IC",
+        dob,
+        ph_no_1: fullPhone,
+        ph_no_2: null,
+        country: formData.country,
+        add1: formData.add1,
+        add2: formData.add2,
+        postcode: formData.postal,
+        state: formData.state,
+      };
+
+      setGlobalFormData({
+      ...globalFormData,
+      journeyId: searchParams.get("journeyId") || "",
+      idType: "ic",
+      idNum: formData.nric,
+      personalInfo,
+    });
+
+
+
     localStorage.setItem(
       "personalInfo",
       JSON.stringify({
@@ -241,7 +269,7 @@ export default function BusinessMalaysianInfo() {
 
 
     router.push(
-      `/business/malaysian/business_particular?id_type=ic&id_num=${encodeURIComponent(
+      `/business/malaysian/business_particulars?id_type=ic&id_num=${encodeURIComponent(
         formData.nric
       )}&journeyId=${encodeURIComponent(searchParams.get("journeyId") || "")}`
     );

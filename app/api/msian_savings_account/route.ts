@@ -21,7 +21,7 @@ let db: admin.firestore.Firestore | null = null;
 function getDb() {
   if (!db) {
     admin.initializeApp({
-      credential: admin.credential.cert(loadFirebaseServiceAccount()),
+      credential: admin.credential.cert(loadFirebaseServiceAccount("jpn")),
     });
     db = admin.firestore();
   }
