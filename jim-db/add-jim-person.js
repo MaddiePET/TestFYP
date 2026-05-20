@@ -13,16 +13,16 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 
 const personData = {
-  "passport_no": "MF676842",
-  "full_name": "MYAT PAN EI THU",
-  "date_of_birth": "1998-10-22",
+  "passport_no": "A62595296",
+  "full_name": "ASHLEY TANG WAY YAN",
+  "date_of_birth": "2003-09-09",
   "sex": "F",
-  "exp_date": "2027-02-17",
-  "nationality": "Myanmar",
-  "country": "MMR",
-  "issue_date": "2022-02-18",
-  "issue_office": "YANGON",
-  "passport_photo": "\\xffd8ffe000104a464946",
+  "exp_date": "2029-12-03",
+  "nationality": "Malaysia",
+  "country": "MYS",
+  "issue_date": "2024-12-03",
+  "issue_office": "PUCHONG",
+  "passport_photo": "\\xcwqe23094833hisfd",
   "visa_type": "Student",
   "photo_pattern": "DEF123"
 };

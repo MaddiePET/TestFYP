@@ -65,17 +65,17 @@ export default function PersonalMalaysianAccountCreation() {
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setProfileFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const dataUrl = reader.result as string;
-        setProfilePreview(dataUrl)
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+      const file = e.target.files?.[0];
+      if (file) {
+        setProfileFile(file);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const dataUrl = reader.result as string;
+          setProfilePreview(dataUrl); 
+        };
+        reader.readAsDataURL(file);
+      }
+    };
 
   const handleNext = () => {
     if (step === "profile") setStep("password");

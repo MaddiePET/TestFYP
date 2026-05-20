@@ -24,6 +24,7 @@ export default function PersonalNonMalaysianAccountCreation() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -295,6 +296,7 @@ export default function PersonalNonMalaysianAccountCreation() {
                       <span className="text-[10px] text-gray-400 uppercase font-bold group-hover:text-[#F0CA8E] transition-colors">Upload</span>
                     </div>
                   )}
+
                   <input 
                     type="file" 
                     ref={fileInputRef} 
@@ -310,11 +312,7 @@ export default function PersonalNonMalaysianAccountCreation() {
                       key={idx}
                       type="button"
                       onClick={() => setProfilePreview(url)}
-                      className={`w-10 h-10 rounded-full border-2 transition-all overflow-hidden ${
-                        profilePreview === url 
-                          ? 'border-[#3D405B] scale-110' 
-                          : 'border-transparent hover:border-gray-300'
-                      }`}
+                      className={`w-10 h-10 rounded-full border-2 transition-all overflow-hidden ${profilePreview === url ? 'border-[#3D405B] scale-110' : 'border-transparent hover:border-gray-300'}`}
                     >
                       <img 
                         src={url} 
@@ -462,18 +460,32 @@ export default function PersonalNonMalaysianAccountCreation() {
                 </p>
               </div>
 
-              <div>
-                <Label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-                  Confirm Password<span className="text-error-500">*</span>
-                </Label>
-
+              <div className="relative">
                 <input
-                  type="password"
+                  type={showConfirmPassword ? "text" : "password"}
                   className="w-full px-4 py-2.5 text-sm transition-all bg-white border-2 rounded-xl outline-none border-gray-200 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:placeholder-gray-400 dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40"
                   placeholder="Confirm your password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                 />
+
+                {confirmPassword.length > 0 && password !== confirmPassword && (
+                  <p className="mt-2 text-[10px] text-red-500">
+                    Passwords do not match
+                  </p>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
+                >
+                  {showConfirmPassword ? (
+                    <EyeIcon className="w-5 h-5" />
+                  ) : (
+                    <EyeCloseIcon className="w-5 h-5" />
+                  )}
+                </button>
               </div>
 
               <button 

@@ -20,6 +20,7 @@ export default function PersonalMalaysianInfo() {
     nric: "",
     dobDay: "",
     dobMonth: "",
+    dobMonth: "",
     dobYear: "",
     phoneCode: "+60",
     phoneNumber: "",
@@ -150,7 +151,7 @@ export default function PersonalMalaysianInfo() {
   }, []); 
 
   const handleNavigation = async () => {
-    if (isSubmitting) return;
+   if (isSubmitting) return;
 
     try {
       setIsSubmitting(true);

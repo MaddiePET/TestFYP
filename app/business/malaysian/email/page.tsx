@@ -12,7 +12,11 @@ type MessageType = "success" | "error" | "";
 
 export default function BusinessMalaysianEmail() {
   const router = useRouter();
-
+  const searchParams = useSearchParams();
+  const journeyId =
+    searchParams.get("journeyId") ||
+    (typeof window !== "undefined" ? localStorage.getItem("journeyId") : "") ||
+    "";
   const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState<Step>("input");
   const [email, setEmail] = useState("");
@@ -25,11 +29,7 @@ export default function BusinessMalaysianEmail() {
   const { formData, setFormData } = useFormData();
 
   const otpInputs = useRef<(HTMLInputElement | null)[]>([]);
-  
-  const searchParams = useSearchParams();
-
-  const journeyId = searchParams.get("journeyId") || (typeof window !== "undefined" ? localStorage.getItem("journeyId") : "") ||  "";
-  
+ 
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -128,7 +128,7 @@ export default function BusinessMalaysianEmail() {
         }),
       });
 
-      const data = await res.json();
+    const data = await res.json();
 
       if (!res.ok) {
         setMessage(data.error || "Invalid OTP. Please try again.");
@@ -137,14 +137,15 @@ export default function BusinessMalaysianEmail() {
         return;
       }
 
-      setFormData((prev: any) => ({
-        ...prev,
-        contactInfo: {
-          ...prev?.contactInfo,
-          email: email.trim(),
-          emailVerified: true,
-        },
-      }));
+    // Save the verified business email into the shared form context.
+    setFormData((prev: any) => ({
+      ...prev,
+      contactInfo: {
+        ...prev?.contactInfo,
+        email: email.trim(),
+        emailVerified: true,
+      },
+    }));
 
       const statusRes = await fetch(
         `/api/ekyc/status?journeyId=${encodeURIComponent(journeyId)}`
@@ -320,6 +321,12 @@ export default function BusinessMalaysianEmail() {
               >
                 {isLoading ? "Processing..." : "Continue"}
               </button>
+
+              {message && (
+                <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm text-center">
+                  {message}
+                 </div>
+                )}
             </form>
           </div>
         )}
@@ -364,6 +371,12 @@ export default function BusinessMalaysianEmail() {
                   />
                 ))}
               </div>
+
+              {message && (
+               <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm text-center">
+                {message}
+              </div>
+              )}
 
               <button
                 type="button"

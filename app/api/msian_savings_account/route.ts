@@ -21,16 +21,10 @@ let db: admin.firestore.Firestore | null = null;
 
 function getDb() {
   if (!db) {
-    const appName = "jpn-app";
-
-    const jpnApp = admin.apps.find((app) => app?.name === appName)
-      || admin.initializeApp({
-          credential: admin.credential.cert(loadFirebaseServiceAccount('jpn')),
-        },
-        appName
-      );
-
-    db = jpnApp.firestore();
+    admin.initializeApp({
+      credential: admin.credential.cert(loadFirebaseServiceAccount("jpn")),
+    });
+    db = admin.firestore();
   }
   return db;
 }

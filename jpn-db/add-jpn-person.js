@@ -13,14 +13,14 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 
 const personData = {
-  ic_number: "030909102074",
+  ic_number: "A62595296",
   full_name: "ASHLEY TANG WAY YAN",
   date_of_birth: "2003-09-09",
-  phone_registered: "01133394826",
-  add1: "F-2-02, Blok F, Palm Spring Condominiums",
-  add2: "JLN PJU 3/29 PJU 3, 47810 Petaling Jaya, Selangor",
-  postcode: "47810",
-  state: "Selangor",
+  phone_registered: "1133394826",
+  add1: "123 JALAN FAKE ADD",
+  add2: "47500, Subang Jaya",
+  postcode: "47500",
+  state: "SELANGOR",
   ic_photo: "\\xffd8ffe000104a464946",
   photo_pattern: "ABC123",
 };

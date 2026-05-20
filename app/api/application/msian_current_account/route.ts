@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { hashPassword } from "@/hashpw";
 
+// Generates a random 16 digit savings account number
 function generateAccountNumber() {
   let accountNo = "";
 
@@ -28,12 +29,32 @@ export async function POST(req: Request) {
     console.log("businessAddress.mailingAddress:", data.businessAddress?.mailingAddress);
     console.log("business details:", data.businessParticulars);
 
+    const personalInfo = data.personalInfo || {};
     const personalAddress = {
-      add_1: data.personalInfo?.streetAddress || "",
-      add_2: data.personalInfo?.city || "",
-      postcode: data.personalInfo?.postal || "",
-      state: data.personalInfo?.state || "",
-      country: data.personalInfo?.country || "Malaysia",
+      add_1:
+        personalInfo.add_1 ||
+        personalInfo.streetAddress ||
+        personalInfo.add1 ||
+        "",
+
+      add_2:
+        personalInfo.add_2 ||
+        personalInfo.city ||
+        personalInfo.add2 ||
+        "",
+
+      postcode:
+        personalInfo.postcode ||
+        personalInfo.postal ||
+        "",
+
+      state:
+        personalInfo.state ||
+        "",
+
+      country:
+        personalInfo.country ||
+        "Malaysia",
     };
 
     if (!personalAddress.add_1) throw new Error("Personal address line 1 is missing");
@@ -75,12 +96,12 @@ export async function POST(req: Request) {
       RETURNING cust_id
       `,
       [
-        data.personalInfo?.id_num || null,
-        data.personalInfo?.fullName || null,
+        data.personalInfo?.id_num || personalInfo.idNumber,
+        data.personalInfo?.fullName || personalInfo.full_name,
         "IC",
-        data.personalInfo?.dob || null,
-        data.phoneVerification?.phoneNumber || null,
-        data.contactInfo?.email || null,
+        data.personalInfo?.dob || personalInfo.date_of_birth ,
+        data.phoneVerification?.phoneNumber || personalInfo.ph_no_1,
+        data.contactInfo?.email || personalInfo.email ,
         home_add,
       ]
     );
@@ -124,14 +145,14 @@ export async function POST(req: Request) {
 
     const businessAddress = {
       add_1:
-        data.businessAddress?.businessAddress?.streetAddress ||
-        data.businessAddress?.streetAddress || "",
+        data.businessAddress?.businessAddress?.addressLine1 ||
+        data.businessAddress?.addressLine1 || "",
       add_2:
-        data.businessAddress?.businessAddress?.city ||
-        data.businessAddress?.city || "",
+        data.businessAddress?.businessAddress?.addressLine2 ||
+        data.businessAddress?.addressLine2 || "",
       postcode:
-        data.businessAddress?.businessAddress?.postal ||
-        data.businessAddress?.postal || "",
+        data.businessAddress?.businessAddress?.postcode ||
+        data.businessAddress?.postcode || "",
       state:
         data.businessAddress?.businessAddress?.state ||
         data.businessAddress?.state || "",
@@ -142,9 +163,9 @@ export async function POST(req: Request) {
     if (!businessAddress.add_1) throw new Error("Business address line 1 is missing");
 
     const mailingAddress = {
-      add_1: data.businessAddress?.mailingAddress?.streetAddress || "",
-      add_2: data.businessAddress?.mailingAddress?.city || "",
-      postcode: data.businessAddress?.mailingAddress?.postal || "",
+      add_1: data.businessAddress?.mailingAddress?.addressLine1 || "",
+      add_2: data.businessAddress?.mailingAddress?.addressLine2 || "",
+      postcode: data.businessAddress?.mailingAddress?.postcode || "",
       state: data.businessAddress?.mailingAddress?.state || "",
       country: data.businessAddress?.mailingAddress?.country || "Malaysia",
     };
@@ -197,6 +218,7 @@ export async function POST(req: Request) {
       mail_add_id = mailingAddressRes.rows[0].add_id;
     }
 
+    // 7. Generate a unique 16 digit current account number
     let accountNo = generateAccountNumber();
     let accountExists = true;
 

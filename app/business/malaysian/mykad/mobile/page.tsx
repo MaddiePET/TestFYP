@@ -139,6 +139,7 @@ function BusinessMalaysianMobileMyKadCapture() {
         throw new Error("IC number could not be extracted");
       }
 
+<<<<<<< HEAD
       const compressedBase64 = await compressImage(fImg);
       localStorage.setItem("ekyc_id_image", compressedBase64);
 
@@ -153,6 +154,17 @@ function BusinessMalaysianMobileMyKadCapture() {
           id_type: "ic",
           id_num: icNo
         })
+=======
+      await fetch("/api/ekyc/status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          journeyId,
+          status: "verified",
+          id_type: "ic",
+          id_num: icNo,
+        }),
+>>>>>>> origin/ashley
       });
 
       setSuccess(true);

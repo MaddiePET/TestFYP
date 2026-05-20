@@ -10,6 +10,7 @@ import { useFormData } from "@/context/FormContext";
 export default function BusinessMalaysianInfo() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { formData: globalFormData, setFormData: setGlobalFormData } = useFormData();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -25,11 +26,12 @@ export default function BusinessMalaysianInfo() {
     phoneCode: "+60",
     phoneNumber: "",
     add1: "",
-    add2: "",
     postal: "",
+    add2: "",
     state: "",
     country: "Malaysia",
   });
+
 
   const formatDateForFields = (value: unknown) => {
     if (!value) return { day: "", month: "January", year: "" };
@@ -76,8 +78,8 @@ export default function BusinessMalaysianInfo() {
       phoneCode: "+60",
       phoneNumber: identity.ph_no_1 || identity.phone_number || identity.phoneNumber || "",
       add1: identity.add1 || identity.address_line_1 || identity.address || identity.home_address || "",
-      add2: identity.add2 || identity.address_line_2 || "",
       postal: identity.postcode || identity.postal_code || identity.postal || "",
+      add2: identity.add2 || identity.address_line_2 || "",
       state: identity.state || "",
       country: identity.country || "Malaysia",
     };
@@ -112,12 +114,14 @@ export default function BusinessMalaysianInfo() {
 
   useEffect(() => {
     setMounted(true);
-  
+
     if (typeof window === "undefined") return;
-  
+
     const currentJourneyId = searchParams.get("journeyId") || "";
+    
     const savedJourneyId = localStorage.getItem("journeyId");
-  
+
+    // NEW JOURNEY DETECTED
     if (savedJourneyId && savedJourneyId !== currentJourneyId) {
       localStorage.removeItem("personalInfo");
       localStorage.removeItem("homeAddress");
@@ -125,30 +129,64 @@ export default function BusinessMalaysianInfo() {
       localStorage.removeItem("id_num");
       localStorage.removeItem("id_type");
     }
-  
+
+    // SAVE CURRENT JOURNEY
     localStorage.setItem("journeyId", currentJourneyId);
-  
+
     const queryParams = new URLSearchParams(window.location.search);
-  
+
     const idType =
       queryParams.get("id_type") ||
       localStorage.getItem("id_type") ||
       "ic";
-  
+
     const idNum =
       queryParams.get("id_num") ||
       localStorage.getItem("id_num") ||
       "";
-  
+
+    // LOAD SAVED PERSONAL INFO FIRST
+    const savedInfo = JSON.parse(
+      localStorage.getItem("personalInfo") || "{}"
+    );
+
+    const savedHome = JSON.parse(
+      localStorage.getItem("homeAddress") || "{}"
+    );
+
+    if (savedInfo.full_name || savedHome.add_1) {
+      const dob = savedInfo.dob
+        ? formatDateForFields(savedInfo.dob)
+        : { day: "", month: "January", year: "" };
+
+      setFormData({
+        fullName: savedInfo.full_name || "",
+        nric: savedInfo.id_num || idNum,
+        dobDay: dob.day,
+        dobMonth: dob.month,
+        dobYear: dob.year,
+        phoneCode: "+60",
+        phoneNumber: savedInfo.ph_no_1?.replace("+60", "") || "",
+        add1: savedHome.add_1 || "",
+        add2: savedHome.add_2 || "",
+        postal: savedHome.postcode || "",
+        state: savedHome.state || "",
+        country: savedHome.country || "Malaysia",
+      });
+
+      return;
+    }
+
+    // OTHERWISE FETCH FROM API
     if (idNum) {
       setFormData((prev) => ({
         ...prev,
         nric: idNum,
       }));
-  
+
       fetchIdentity(idType, idNum);
     }
-  }, []); 
+  }, []);
 
   const handleNavigation = async () => {
    if (isSubmitting) return;
@@ -174,6 +212,31 @@ export default function BusinessMalaysianInfo() {
 
     const dob = `${formData.dobYear}-${monthMap[formData.dobMonth]}-${formData.dobDay}`;
     const fullPhone = `${formData.phoneCode}${formData.phoneNumber}`;
+
+    const personalInfo = {
+        id_num: formData.nric,
+        fullName: formData.fullName,
+        full_name: formData.fullName,
+        id_type: "IC",
+        dob,
+        ph_no_1: fullPhone,
+        ph_no_2: null,
+        country: formData.country,
+        add1: formData.add1,
+        add2: formData.add2,
+        postcode: formData.postal,
+        state: formData.state,
+      };
+
+      setGlobalFormData({
+      ...globalFormData,
+      journeyId: searchParams.get("journeyId") || "",
+      idType: "ic",
+      idNum: formData.nric,
+      personalInfo,
+    });
+
+
 
     localStorage.setItem(
       "personalInfo",
@@ -204,8 +267,11 @@ export default function BusinessMalaysianInfo() {
     localStorage.setItem("id_num", formData.nric);
     localStorage.setItem("journeyId", searchParams.get("journeyId") || "");
 
+
     router.push(
-      `/business/malaysian/business_particulars?id_type=ic&id_num=${encodeURIComponent(formData.nric)}&journeyId=${encodeURIComponent(searchParams.get("journeyId") || "")}`
+      `/business/malaysian/business_particulars?id_type=ic&id_num=${encodeURIComponent(
+        formData.nric
+      )}&journeyId=${encodeURIComponent(searchParams.get("journeyId") || "")}`
     );
   } catch (error: any) {
     console.error("Submission error:", error);
@@ -261,24 +327,10 @@ export default function BusinessMalaysianInfo() {
         </svg>
       </div>
 
-      <div className="absolute bottom-0 left-0 w-full leading-none z-0 pointer-events-none opacity-20">
-        <svg
-          className="relative block w-full h-24 sm:h-32 md:h-48 lg:h-64"
-          preserveAspectRatio="none"
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 1440 320"
-        >
-          <path
-            className="fill-[#F0CA8E]"
-            d="M0,224L34.3,192C68.6,160,137,96,206,90.7C274.3,85,343,139,411,144C480,149,549,107,617,122.7C685.7,139,754,213,823,240C891.4,267,960,245,1029,224C1097.1,203,1166,181,1234,160C1302.9,139,1371,117,1406,106.7L1440,96L1440,320L1405.7,320C1371.4,320,1303,320,1234,320C1165.7,320,1097,320,1029,320C960,320,891,320,823,320C754.3,320,686,320,617,320C548.6,320,480,320,411,320C342.9,320,274,320,206,320C137.1,320,69,320,34,320L0,320Z"
-          />
-        </svg>
-      </div>
-
       <div className="absolute top-6 left-4 right-4 flex justify-between items-center max-w-7xl mx-auto w-full z-20">
         <button
           type="button"
-          onClick={() => router.push("/business/malaysian/email")}
+          onClick={() => router.push("/personal/malaysian/email")}
           className="inline-flex items-center text-sm text-gray-600 dark:text-white/80 transition-colors hover:text-gray-900 dark:hover:text-white"
         >
           <ChevronLeftIcon className="w-5 h-5" />
@@ -286,16 +338,13 @@ export default function BusinessMalaysianInfo() {
           Back
         </button>
 
-        <Link 
-          href="/" 
-          className="flex items-center gap-2"
-        >
-          <Image
-            src="/images/logo/logo-light.svg"
-            alt="Logo"
-            width={40}
-            height={40}
-            className="block dark:invert-0 invert"
+        <Link href="/" className="flex items-center gap-2">
+          <Image 
+            src="/images/logo/logo-light.svg" 
+            alt="Logo" 
+            width={40} 
+            height={40} 
+            className="block dark:invert-0 invert" 
           />
 
           <h1 className="text-2xl font-bold uppercase tracking-tight text-gray-800 dark:text-white">
@@ -304,7 +353,7 @@ export default function BusinessMalaysianInfo() {
         </Link>
       </div>
 
-      <div className="relative w-full max-w-4xl mt-10 z-10">
+      <div className="relative w-full max-w-4xl mt-10 z-10 ">
         <div className="mb-10 text-center">
           <h1 className="mb-3 font-bold text-gray-800 text-title-sm dark:text-white sm:text-title-md">
             Verify Your Personal Information
@@ -323,6 +372,7 @@ export default function BusinessMalaysianInfo() {
                   Full Name<span className="text-red-500">*</span>
                 </label>
 
+<<<<<<< HEAD
                 <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
                   <input
                     type="text"
@@ -331,6 +381,15 @@ export default function BusinessMalaysianInfo() {
                     value={formData.fullName}
                   />
                 </div>
+=======
+                <input 
+                  type="text" 
+                  readOnly
+                  className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none cursor-not-allowed" 
+                  value={formData.fullName} 
+                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })} 
+                />
+>>>>>>> origin/ashley
               </div>
 
               <div>
@@ -338,6 +397,7 @@ export default function BusinessMalaysianInfo() {
                   NRIC<span className="text-red-500">*</span>
                 </label>
 
+<<<<<<< HEAD
                 <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
                   <input
                     type="text"
@@ -346,6 +406,15 @@ export default function BusinessMalaysianInfo() {
                     value={formData.nric}
                   />
                 </div>
+=======
+                <input 
+                  type="text" 
+                  readOnly 
+                  className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none cursor-not-allowed" 
+                  value={formData.nric} 
+                  onChange={(e) => setFormData({ ...formData, nric: e.target.value })} 
+                />
+>>>>>>> origin/ashley
               </div>
 
               <div>
@@ -353,6 +422,7 @@ export default function BusinessMalaysianInfo() {
                   Date of Birth<span className="text-red-500">*</span>
                 </label>
 
+<<<<<<< HEAD
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
                     <input
@@ -379,6 +449,88 @@ export default function BusinessMalaysianInfo() {
                       className="w-full min-w-0 bg-transparent text-sm font-bold text-gray-700 dark:text-gray-200 outline-none cursor-not-allowed"
                       value={formData.dobYear}
                     />
+=======
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="relative">
+                    <select 
+                      value={formData.dobDay} 
+                      disabled
+                      onChange={(e) => setFormData({ ...formData, dobDay: e.target.value })} 
+                      className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none cursor-not-allowed"
+                    >
+                      {Array.from({ length: 31 }, (_, i) => (i + 1).toString().padStart(2, "0")).map((opt) => (<option key={opt} value={opt}>{opt}</option>))}
+                    </select>
+
+                    <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
+                      <svg 
+                        className="w-4 h-4 text-gray-400" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round" 
+                          strokeWidth="2" 
+                          d="M19 9l-7 7-7-7" 
+                        />
+                      </svg>
+                    </div>
+                  </div>
+
+                  <div className="relative">
+                    <select 
+                      value={formData.dobMonth} 
+                      disabled
+                      onChange={(e) => setFormData({ ...formData, dobMonth: e.target.value })} 
+                      className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none cursor-not-allowed"
+                    >
+                      {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map((opt) => (<option key={opt} value={opt}>{opt}</option>))}
+                    </select>
+
+                    <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
+                      <svg 
+                        className="w-4 h-4 text-gray-400" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round" 
+                          strokeWidth="2" 
+                          d="M19 9l-7 7-7-7" 
+                        />
+                      </svg>
+                    </div>
+                  </div>
+
+                  <div className="relative">
+                    <select 
+                      value={formData.dobYear} 
+                      disabled
+                      onChange={(e) => setFormData({ ...formData, dobYear: e.target.value })} 
+                      className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none cursor-not-allowed"
+                    >
+                      {Array.from({ length: 100 }, (_, i) => (2025 - i).toString()).map((opt) => (<option key={opt} value={opt}>{opt}</option>))}
+                    </select>
+
+                    <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
+                      <svg 
+                        className="w-4 h-4 text-gray-400" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round" 
+                          strokeWidth="2" 
+                          d="M19 9l-7 7-7-7" 
+                        />
+                      </svg>
+                    </div>
+>>>>>>> origin/ashley
                   </div>
                 </div>
               </div>
@@ -399,6 +551,7 @@ export default function BusinessMalaysianInfo() {
                     <span className="text-sm font-bold text-gray-700 dark:text-gray-200">{formData.phoneCode}</span>
                   </div>
 
+<<<<<<< HEAD
                   <div className="flex-1 flex items-center gap-2 px-4 py-2.5 border-2 rounded-r-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
                     <input
                       type="text"
@@ -407,6 +560,15 @@ export default function BusinessMalaysianInfo() {
                       value={formData.phoneNumber}
                     />
                   </div>
+=======
+                  <input 
+                    type="text" 
+                    readOnly
+                    className="w-full px-4 py-2.5 text-sm font-medium transition-all bg-white border-2 rounded-r-xl outline-none border-gray-200 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:placeholder-gray-400 dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 cursor-not-allowed" 
+                    value={formData.phoneNumber} 
+                    onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })} 
+                  />
+>>>>>>> origin/ashley
                 </div>
               </div>
             </div>
@@ -417,6 +579,7 @@ export default function BusinessMalaysianInfo() {
                   Address 1<span className="text-red-500">*</span>
                 </label>
 
+<<<<<<< HEAD
                 <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
                   <input
                     type="text"
@@ -425,13 +588,23 @@ export default function BusinessMalaysianInfo() {
                     value={formData.add1}
                   />
                 </div>
+=======
+                <input 
+                  type="text" 
+                  readOnly
+                  className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none cursor-not-allowed" 
+                  value={formData.add1} 
+                  onChange={(e) => setFormData({ ...formData, add1: e.target.value })} 
+                />
+>>>>>>> origin/ashley
               </div>
             
-              <div>
+            <div>
                 <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
                   Address 2<span className="text-red-500">*</span>
                 </label>
 
+<<<<<<< HEAD
                 <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
                   <input
                     type="text"
@@ -441,6 +614,16 @@ export default function BusinessMalaysianInfo() {
                   />
                 </div>
               </div>
+=======
+                <input 
+                  type="text" 
+                  readOnly
+                  className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none cursor-not-allowed" 
+                  value={formData.add2} 
+                  onChange={(e) => setFormData({ ...formData, add2: e.target.value })} 
+                />
+            </div>
+>>>>>>> origin/ashley
 
               <div className="grid grid-cols-2 gap-5">
                 <div>
@@ -448,6 +631,7 @@ export default function BusinessMalaysianInfo() {
                     Postal Code<span className="text-red-500">*</span>
                   </label>
 
+<<<<<<< HEAD
                   <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
                     <input
                       type="text"
@@ -456,13 +640,23 @@ export default function BusinessMalaysianInfo() {
                       value={formData.postal}
                     />
                   </div>
+=======
+                  <input 
+                    type="text" 
+                    readOnly
+                    className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none cursor-not-allowed" 
+                    value={formData.postal} 
+                    onChange={(e) => setFormData({ ...formData, postal: e.target.value })} 
+                  />
+>>>>>>> origin/ashley
                 </div>
 
                 <div>
-                  <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-                    State<span className="text-red-500">*</span>
-                  </label>
+                <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
+                  State<span className="text-red-500">*</span>
+                </label>
 
+<<<<<<< HEAD
                   <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
                   <input
                     type="text"
@@ -472,6 +666,16 @@ export default function BusinessMalaysianInfo() {
                   />
                 </div>
                 </div>
+=======
+                <input 
+                  type="text" 
+                  readOnly
+                  className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none cursor-not-allowed" 
+                  value={formData.state} 
+                  onChange={(e) => setFormData({ ...formData, state: e.target.value })} 
+                />
+              </div>
+>>>>>>> origin/ashley
               </div>
 
               <div>
@@ -479,8 +683,25 @@ export default function BusinessMalaysianInfo() {
                   Country<span className="text-red-500">*</span>
                 </label>
 
-                <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl cursor-not-allowed bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400">
+                <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400">
                   <span className="text-sm font-bold text-gray-700 dark:text-gray-200">{formData.country}</span>
+<<<<<<< HEAD
+=======
+
+                  <svg 
+                    className="w-4 h-4 text-gray-400" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth="2" 
+                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" 
+                    />
+                  </svg>
+>>>>>>> origin/ashley
                 </div>
               </div>
             </div>

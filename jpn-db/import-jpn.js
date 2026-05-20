@@ -4,8 +4,27 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
-const keyPath = path.join(process.cwd(), 'jpn-db', 'serviceAccountKey-JPN.json');
-const serviceAccount = JSON.parse(fs.readFileSync(keyPath, 'utf8'));
+const path = require('path');
+
+const keyPath = path.join(
+  process.cwd(),
+  'jpn-db',
+  'serviceAccountKey-JPN.json'
+);
+
+const jsonPath = path.join(
+  process.cwd(),
+  'jpn-db',
+  'JPN_json.json'
+);
+
+const serviceAccount = JSON.parse(
+  fs.readFileSync(keyPath, 'utf8')
+);
+
+function generateHashID(identifier) {
+  return crypto.createHash('sha256').update(identifier).digest('hex');
+}
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
@@ -19,7 +38,7 @@ function generateHashID(identifier) {
 
 async function uploadJPN() {
   try {
-    const rawData = JSON.parse(fs.readFileSync('JPN_json.json', 'utf8'));
+    const rawData = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
     const jpnSchema = JSON.parse(rawData[0].jpn_schema_export);
     const citizens = jpnSchema.jpn_citizens;
     const templates = jpnSchema.face_templates;
