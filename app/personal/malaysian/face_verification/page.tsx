@@ -34,7 +34,7 @@ export default function PersonalMalaysianFaceQRCode() {
     }
 
     const origin = window.location.origin;
-    const targetUrl = `${origin}/personal/non-malaysian/face_verification/mobile?journeyId=${jId}`;
+    const targetUrl = `${origin}/personal/malaysian/face_verification/mobile?journeyId=${jId}`;
 
     if (origin.includes("localhost") || origin.includes("127.0.0.1")) {
       setHostWarning(
