@@ -74,7 +74,30 @@ function PersonalMalaysianMobileFaceCapture() {
 
       const faceResult = await faceApiRes.json();
 
+      console.log("OkayFace output:", faceResult);
+
       if (faceResult.status === "success") {
+      const liveApiRes = await fetch("/api/ekyc/okaylive", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          journeyId,
+          selfieBase64,
+          idCardBase64,
+        }),
+      });
+
+        const liveResult = await liveApiRes.json();
+
+        console.log("OkayLive status:", liveApiRes.status);
+        console.log("OkayLive output:", liveResult);
+
+         if (!liveApiRes.ok) {
+          throw new Error(liveResult.message || "OkayLive failed");
+        }
+
         await fetch("/api/ekyc/status", {
           method: "POST",
           headers: { 

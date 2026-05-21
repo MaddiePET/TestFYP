@@ -34,7 +34,7 @@ export default function BusinessMalaysianEmail() {
     setMounted(true);
   }, []);
 
-  useEffect(() => {
+useEffect(() => {
     if (!mounted) return;
 
     const currentFormData = formData as any;

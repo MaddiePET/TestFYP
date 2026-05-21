@@ -54,27 +54,11 @@ const BRANCHES: Branch[] = [
 
 export default function BusinessMalaysianBusinessAddress() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+
   const { formData, setFormData } = useFormData();
-
-  const journeyId =
-    searchParams.get("journeyId") ||
-    (typeof window !== "undefined" ? localStorage.getItem("journeyId") : "") ||
-    "";
-
-  const idType =
-    searchParams.get("id_type") ||
-    (typeof window !== "undefined" ? localStorage.getItem("id_type") : "") ||
-    "ic";
-
-  const idNum =
-    searchParams.get("id_num") ||
-    (typeof window !== "undefined" ? localStorage.getItem("id_num") : "") ||
-    "";
 
   const [step, setStep] = useState<number>(1);
   const [mounted, setMounted] = useState<boolean>(false);
-
   const [businessAddress, setBusinessAddress] = useState<Address>({
     addressLine1: formData?.businessAddress?.businessAddress?.addressLine1 || "",
     addressLine2: formData?.businessAddress?.businessAddress?.addressLine2 || "",
@@ -82,7 +66,6 @@ export default function BusinessMalaysianBusinessAddress() {
     state: formData?.businessAddress?.businessAddress?.state || "",
     country: "Malaysia",
   });
-
   const [mailingAddress, setMailingAddress] = useState<Address>({
     addressLine1: formData?.businessAddress?.mailingAddress?.addressLine1 || "",
     addressLine2: formData?.businessAddress?.mailingAddress?.addressLine2 || "",
@@ -90,17 +73,17 @@ export default function BusinessMalaysianBusinessAddress() {
     state: formData?.businessAddress?.mailingAddress?.state || "",
     country: "Malaysia",
   });
-
-  const [useBusinessAsMailing, setUseBusinessAsMailing] = useState<boolean | null>(
-    formData?.businessAddress?.isMailingSameAsBusiness ?? null
-  );
-
+  const [useBusinessAsMailing, setUseBusinessAsMailing] = useState<boolean | null>(formData?.businessAddress?.isMailingSameAsBusiness ?? null);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [userAddressLabel, setUserAddressLabel] = useState<string>("");
   const [isLocating, setIsLocating] = useState<boolean>(false);
-  const [preferredBranch, setPreferredBranch] = useState<string>(
-    formData?.businessAddress?.preferredBranch || ""
-  );
+  const [preferredBranch, setPreferredBranch] = useState<string>(formData?.businessAddress?.preferredBranch || "");
+
+  const searchParams = useSearchParams();
+
+  const journeyId = searchParams.get("journeyId") || (typeof window !== "undefined" ? localStorage.getItem("journeyId") : "") || "";
+  const idType = searchParams.get("id_type") || (typeof window !== "undefined" ? localStorage.getItem("id_type") : "") || "ic";
+  const idNum = searchParams.get("id_num") || (typeof window !== "undefined" ? localStorage.getItem("id_num") : "") || "";
 
   useEffect(() => {
     setMounted(true);
@@ -217,7 +200,7 @@ export default function BusinessMalaysianBusinessAddress() {
     }
   };
 
-    const isAddressValid = (address: Address) => {
+  const isAddressValid = (address: Address) => {
     return (
       address.addressLine1.trim() !== "" &&
       address.addressLine2.trim() !== "" &&
@@ -256,16 +239,28 @@ export default function BusinessMalaysianBusinessAddress() {
     });
 
     router.push(
-      `/business/malaysian/contact?id_type=${encodeURIComponent(
-        idType
-      )}&id_num=${encodeURIComponent(idNum)}&journeyId=${encodeURIComponent(
-        journeyId
-      )}`
+      `/business/malaysian/contact?id_type=${encodeURIComponent(idType)}&id_num=${encodeURIComponent(idNum)}&journeyId=${encodeURIComponent(journeyId)}`
     );
   };
 
-  const inputClasses =
-    "w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none";
+  const registeredSSMAddress = [
+    formData?.businessAddress?.businessAddress?.addressLine1,
+    formData?.businessAddress?.businessAddress?.addressLine2,
+    formData?.businessAddress?.businessAddress?.postcode,
+    formData?.businessAddress?.businessAddress?.state,
+    "Malaysia"
+  ].filter(Boolean).join(", ");
+
+  const verifiedBusinessAddress = [
+    businessAddress.addressLine1,
+    businessAddress.addressLine2,
+    businessAddress.postcode,
+    businessAddress.state,
+    "Malaysia"
+  ].filter(Boolean).join(", ");
+
+  const isStep1Valid = isAddressValid(businessAddress) && useBusinessAsMailing !== null;
+  const isStep2Valid = isAddressValid(mailingAddress);
 
   if (!mounted) return null;
 
@@ -314,12 +309,10 @@ export default function BusinessMalaysianBusinessAddress() {
           Back
         </button>
 
-
-        
-          <Link 
-            href="/" 
-            className="flex items-center gap-2"
-          >
+        <Link 
+          href="/" 
+          className="flex items-center gap-2"
+        >
           <Image 
             src="/images/logo/logo-light.svg" 
             alt="Logo" 
@@ -352,9 +345,7 @@ export default function BusinessMalaysianBusinessAddress() {
 
               <div className="relative p-4 mb-8 rounded-2xl border-2 transition-all duration-300 text-center backdrop-blur-sm border-[#F0CA8E] bg-white/90 shadow-lg ring-4 ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#F0CA8E] dark:ring-[#F0CA8E]/20">
                 <p className="text-sm font-bold text-blue-600 dark:text-blue-400 text-center">
-                  {`${businessAddress.addressLine1}, ${
-                    businessAddress.addressLine2 ? businessAddress.addressLine2 + ", " : ""
-                  }${businessAddress.postcode}, ${businessAddress.state}, Malaysia`}
+                  {registeredSSMAddress || "Address not available"}
                 </p>
 
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -366,17 +357,18 @@ export default function BusinessMalaysianBusinessAddress() {
             <div className="space-y-6">
               <div>
                 <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-                  Address Line 1<span className="text-red-500">*</span>
+                  Address 1<span className="text-red-500">*</span>
                 </label>
 
                 <input
                   type="text"
-                  className={inputClasses}
+                  className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
+                  placeholder="Enter your building name"
                   value={businessAddress.addressLine1}
                   onChange={(e) =>
                     setBusinessAddress({
                       ...businessAddress,
-                      addressLine1: e.target.value,
+                      addressLine1: e.target.value.replace(/[^a-zA-Z0-9,.\-\/ ]/g, ""),
                     })
                   }
                 />
@@ -384,17 +376,18 @@ export default function BusinessMalaysianBusinessAddress() {
 
               <div>
                 <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-                  Address Line 2
+                  Address 2<span className="text-red-500">*</span>
                 </label>
 
                 <input
                   type="text"
-                  className={inputClasses}
+                  className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
+                  placeholder="Enter your street name, area"
                   value={businessAddress.addressLine2}
                   onChange={(e) =>
                     setBusinessAddress({
                       ...businessAddress,
-                      addressLine2: e.target.value,
+                      addressLine2: e.target.value.replace(/[^a-zA-Z0-9,.\-\/ ]/g, ""),
                     })
                   }
                 />
@@ -403,17 +396,19 @@ export default function BusinessMalaysianBusinessAddress() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-                    Postcode<span className="text-red-500">*</span>
+                    Postal Code<span className="text-red-500">*</span>
                   </label>
 
                   <input
                     type="text"
-                    className={inputClasses}
+                    maxLength={5}
+                    className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
+                    placeholder="Enter your postal code"
                     value={businessAddress.postcode}
                     onChange={(e) =>
                       setBusinessAddress({
                         ...businessAddress,
-                        postcode: e.target.value,
+                        postcode: e.target.value.replace(/[^0-9]/g, ""),
                       })
                     }
                   />
@@ -426,12 +421,13 @@ export default function BusinessMalaysianBusinessAddress() {
 
                   <input
                     type="text"
-                    className={inputClasses}
+                    className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
+                    placeholder="Enter your state"
                     value={businessAddress.state}
                     onChange={(e) =>
                       setBusinessAddress({
                         ...businessAddress,
-                        state: e.target.value,
+                        state: e.target.value.replace(/[^a-zA-Z ]/g, ""),
                       })
                     }
                   />
@@ -443,62 +439,55 @@ export default function BusinessMalaysianBusinessAddress() {
                   Country<span className="text-red-500">*</span>
                 </label>
 
-                <input
-                  type="text"
-                  className={inputClasses}
-                  value="Malaysia"
-                  readOnly
-                />
+                <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl cursor-not-allowed bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400">
+                  <span className="text-sm font-bold text-gray-700 dark:text-gray-200">Malaysia</span>
+                </div>
               </div>
 
-              <div className="pt-2 text-center">
-                <div>
-                  <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-                  Keep business address as mailing address? 
-                  <span className="text-red-500">
-                    *
-                  </span>
-                </label>
+              <div className="pt-4 flex flex-col items-center">
+                <div className="w-full mb-8">
+                  <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90 text-center">
+                    Keep business address as mailing address? 
+                    <span className="text-red-500">
+                      *
+                    </span>
+                  </label>
 
                   <div className="flex justify-center gap-8 mt-2">
-                  <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300">
-                    <input
-                      type="radio"
-                      name="sameAddress"
-                      className="w-4 h-4 accent-[#3D405B]"
-                      checked={useBusinessAsMailing === true}
-                      onChange={() => setUseBusinessAsMailing(true)}
-                    />
+                    <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <input
+                        type="radio"
+                        name="sameAddress"
+                        className="w-4 h-4 accent-[#3D405B]"
+                        checked={useBusinessAsMailing === true}
+                        onChange={() => setUseBusinessAsMailing(true)}
+                      />
+                      Yes
+                    </label>
 
-                    Yes
-                  </label>
-
-                  <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300">
-                    <input
-                      type="radio"
-                      name="sameAddress"
-                      className="w-4 h-4 accent-[#3D405B]"
-                      checked={useBusinessAsMailing === false}
-                      onChange={() => setUseBusinessAsMailing(false)}
-                    />
-
-                    No
-                  </label>
-                
-                </div>
-                    
+                    <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <input
+                        type="radio"
+                        name="sameAddress"
+                        className="w-4 h-4 accent-[#3D405B]"
+                        checked={useBusinessAsMailing === false}
+                        onChange={() => setUseBusinessAsMailing(false)}
+                      />
+                      No
+                    </label>
+                  </div>
                 </div>
 
-                <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-                  By clicking continue, you confirm that the information provided is accurate.
+                <p className="mb-6 text-xs text-gray-500 dark:text-gray-400 text-center">
+                  By clicking continue, you confirm that the information provided is accurate and belongs to you.
                 </p>
 
                 <button
                   type="button"
                   onClick={handleStep1Submit}
-                  disabled={useBusinessAsMailing === null}
+                  disabled={!isStep1Valid}
                   className={`inline-flex items-center justify-center w-full px-4 py-3 text-sm font-bold transition rounded-lg shadow-theme-xs active:scale-[0.98] ${
-                    useBusinessAsMailing !== null
+                    isStep1Valid
                       ? "bg-[#3D405B] text-white hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d]"
                       : "bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600"
                   }`}
@@ -523,9 +512,7 @@ export default function BusinessMalaysianBusinessAddress() {
 
               <div className="relative p-4 mb-8 rounded-2xl border-2 transition-all duration-300 text-center backdrop-blur-sm border-[#F0CA8E] bg-white/90 shadow-lg ring-4 ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#F0CA8E] dark:ring-[#F0CA8E]/20">
                 <p className="text-sm font-bold text-blue-600 dark:text-blue-400 text-center">
-                  {`${businessAddress.addressLine1}, ${
-                    businessAddress.addressLine2 ? businessAddress.addressLine2 + ", " : ""
-                  }${businessAddress.postcode}, ${businessAddress.state}, Malaysia`}
+                  {verifiedBusinessAddress || "Address not available"}
                 </p>
 
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -537,17 +524,18 @@ export default function BusinessMalaysianBusinessAddress() {
             <div className="space-y-6">
               <div>
                 <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-                  Address Line 1<span className="text-red-500">*</span>
+                  Address 1<span className="text-red-500">*</span>
                 </label>
 
                 <input
                   type="text"
-                  className={inputClasses}
+                  className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
+                  placeholder="Enter your building name"
                   value={mailingAddress.addressLine1}
                   onChange={(e) =>
                     setMailingAddress({
                       ...mailingAddress,
-                      addressLine1: e.target.value,
+                      addressLine1: e.target.value.replace(/[^a-zA-Z0-9,.\-\/ ]/g, ""),
                     })
                   }
                 />
@@ -555,17 +543,18 @@ export default function BusinessMalaysianBusinessAddress() {
 
               <div>
                 <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-                  Address Line 2
+                  Address 2<span className="text-red-500">*</span>
                 </label>
 
                 <input
                   type="text"
-                  className={inputClasses}
+                  className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
+                  placeholder="Enter your building name"
                   value={mailingAddress.addressLine2}
                   onChange={(e) =>
                     setMailingAddress({
                       ...mailingAddress,
-                      addressLine2: e.target.value,
+                      addressLine2: e.target.value.replace(/[^a-zA-Z0-9,.\-\/ ]/g, ""),
                     })
                   }
                 />
@@ -579,12 +568,14 @@ export default function BusinessMalaysianBusinessAddress() {
 
                   <input
                     type="text"
-                    className={inputClasses}
+                    maxLength={5}
+                    className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
+                    placeholder="Enter your postal code"
                     value={mailingAddress.postcode}
                     onChange={(e) =>
                       setMailingAddress({
                         ...mailingAddress,
-                        postcode: e.target.value,
+                        postcode: e.target.value.replace(/[^0-9]/g, ""),
                       })
                     }
                   />
@@ -597,12 +588,13 @@ export default function BusinessMalaysianBusinessAddress() {
 
                   <input
                     type="text"
-                    className={inputClasses}
+                    className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
+                    placeholder="Enter your state"
                     value={mailingAddress.state}
                     onChange={(e) =>
                       setMailingAddress({
                         ...mailingAddress,
-                        state: e.target.value,
+                        state: e.target.value.replace(/[^a-zA-Z ]/g, ""),
                       })
                     }
                   />
@@ -614,23 +606,25 @@ export default function BusinessMalaysianBusinessAddress() {
                   Country<span className="text-red-500">*</span>
                 </label>
 
-                <input
-                  type="text"
-                  className={inputClasses}
-                  value="Malaysia"
-                  readOnly
-                />
+                <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl cursor-not-allowed bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400">
+                  <span className="text-sm font-bold text-gray-700 dark:text-gray-200">Malaysia</span>
+                </div>
               </div>
 
-              <div className="pt-4 space-y-6">
-                <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-                  By clicking continue, you confirm that the mailing address provided is accurate.
+              <div className="pt-4 flex flex-col items-center">
+                <p className="mb-6 text-xs text-gray-500 dark:text-gray-400 text-center">
+                  By clicking continue, you confirm that the information provided is accurate and belongs to you.
                 </p>
 
                 <button
                   type="button"
                   onClick={handleStep2Submit}
-                  className="inline-flex items-center justify-center w-full px-4 py-3 text-sm font-bold transition rounded-lg shadow-theme-xs bg-[#3D405B] text-white hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d] active:scale-[0.98]"
+                  disabled={!isStep2Valid}
+                  className={`inline-flex items-center justify-center w-full px-4 py-3 text-sm font-bold transition rounded-lg shadow-theme-xs active:scale-[0.98] ${
+                    isStep2Valid
+                      ? "bg-[#3D405B] text-white hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d]"
+                      : "bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600"
+                  }`}
                 >
                   Continue
                 </button>
@@ -804,7 +798,7 @@ export default function BusinessMalaysianBusinessAddress() {
 
             <div className="pt-10 flex flex-col items-center">
               <p className="mb-6 text-xs text-gray-500 dark:text-gray-400 text-center">
-                By clicking continue, you confirm that all selected information is correct.
+                By clicking continue, you confirm that the information provided is accurate and belongs to you.
               </p>
 
               <button
@@ -825,9 +819,7 @@ export default function BusinessMalaysianBusinessAddress() {
 
         <div className="mt-5 text-center">
           <p className="text-sm font-normal">
-            <span className="text-gray-500 dark:text-gray-400">
-              Having trouble?{" "}
-            </span>
+            <span className="text-gray-500 dark:text-gray-400">Having trouble? </span>
 
             <Link
               href="/support"

@@ -93,67 +93,67 @@ export default function BusinessMalaysianContact() {
   }, 800);
 };
 
- const handleVerifyOtp = async () => {
-  const enteredOtp = otp.join("");
+  const handleVerifyOtp = async () => {
+    const enteredOtp = otp.join("");
 
-  setIsLoading(true);
-  setMessage("");
-  setMessageType("");
+    setIsLoading(true);
+    setMessage("");
+    setMessageType("");
 
-  if (step === "email-otp") {
-    try {
-      const res = await fetch("/api/otp/email/verify", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: email.trim(),
-          otp: enteredOtp,
-        }),
-      });
+    if (step === "email-otp") {
+      try {
+        const res = await fetch("/api/otp/email/verify", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: email.trim(),
+            otp: enteredOtp,
+          }),
+        });
 
-      const data = await res.json();
+        const data = await res.json();
 
-      if (!res.ok) {
-        setMessage(data.error || "Invalid OTP. Please try again.");
+        if (!res.ok) {
+          setMessage(data.error || "Invalid OTP. Please try again.");
+          setMessageType("error");
+          return;
+        }
+
+        setStep("phone-otp");
+        setOtp(["", "", "", "", "", ""]);
+        setTimer(60);
+        setMessage("Email verified successfully. Please verify your phone number.");
+        setMessageType("success");
+      } catch (error) {
+        console.error("Verify business email OTP error:", error);
+        setMessage("Something went wrong while verifying the email OTP.");
         setMessageType("error");
-        return;
+      } finally {
+        setIsLoading(false);
       }
 
-      setStep("phone-otp");
-      setOtp(["", "", "", "", "", ""]);
-      setTimer(60);
-      setMessage("Email verified successfully. Please verify your phone number.");
-      setMessageType("success");
-    } catch (error) {
-      console.error("Verify business email OTP error:", error);
-      setMessage("Something went wrong while verifying the email OTP.");
-      setMessageType("error");
-    } finally {
-      setIsLoading(false);
+      return;
     }
 
-    return;
-  }
+    if (step === "phone-otp") {
+      setTimeout(() => {
+        setFormData((prev: any) => ({
+          ...prev,
+          businessContact: {
+            ...prev?.businessContact,
+            bus_email: email.trim(),
+            bus_email_verified: true,
+            bus_ph_no: phoneNumber.trim(),
+          },
+        }));
 
-  if (step === "phone-otp") {
-    setTimeout(() => {
-      setFormData((prev: any) => ({
-        ...prev,
-        businessContact: {
-          ...prev?.businessContact,
-          bus_email: email.trim(),
-          bus_email_verified: true,
-          bus_ph_no: phoneNumber.trim(),
-        },
-      }));
-
-      setIsLoading(false);
-      router.push("/business/malaysian/supporting_documents");
-    }, 800);
-  }
-};
+        setIsLoading(false);
+        router.push("/business/malaysian/supporting_documents");
+      }, 800);
+    }
+  };
 
   const handleOtpChange = (value: string, index: number) => {
     const cleanValue = value.replace(/[^0-9]/g, "");

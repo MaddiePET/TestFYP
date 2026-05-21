@@ -73,7 +73,30 @@ function BusinessMalaysianMobileFaceCapture() {
 
       const faceResult = await faceApiRes.json();
 
+            console.log("OkayFace output:", faceResult);
+
       if (faceResult.status === "success") {
+      const liveApiRes = await fetch("/api/ekyc/okaylive", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          journeyId,
+          selfieBase64,
+          idCardBase64,
+        }),
+      });
+
+        const liveResult = await liveApiRes.json();
+
+        console.log("OkayLive status:", liveApiRes.status);
+        console.log("OkayLive output:", liveResult);
+
+         if (!liveApiRes.ok) {
+          throw new Error(liveResult.message || "OkayLive failed");
+        }
+
         await fetch("/api/ekyc/status", {
           method: "POST",
           headers: { 
@@ -122,6 +145,7 @@ function BusinessMalaysianMobileFaceCapture() {
       setIsLoading(false);
     }
   };
+
 
   return (
     <div className="relative flex flex-col items-center justify-center min-h-[100dvh] px-4 pt-24 pb-6 bg-[#F9FAFB] dark:bg-gray-950 overflow-hidden">
