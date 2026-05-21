@@ -16,6 +16,7 @@ export default function PersonalMalaysianInfo() {
   const [lookupStatus, setLookupStatus] = useState<"idle" | "fetching" | "done" | "not-found">("idle");
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
+    title: "",
     fullName: "",
     nric: "",
     dobDay: "",
@@ -66,13 +67,14 @@ export default function PersonalMalaysianInfo() {
     const { day, month, year } = formatDateForFields(dob);
     
     return {
+      title: identity.title || "",
       fullName: identity.full_name || identity.name || identity.fullName || "",
       nric: identity.ic_number || identity.nric || identity.id_num || idNum,
       dobDay: day || "",
       dobMonth: month,
       dobYear: year || "",
       phoneCode: "+60",
-      phoneNumber: identity.ph_no_1 || identity.phone_number || identity.phoneNumber || "",
+      phoneNumber: identity.ph_no || identity.phone_number || identity.phoneNumber || "",
       add1: identity.add1 || identity.address_line_1 || identity.address || identity.home_address || "",
       add2: identity.add2 || identity.address_line_2 || "",
       postal: identity.postcode || identity.postal_code || identity.postal || "",
@@ -176,12 +178,12 @@ export default function PersonalMalaysianInfo() {
       localStorage.setItem(
         "personalInfo",
         JSON.stringify({
+          title: formData.title,
           id_num: formData.nric,
           full_name: formData.fullName,
           id_type: "NRIC",
           dob,
-          ph_no_1: fullPhone,
-          ph_no_2: null,
+          ph_no: fullPhone,
           country: formData.country,
         })
       );
@@ -205,7 +207,7 @@ export default function PersonalMalaysianInfo() {
       router.push(
         `/personal/malaysian/mailing_address?id_type=ic&id_num=${encodeURIComponent(formData.nric)}&journeyId=${encodeURIComponent(searchParams.get("journeyId") || "")}`
       );
-    } catch (error: any) {
+    } catch (error: any) { router.push(`/business/malaysian/business_particulars?id_type=ic&id_num=${encodeURIComponent(formData.nric)}&journeyId=${encodeURIComponent(journeyId)}`);
       console.error("Submission error:", error);
       setSubmitError(error.message || "Failed to save application data.");
     } finally {
@@ -302,18 +304,52 @@ export default function PersonalMalaysianInfo() {
         <div className="bg-white dark:bg-gray-900 p-6 sm:p-10 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm backdrop-blur-sm bg-white/90 dark:bg-gray-900/90">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
             <div className="space-y-6">
-              <div>
-                <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-                  Full Name<span className="text-red-500">*</span>
-                </label>
+              <div className="grid grid-cols-4 gap-4">
+                <div className="col-span-1">
+                  <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
+                    Title<span className="text-red-500">*</span>
+                  </label>
 
-                <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
-                  <input
-                    type="text"
-                    readOnly
-                    className="text-sm font-bold text-gray-700 dark:text-gray-200"
-                    value={formData.fullName}
-                  />
+                  <div className="relative">
+                    <select 
+                      value={formData.title} 
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })} 
+                      className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
+                    >
+                      {["Mr.", "Ms.", "Mrs.", "Dr.", "Prof."].map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+                    </select>
+
+                    <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
+                      <svg 
+                        className="w-4 h-4 text-gray-400" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round" 
+                          strokeWidth="2" 
+                          d="M19 9l-7 7-7-7" 
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="col-span-3">
+                  <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
+                    Full Name<span className="text-red-500">*</span>
+                  </label>
+
+                  <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
+                    <input
+                      type="text"
+                      readOnly
+                      className="text-sm font-bold text-gray-700 dark:text-gray-200"
+                      value={formData.fullName}
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -329,6 +365,7 @@ export default function PersonalMalaysianInfo() {
                     className="text-sm font-bold text-gray-700 dark:text-gray-200"
                     value={formData.nric}
                   />
+
                 </div>
               </div>
 
@@ -363,6 +400,7 @@ export default function PersonalMalaysianInfo() {
                       className="w-full min-w-0 bg-transparent text-sm font-bold text-gray-700 dark:text-gray-200 outline-none cursor-not-allowed"
                       value={formData.dobYear}
                     />
+
                   </div>
                 </div>
               </div>
@@ -423,6 +461,7 @@ export default function PersonalMalaysianInfo() {
                     className="w-full min-w-0 bg-transparent text-sm font-bold text-gray-700 dark:text-gray-200 outline-none cursor-not-allowed"
                     value={formData.add2}
                   />
+
                 </div>
               </div>
 
@@ -439,6 +478,7 @@ export default function PersonalMalaysianInfo() {
                       className="w-full min-w-0 bg-transparent text-sm font-bold text-gray-700 dark:text-gray-200 outline-none cursor-not-allowed"
                       value={formData.postal}
                     />
+
                   </div>
                 </div>
 
@@ -454,6 +494,7 @@ export default function PersonalMalaysianInfo() {
                     className="w-full min-w-0 bg-transparent text-sm font-bold text-gray-700 dark:text-gray-200 outline-none cursor-not-allowed"
                     value={formData.state}
                   />
+
                 </div>
                 </div>
               </div>

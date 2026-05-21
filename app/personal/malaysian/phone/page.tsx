@@ -43,7 +43,7 @@ export default function PersonalMalaysianPhone() {
 
       if (response.ok && data.success && data.identity) {
         const identityData = data.formData || data.identity;
-        const rawPhone = identityData.ph_no_1 || identityData.phone_number || identityData.phoneNumber || "";
+        const rawPhone = identityData.ph_no || identityData.phone_number || identityData.phoneNumber || "";
 
         if (rawPhone) {
           let digitsOnly = rawPhone.replace(/\D/g, "");
@@ -218,8 +218,8 @@ export default function PersonalMalaysianPhone() {
             height={40} 
             className="block dark:invert-0 invert" 
           />
-
-          <h1 className="text-2xl font-bold uppercase tracking-tight text-gray-800 dark:text-white">
+          
+          <h1 className="text-lg sm:text-2xl font-bold uppercase tracking-tight text-gray-800 dark:text-white truncate">
             DTCOB
           </h1>
         </Link>
