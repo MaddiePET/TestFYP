@@ -12,12 +12,12 @@ export default function PersonalMalaysianFaceQRCode() {
   const router = useRouter();
 
   const [mobileUrl, setMobileUrl] = useState<string>("");
-  const searchParams = useSearchParams();
   const [journeyId, setJourneyId] = useState<string>("");
-
   const [isVerified, setIsVerified] = useState<boolean>(false);
   const [isFailed, setIsFailed] = useState<boolean>(false);
   const [hostWarning, setHostWarning] = useState<string | null>(null);
+
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     const jId = searchParams.get("journeyId") || localStorage.getItem("journeyId");

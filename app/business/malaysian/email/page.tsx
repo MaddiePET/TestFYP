@@ -38,11 +38,10 @@ export default function BusinessMalaysianEmail() {
     if (!mounted) return;
 
     setEmail(
-      formData?.contactInfo?.email ||
-      formData?.contact?.email ||
-      formData?.email ||
-      ""
-    );
+    formData?.businessContact?.bus_email || 
+    formData?.personalInfo?.email || 
+    ""
+  );
   }, [mounted, formData]);
 
   useEffect(() => {
@@ -55,7 +54,7 @@ export default function BusinessMalaysianEmail() {
 
   if (!mounted) return null;
 
-  const handleGlobalBack = () => {
+  const handleBack = () => {
     if (step === "otp") setStep("input");
     else router.push(
       `/business/malaysian/phone?journeyId=${encodeURIComponent(journeyId)}`
@@ -128,7 +127,7 @@ export default function BusinessMalaysianEmail() {
         }),
       });
 
-    const data = await res.json();
+      const data = await res.json();
 
       if (!res.ok) {
         setMessage(data.error || "Invalid OTP. Please try again.");
@@ -137,15 +136,13 @@ export default function BusinessMalaysianEmail() {
         return;
       }
 
-    // Save the verified business email into the shared form context.
-    setFormData((prev: any) => ({
-      ...prev,
-      contactInfo: {
-        ...prev?.contactInfo,
-        email: email.trim(),
-        emailVerified: true,
-      },
-    }));
+      setFormData((prev: any) => ({
+        ...prev,
+        businessContact: {
+          ...prev.businessContact,
+          bus_email: email.trim(),
+        },
+      }));
 
       const statusRes = await fetch(
         `/api/ekyc/status?journeyId=${encodeURIComponent(journeyId)}`
@@ -240,11 +237,11 @@ export default function BusinessMalaysianEmail() {
       <div className="absolute top-6 left-4 right-4 flex justify-between items-center max-w-7xl mx-auto z-20 overflow-hidden">
         <button
           type="button"
-          onClick={handleGlobalBack}
+          onClick={handleBack}
           className="inline-flex items-center text-sm text-gray-600 dark:text-white/80 transition-colors hover:text-gray-900 dark:hover:text-white"
         >
           <ChevronLeftIcon className="w-5 h-5" />
-          
+
           Back
         </button>
 
@@ -300,33 +297,27 @@ export default function BusinessMalaysianEmail() {
                   Email Address<span className="text-red-500">*</span>
                 </label>
 
-                <input
-                  type="email"
-                  required
-                  placeholder="Enter your email"
-                  className="w-full px-4 py-2.5 text-sm transition-all bg-white border-2 rounded-xl outline-none border-gray-200 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:placeholder-gray-400 dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40"
+                <input 
+                  type="email" 
+                  required 
+                  placeholder="Enter your email" 
+                  className="w-full px-4 py-2.5 text-sm transition-all bg-white border-2 rounded-xl outline-none border-gray-200 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:placeholder-gray-400 dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40" 
                   value={email}
-                  onChange={(e) => setEmail(e.target.value.replace(/[^a-zA-Z0-9@.]/g, ""))} 
+                  onChange={(e) => setEmail(e.target.value.replace(/[^a-zA-Z0-9@.\-_+]/g, ""))} 
                 />
               </div>
 
-              <button
-                type="submit"
-                disabled={isLoading || !email.trim()}
+              <button 
+                type="submit" 
+                disabled={isLoading || !email} 
                 className={`inline-flex items-center justify-center w-full px-4 py-3 text-sm font-bold transition rounded-lg shadow-theme-xs ${
-                  isLoading || !email.trim()
-                    ? "bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600"
-                    : "bg-[#3D405B] text-white hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d]"
+                  isLoading || !email
+                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600' 
+                    : 'bg-[#3D405B] text-white hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d]'
                 }`}
               >
                 {isLoading ? "Processing..." : "Continue"}
               </button>
-
-              {message && (
-                <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm text-center">
-                  {message}
-                 </div>
-                )}
             </form>
           </div>
         )}
@@ -354,7 +345,7 @@ export default function BusinessMalaysianEmail() {
                 {message}
               </div>
             )}
-
+            
             <div className="space-y-6">
               <div className="flex justify-center gap-2">
                 {otp.map((digit, index) => (
@@ -363,7 +354,7 @@ export default function BusinessMalaysianEmail() {
                     type="text"
                     inputMode="numeric"
                     maxLength={1}
-                    ref={(el) => {otpInputs.current[index] = el;}}
+                    ref={(el) => { otpInputs.current[index] = el; }}
                     value={digit}
                     onChange={(e) => handleOtpChange(e.target.value, index)}
                     onKeyDown={(e) => handleOtpKeyDown(e, index)}
@@ -372,20 +363,14 @@ export default function BusinessMalaysianEmail() {
                 ))}
               </div>
 
-              {message && (
-               <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm text-center">
-                {message}
-              </div>
-              )}
-
-              <button
-                type="button"
-                onClick={handleVerifyOtp}
-                disabled={otp.join("").length < 6 || isLoading || !email.trim()}
+              <button 
+                type="button" 
+                onClick={handleVerifyOtp} 
+                disabled={otp.join("").length < 6 || isLoading} 
                 className={`inline-flex items-center justify-center w-full px-4 py-3 text-sm font-bold transition rounded-lg shadow-theme-xs ${
-                  otp.join("").length === 6 && email.trim() && !isLoading
-                    ? "bg-[#3D405B] text-white hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d]"
-                    : "bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600"
+                  otp.join("").length === 6 
+                    ? 'bg-[#3D405B] text-white hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d]' 
+                    : 'bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600'
                 }`}
               >
                 {isLoading ? "Verifying..." : "Verify"}
@@ -398,9 +383,9 @@ export default function BusinessMalaysianEmail() {
                   Resend code in <span className="font-bold text-blue-600 dark:text-blue-400">{timer}s</span>
                 </p>
               ) : (
-                <button
-                  type="button"
-                  onClick={handleSendOtp}
+                <button 
+                  type="button" 
+                  onClick={handleSendOtp} 
                   className="text-sm font-bold text-blue-600 dark:text-blue-400 hover:opacity-80 transition-opacity"
                 >
                   Resend Code
@@ -413,9 +398,9 @@ export default function BusinessMalaysianEmail() {
         <div className="mt-5 text-center">
           <p className="text-sm font-normal">
             <span className="text-gray-500 dark:text-gray-400">Having trouble? </span>
-
-            <Link
-              href="/support"
+            
+            <Link 
+              href="/support" 
               className="font-semibold text-blue-700 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
             >
               Contact Support
@@ -429,9 +414,9 @@ export default function BusinessMalaysianEmail() {
             fill="currentColor" 
             viewBox="0 0 20 20"
           >
-            <path
-              fillRule="evenodd"
-              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+            <path 
+              fillRule="evenodd" 
+              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" 
               clipRule="evenodd"
             />
           </svg>
@@ -442,7 +427,7 @@ export default function BusinessMalaysianEmail() {
         </div>
       </div>
 
-      <footer className="relative mt-8 text-xs text-gray-400 dark:text-gray-200 text-center z-10">
+      <footer className="relative mt-8 text-xs text-gray-400 dark:text-gray-200 text-center z-10">        
         &copy; {new Date().getFullYear()} DTCOB Banking Services. All rights reserved.
       </footer>
     </div>

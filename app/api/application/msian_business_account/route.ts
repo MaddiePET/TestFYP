@@ -3,6 +3,8 @@ import { pool } from "@/lib/db";
 import { hashPassword } from "@/hashpw";
 import { encrypt, hashLookup } from "@/lib/cryptoSecurity";
 
+export const runtime = "nodejs";
+
 function generateAccountNumber() {
   let accountNo = "";
   for (let i = 0; i < 16; i++) {
@@ -20,80 +22,136 @@ function hash(value: any) {
 }
 
 export async function POST(req: Request) {
-  const data = await req.json();
   const client = await pool.connect();
 
   try {
-    await client.query("BEGIN");
-
+    const data = await req.json();
+    
     const personalInfo = data.personalInfo || {};
     const contactInfo = data.contactInfo || {};
-    const phoneVerification = data.phoneVerification || {};
-    const businessParticulars = data.businessParticulars || {};
     const businessContact = data.businessContact || {};
-    const businessAddress = data.businessAddress?.businessAddress || {};
-    const mailingAddress = data.businessAddress?.mailingAddress || {};
+    const businessParticulars = data.businessParticulars || {};
+    const businessAddressData = data.businessAddress || {};
     const account = data.account || {};
+    const phoneVerification = data.phoneVerification || {};
+
+    const customerIdNum = personalInfo.id_num || personalInfo.idNumber || personalInfo.ic_num;
+    const customerFullName = personalInfo.fullName || personalInfo.full_name;
+
+    if (!customerIdNum || !customerFullName || !personalInfo.dob) {
+      console.error("Missing required submission sections.", {
+        extractedId: customerIdNum,
+        extractedName: customerFullName,
+        extractedDob: personalInfo.dob
+      });
+      return NextResponse.json(
+        { error: "Customer IC number, full name, and date of birth are required." },
+        { status: 400 }
+      );
+    }
+
+    await client.query("BEGIN");
+
+    const personalAddress = {
+      add_1: personalInfo.add_1 || personalInfo.streetAddress || personalInfo.add1 || "",
+      add_2: personalInfo.add_2 || personalInfo.city || personalInfo.add2 || "",
+      postcode: personalInfo.postcode || personalInfo.postal || "",
+      state: personalInfo.state || "",
+      country: personalInfo.country || "Malaysia",
+    };
+
+    if (!personalAddress.add_1) {
+      throw new Error("Personal residential address Line 1 parameter is empty.");
+    }
 
     const homeAddressRes = await client.query(
       `
-      INSERT INTO banka."Address" (
-        add_1, add_2, postcode, state, country
-      )
+      INSERT INTO banka."Address" (add_1, add_2, postcode, state, country)
       VALUES ($1, $2, $3, $4, $5)
       RETURNING add_id
       `,
       [
-        enc(personalInfo.streetAddress || personalInfo.add_1),
-        enc(personalInfo.city || personalInfo.add_2),
-        enc(personalInfo.postal || personalInfo.postcode),
-        enc(personalInfo.state),
-        enc(personalInfo.country || "Malaysia"),
+        enc(personalAddress.add_1),
+        enc(personalAddress.add_2),
+        enc(personalAddress.postcode),
+        enc(personalAddress.state),
+        enc(personalAddress.country),
       ]
     );
 
     const homeAddId = homeAddressRes.rows[0].add_id;
 
-    const customerRes = await client.query(
-      `
-      INSERT INTO banka."Customer" (
-        id_num_hash,
-        id_num,
-        full_name,
-        id_type,
-        dob,
-        ph_no,
-        email,
-        home_add
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      RETURNING cust_id
-      `,
-      [
-        hash(personalInfo.id_num || personalInfo.nric),
-        enc(personalInfo.id_num || personalInfo.nric),
-        enc(personalInfo.fullName || personalInfo.full_name),
-        personalInfo.id_type || "IC",
-        personalInfo.dob || null,
-        enc(phoneVerification.phoneNumber || phoneVerification.ph_no),
-        enc(contactInfo.email),
-        homeAddId,
-      ]
+    const cleanIdNum = String(customerIdNum).replace(/-/g, "").trim().toUpperCase();
+    const identityLookupHash = hashLookup(cleanIdNum);
+
+    const existingCustomerCheck = await client.query(
+      `SELECT cust_id FROM banka."Customer" WHERE id_num_hash = $1`,
+      [identityLookupHash]
     );
 
-    const custId = customerRes.rows[0].cust_id;
+    let custId: number;
+
+    if (existingCustomerCheck.rows.length > 0) {
+      custId = existingCustomerCheck.rows[0].cust_id;
+      console.log(`[CURRENT ACCOUNT] Existing profile found. Linking current account to master cust_id: ${custId}`);
+    } else {
+      const customerRes = await client.query(
+        `
+        INSERT INTO banka."Customer" (
+          id_num_hash,
+          id_num,
+          full_name,
+          id_type,
+          dob,
+          ph_no,
+          email,
+          home_add
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        RETURNING cust_id
+        `,
+        [
+          identityLookupHash,
+          enc(cleanIdNum),
+          enc(customerFullName),
+          personalInfo.id_type || "IC",
+          personalInfo.dob,
+          enc(phoneVerification.phoneNumber || personalInfo.ph_no_1 || personalInfo.ph_no),
+          enc(contactInfo.email || personalInfo.email),
+          homeAddId,
+        ]
+      );
+      custId = customerRes.rows[0].cust_id;
+    }
+
+    const targetUsername = account.username;
+    if (!targetUsername) throw new Error("Account registration username parameter is empty.");
+
+    const usernameCheck = await client.query(
+      `SELECT user_id FROM banka."User" WHERE LOWER(username) = LOWER($1)`,
+      [targetUsername]
+    );
+
+    if (usernameCheck.rows.length > 0) {
+      return NextResponse.json(
+        { error: "This user profile identifier username is already registered." },
+        { status: 400 }
+      );
+    }
 
     const rawPassword = account.password;
-    if (!rawPassword) throw new Error("Password is missing");
+    if (!rawPassword) throw new Error("Account secure profile validation password parameter is missing.");
 
     const hashedPassword = await hashPassword(rawPassword);
 
-    let profileBuffer: Buffer | string | null = null;
-    if (account.profilePreview || account.img) {
-      const img = account.profilePreview || account.img;
-      profileBuffer = img.startsWith("data:image")
-        ? Buffer.from(img.split(",")[1], "base64")
-        : Buffer.from(img);
+    let profileBuffer: Buffer | null = null;
+    const imgData = account.profilePreview || account.img;
+    if (imgData) {
+      profileBuffer = imgData.startsWith("data:image")
+        ? Buffer.from(imgData.split(",")[1], "base64")
+        : Buffer.from(imgData);
+    } else {
+      profileBuffer = Buffer.alloc(0);
     }
 
     const userRes = await client.query(
@@ -103,74 +161,87 @@ export async function POST(req: Request) {
         username,
         password,
         status,
+        img,
         sec_phrase,
-        branch,
-        img
+        branch
       )
       VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING user_id
       `,
       [
         custId,
-        account.username,
+        targetUsername,
         hashedPassword,
-        account.status || "Pending",
-        account.securityPhrase || account.sec_phrase,
-        data.branchInfo?.branch || account.branch,
+        "PENDING",
         profileBuffer,
+        account.securityPhrase || "",
+        businessAddressData.preferredBranch || "Main Corporate Branch",
       ]
     );
-
     const userId = userRes.rows[0].user_id;
+
+    const businessAddress = {
+      add_1: businessAddressData.businessAddress?.addressLine1 || businessAddressData.addressLine1 || "",
+      add_2: businessAddressData.businessAddress?.addressLine2 || businessAddressData.addressLine2 || "",
+      postcode: businessAddressData.businessAddress?.postcode || businessAddressData.postcode || "",
+      state: businessAddressData.businessAddress?.state || businessAddressData.state || "",
+      country: businessAddressData.businessAddress?.country || businessAddressData.country || "Malaysia",
+    };
+
+    if (!businessAddress.add_1) throw new Error("Corporate operational business address Line 1 is empty.");
 
     const businessAddressRes = await client.query(
       `
-      INSERT INTO banka."Address" (
-        add_1, add_2, postcode, state, country
-      )
+      INSERT INTO banka."Address" (add_1, add_2, postcode, state, country)
       VALUES ($1, $2, $3, $4, $5)
       RETURNING add_id
       `,
       [
-        enc(businessAddress.add_1 || businessAddress.streetAddress1),
-        enc(businessAddress.add_2 || businessAddress.streetAddress2 || businessAddress.city),
-        enc(businessAddress.postcode || businessAddress.postal),
+        enc(businessAddress.add_1),
+        enc(businessAddress.add_2),
+        enc(businessAddress.postcode),
         enc(businessAddress.state),
-        enc(businessAddress.country || "Malaysia"),
+        enc(businessAddress.country),
       ]
     );
 
     const businessAddId = businessAddressRes.rows[0].add_id;
+    let mailingAddId = businessAddId;
 
-    const mailingAddressRes = await client.query(
-      `
-      INSERT INTO banka."Address" (
-        add_1, add_2, postcode, state, country
-      )
-      VALUES ($1, $2, $3, $4, $5)
-      RETURNING add_id
-      `,
-      [
-        enc(mailingAddress.add_1 || mailingAddress.streetAddress1 || businessAddress.add_1),
-        enc(mailingAddress.add_2 || mailingAddress.streetAddress2 || mailingAddress.city || businessAddress.add_2),
-        enc(mailingAddress.postcode || mailingAddress.postal || businessAddress.postcode),
-        enc(mailingAddress.state || businessAddress.state),
-        enc(mailingAddress.country || businessAddress.country || "Malaysia"),
-      ]
-    );
+    const isMailingSameAsBusiness = businessAddressData.isMailingSameAsBusiness ?? true;
 
-    const mailingAddId = mailingAddressRes.rows[0].add_id;
+    if (!isMailingSameAsBusiness && businessAddressData.mailingAddress) {
+      const mailingAddress = {
+        add_1: businessAddressData.mailingAddress.addressLine1 || "",
+        add_2: businessAddressData.mailingAddress.addressLine2 || "",
+        postcode: businessAddressData.mailingAddress.postcode || "",
+        state: businessAddressData.mailingAddress.state || "",
+        country: businessAddressData.mailingAddress.country || "Malaysia",
+      };
+
+      const mailingAddressRes = await client.query(
+        `
+        INSERT INTO banka."Address" (add_1, add_2, postcode, state, country)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING add_id
+        `,
+        [
+          enc(mailingAddress.add_1),
+          enc(mailingAddress.add_2),
+          enc(mailingAddress.postcode),
+          enc(mailingAddress.state),
+          enc(mailingAddress.country),
+        ]
+      );
+      mailingAddId = mailingAddressRes.rows[0].add_id;
+    }
 
     let accountNo = generateAccountNumber();
     let accountExists = true;
 
     while (accountExists) {
       const checkAccount = await client.query(
-        `
-        SELECT account_no
-        FROM banka."Current_account"
-        WHERE account_no = $1
-        `,
+        `SELECT account_no FROM banka."Current_account" WHERE account_no = $1`,
         [accountNo]
       );
 
@@ -181,7 +252,7 @@ export async function POST(req: Request) {
       }
     }
 
-    const currentAccountRes = await client.query(
+    await client.query(
       `
       INSERT INTO banka."Current_account" (
         account_no,
@@ -200,18 +271,17 @@ export async function POST(req: Request) {
         msic_name
       )
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-      RETURNING account_no
       `,
       [
         accountNo,
         userId,
-        hash(businessParticulars.reg_no),
-        enc(businessParticulars.reg_no),
-        enc(businessParticulars.bus_name),
-        enc(businessContact.bus_ph_no),
-        enc(businessContact.bus_email),
+        hash(businessParticulars.registration_number || businessParticulars.reg_no),
+        enc(businessParticulars.registration_number || businessParticulars.reg_no),
+        enc(businessParticulars.business_name || businessParticulars.bus_name),
+        enc(businessContact.bus_ph_no || businessContact.phoneNumber),
+        enc(businessContact.bus_email || businessContact.email),
         businessParticulars.start_date || null,
-        businessParticulars.bus_type || null,
+        businessParticulars.business_type || businessParticulars.bus_type || null,
         businessAddId,
         mailingAddId,
         businessParticulars.role || null,
@@ -224,24 +294,19 @@ export async function POST(req: Request) {
 
     return NextResponse.json(
       {
-        message: "Malaysian current account application created successfully",
+        message: "Malaysian corporate current account application created successfully",
         cust_id: custId,
         user_id: userId,
-        account_no: currentAccountRes.rows[0].account_no,
+        account_no: accountNo,
       },
       { status: 201 }
     );
   } catch (error: any) {
     await client.query("ROLLBACK");
-
-    console.error("Malaysian current account error:", error);
+    console.error("Malaysian current account deployment exception path hit:", error);
 
     return NextResponse.json(
-      {
-        error:
-          error.message ||
-          "Failed to create Malaysian current account application",
-      },
+      { error: error.message || "Failed to create Malaysian corporate current account application" },
       { status: 500 }
     );
   } finally {

@@ -1,7 +1,7 @@
-const admin = require('firebase-admin');
-const fs = require('fs');
-const crypto = require('crypto');
-const path = require('path');
+import admin from 'firebase-admin';
+import fs from 'fs';
+import crypto from 'crypto';
+import path from 'path';
 
 const keyPath = path.join(
   process.cwd(),
@@ -30,7 +30,7 @@ async function uploadSSM() {
   try {
     const rawData = JSON.parse(
       fs.readFileSync(
-        path.join(process.cwd(), 'ssm-db', 'SSM_json.json'),
+        path.join(process.cwd(), 'ssm-db', 'SSM_json_encrypted.json'),
         'utf8'
       )
     );
@@ -46,7 +46,6 @@ async function uploadSSM() {
 
     const batch = db.batch();
 
-    // Upload SSM companies
     companies.forEach((company) => {
       const regNo = company.registration_number;
 
@@ -69,7 +68,6 @@ async function uploadSSM() {
       batch.set(docRef, companyDoc);
     });
 
-    // Upload SSM business people
     businessPeople.forEach((person) => {
       const regNo = person.registration_number;
       const icNumber = person.ic_number;
@@ -83,8 +81,6 @@ async function uploadSSM() {
 
       const companyHashID = generateHashID(regNo);
 
-      // PK / document ID for business person
-      // Uses registration number + IC number
       const personHashID = generateHashID(`${regNo}-${icNumber}`);
 
       const personDoc = {

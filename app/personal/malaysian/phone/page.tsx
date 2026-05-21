@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import ChevronLeftIcon from "@/icons/chevron-left.svg";
 import Label from "@/components/form/Label";
+import { useFormData } from "@/context/FormContext";
 
 type Step = "confirm" | "change" | "otp";
 
@@ -16,11 +17,13 @@ export default function PersonalMalaysianPhone() {
   const [step, setStep] = useState<Step>("confirm");
   const [originalPhoneNumber, setOriginalPhoneNumber] = useState("");
   const [newPhoneNumber, setNewPhoneNumber] = useState("");
-  const [isChangedNumberFlow, setIsChangedNumberFlow] = useState(false);
+  const [isChangedNumber, setIsChangedNumber] = useState(false);
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [isLoading, setIsLoading] = useState(false);
   const [timer, setTimer] = useState(0);
 
+  const { formData, setFormData } = useFormData();
+  
   const otpInputs = useRef<(HTMLInputElement | null)[]>([]);
   
   const searchParams = useSearchParams();
@@ -29,7 +32,7 @@ export default function PersonalMalaysianPhone() {
   const idType = searchParams.get("id_type") || (typeof window !== "undefined" ? localStorage.getItem("id_type") : "") || "ic";
   const idNum = searchParams.get("id_num") || (typeof window !== "undefined" ? localStorage.getItem("id_num") : "") || "";
 
-  const activePhoneNumber = isChangedNumberFlow ? newPhoneNumber : originalPhoneNumber;
+  const activePhoneNumber = isChangedNumber ? newPhoneNumber : originalPhoneNumber;
 
   const fetchIdentity = async (type: string, num: string) => {
     if (!num) return;
@@ -79,10 +82,10 @@ export default function PersonalMalaysianPhone() {
 
   const handleBack = () => {
     if (step === "otp") {
-      setStep(isChangedNumberFlow ? "change" : "confirm");
+      setStep(isChangedNumber ? "change" : "confirm");
     } else if (step === "change") {
       setStep("confirm");
-      setIsChangedNumberFlow(false);
+      setIsChangedNumber(false);
       setOtp(["", "", "", "", "", ""]);
     } else {
       router.push("/personal/malaysian/face_verification");
@@ -91,6 +94,7 @@ export default function PersonalMalaysianPhone() {
 
   const handleSendOtp = () => {
     setIsLoading(true);
+
     setTimeout(() => {
       setIsLoading(false);
       setStep("otp");
@@ -100,7 +104,7 @@ export default function PersonalMalaysianPhone() {
   };
 
   const handleChangeNumber = () => {
-    setIsChangedNumberFlow(true);
+    setIsChangedNumber(true);
     setNewPhoneNumber("");
     setOtp(["", "", "", "", "", ""]);
     setStep("change");
@@ -108,6 +112,7 @@ export default function PersonalMalaysianPhone() {
 
   const handleOtpChange = (value: string, index: number) => {
     const cleanValue = value.replace(/[^0-9]/g, "");
+    
     if (!cleanValue) {
       const newOtp = [...otp];
       newOtp[index] = "";
@@ -116,6 +121,7 @@ export default function PersonalMalaysianPhone() {
     }
 
     const newOtp = [...otp];
+    
     if (cleanValue.length > 1) {
       const pastedChars = cleanValue.slice(0, 6).split("");
       pastedChars.forEach((char, i) => {
@@ -130,20 +136,17 @@ export default function PersonalMalaysianPhone() {
     }
   };
 
-  const handleVerifyOTP = async () => {
-    try {
-      localStorage.setItem(
-        "phoneVerification",
-        JSON.stringify({
-          ph_no: `+60${activePhoneNumber}`,
-          phone_was_changed: isChangedNumberFlow
-        })
-      );
+  const handleVerifyOtp = () => {
+    setFormData((prev: any) => ({
+      ...prev,
+      phoneVerification: {
+        ...prev?.phoneVerification,
+        phoneNumber: activePhoneNumber,
+        phone_was_changed: isChangedNumber,
+      },
+    }));
 
       router.push(`/personal/malaysian/email?journeyId=${encodeURIComponent(journeyId)}`);
-    } catch (error: any) {
-      console.error("Malaysian phone verification error:", error);
-    }
   };
 
   const handleOtpKeyDown = (e: React.KeyboardEvent, index: number) => {
@@ -245,7 +248,7 @@ export default function PersonalMalaysianPhone() {
               <button
                 type="button"
                 onClick={() => {
-                  setIsChangedNumberFlow(false);
+                  setIsChangedNumber(false);
                   handleSendOtp();
                 }}
                 disabled={isLoading || !originalPhoneNumber}
@@ -313,6 +316,7 @@ export default function PersonalMalaysianPhone() {
                         alt="MY"
                         className="w-5 h-auto rounded-sm shadow-sm"
                       />
+                      
                       <span className="text-sm font-bold text-gray-700 dark:text-gray-300">+60</span>
                     </div>
 
@@ -388,7 +392,7 @@ export default function PersonalMalaysianPhone() {
             <div className="space-y-4">
               <button
                 type="button"
-                onClick={handleVerifyOTP}
+                onClick={handleVerifyOtp}
                 disabled={otp.join("").length < 6 || isLoading}
                 className={`inline-flex items-center justify-center w-full px-4 py-3 text-sm font-bold transition rounded-lg shadow-theme-xs ${
                   otp.join("").length === 6 

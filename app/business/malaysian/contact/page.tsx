@@ -54,7 +54,7 @@ export default function BusinessMalaysianContact() {
     }, 800);
   };
 
-  const handleVerify = () => {
+  const handleVerifyOTP = () => {
     if (step === "email-otp") {
       handleSendOtp("phone-otp");
     } else if (step === "phone-otp") {
@@ -198,7 +198,6 @@ export default function BusinessMalaysianContact() {
             >
               <div className="space-y-6">
                 <div>
-                  
                   <Label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
                     Business Email Address<span className="text-red-500">*</span>
                   </Label>
@@ -250,7 +249,7 @@ export default function BusinessMalaysianContact() {
                       : "bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600"
                   }`}
                 >
-                  {isLoading ? "Processing..." : "Next"}
+                  {isLoading ? "Processing..." : "Continue"}
                 </button>
               </div>
             </form>
@@ -288,7 +287,7 @@ export default function BusinessMalaysianContact() {
 
               <button
                 type="button"
-                onClick={handleVerify}
+                onClick={handleVerifyOTP}
                 disabled={otp.join("").length < 6 || isLoading}
                 className={`inline-flex items-center justify-center w-full px-4 py-3 text-sm font-bold transition rounded-lg shadow-theme-xs ${
                   otp.join("").length === 6
@@ -333,7 +332,7 @@ export default function BusinessMalaysianContact() {
 
               <button
                 type="button"
-                onClick={handleVerify}
+                onClick={handleVerifyOTP}
                 disabled={otp.join("").length < 6 || isLoading}
                 className={`inline-flex items-center justify-center w-full px-4 py-3 text-sm font-bold transition rounded-lg shadow-theme-xs ${
                   otp.join("").length === 6

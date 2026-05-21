@@ -26,7 +26,7 @@ export default function PersonalMalaysianAccountCreation() {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -79,8 +79,8 @@ export default function PersonalMalaysianAccountCreation() {
 
       const phoneVerification = JSON.parse(localStorage.getItem("phoneVerification") || "{}");
       const personalInfo = JSON.parse(localStorage.getItem("personalInfo") || "{}");
-      const contactInfo = JSON.parse(localStorage.getItem("contactInfo") || "{}"); 
       const storedHomeAddress = JSON.parse(localStorage.getItem("homeAddress") || "{}");
+      const contactInfo = JSON.parse(localStorage.getItem("contactInfo") || "{}");
       const storedMailingAddress = JSON.parse(localStorage.getItem("mailingAddress") || "{}");
       const branchInfo = JSON.parse(localStorage.getItem("branchInfo") || "{}");
       const savingsApplication = JSON.parse(localStorage.getItem("savingsApplication") || "{}");
@@ -137,7 +137,7 @@ export default function PersonalMalaysianAccountCreation() {
         },
       };
 
-      console.log("Sending Malaysian application payload verification:", JSON.stringify(payload));
+      console.log("Sending Malaysian application payload verification: ", JSON.stringify(payload));
 
       const response = await fetch("/api/application/msian_personal_account", {
         method: "POST",
@@ -170,7 +170,7 @@ export default function PersonalMalaysianAccountCreation() {
     }
   };
 
-   const handleNext = () => {
+  const handleNext = () => {
     if (step === "profile") {
       setStep("password");
     } else if (step === "password") {
@@ -412,10 +412,7 @@ export default function PersonalMalaysianAccountCreation() {
                     className="w-full px-4 py-2.5 text-sm transition-all bg-white border-2 rounded-xl outline-none border-gray-200"
                     placeholder="Enter your password"
                     value={password}
-                    onChange={(e) => {
-                      const sanitized = e.target.value.replace(/\s/g, "");
-                      setPassword(sanitized);
-                    }}
+                    onChange={(e) => setPassword(e.target.value.replace(/\s/g, ""))}
                   />
 
                   <button 
@@ -479,10 +476,7 @@ export default function PersonalMalaysianAccountCreation() {
                   className="w-full px-4 py-2.5 text-sm transition-all bg-white border-2 rounded-xl outline-none border-gray-200"
                   placeholder="Confirm your password"
                   value={confirmPassword}
-                  onChange={(e) => {
-                    const sanitized = e.target.value.replace(/\s/g, "");
-                    setConfirmPassword(sanitized);
-                  }}
+                  onChange={(e) => setConfirmPassword(e.target.value.replace(/\s/g, ""))}
                 />
               </div>
 
@@ -547,18 +541,18 @@ export default function PersonalMalaysianAccountCreation() {
         )}
         
         {step !== "pending" && (
-           <div className="mt-5 text-center">
-             <p className="text-sm font-normal">
+          <div className="mt-5 text-center">
+            <p className="text-sm font-normal">
                 <span className="text-gray-500 dark:text-gray-400">Having trouble? </span>
 
-               <Link 
+              <Link 
                 href="/support" 
                 className="font-semibold text-blue-700 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
                >
-                 Contact Support
-               </Link>
-             </p>
-           </div>
+                Contact Support
+              </Link>
+            </p>
+          </div>
         )}
       </div>
 
