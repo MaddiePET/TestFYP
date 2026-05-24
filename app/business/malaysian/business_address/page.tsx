@@ -214,7 +214,6 @@ export default function BusinessMalaysianBusinessAddress() {
           className="inline-flex items-center text-sm text-gray-600 dark:text-white/80 transition-colors hover:text-gray-900 dark:hover:text-white"
         >
           <ChevronLeftIcon className="w-5 h-5" />
-          
           Back
         </button>
 
@@ -226,7 +225,6 @@ export default function BusinessMalaysianBusinessAddress() {
             height={40} 
             className="block dark:invert-0 invert" 
           />
-
           <h1 className="text-2xl font-bold uppercase tracking-tight text-gray-800 dark:text-white">
             DTCOB
           </h1>
@@ -331,9 +329,7 @@ export default function BusinessMalaysianBusinessAddress() {
               <div className="pt-2 text-center">
                 <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
                   Keep business address as mailing address? 
-                  <span className="text-red-500">
-                    *
-                  </span>
+                  <span className="text-red-500">*</span>
                 </label>
 
                 <div className="flex justify-center gap-8 mt-2">
@@ -345,7 +341,6 @@ export default function BusinessMalaysianBusinessAddress() {
                       checked={useBusinessAsMailing === true}
                       onChange={() => setUseBusinessAsMailing(true)}
                     />
-
                     Yes
                   </label>
 
@@ -357,7 +352,6 @@ export default function BusinessMalaysianBusinessAddress() {
                       checked={useBusinessAsMailing === false}
                       onChange={() => setUseBusinessAsMailing(false)}
                     />
-
                     No
                   </label>
                 </div>
@@ -522,7 +516,6 @@ export default function BusinessMalaysianBusinessAddress() {
                         strokeWidth="2" 
                         d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" 
                       />
-
                       <path 
                         strokeLinecap="round" 
                         strokeLinejoin="round" 
@@ -662,7 +655,6 @@ export default function BusinessMalaysianBusinessAddress() {
         <div className="mt-5 text-center">
           <p className="text-sm font-normal">
             <span className="text-gray-500 dark:text-gray-400">Having trouble? </span>
-
             <Link 
               href="/support" 
               className="font-semibold text-blue-700 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"

@@ -36,7 +36,7 @@ export default function PersonalNonMalaysianPassportQRCode() {
 
     if (origin.includes("localhost") || origin.includes("127.0.0.1")) {
       setHostWarning(
-        "This app is loaded from localhost, which is not be reachable from your phone. Open the app from your laptop IP or tunnel URL and refresh."
+        "This app is loaded from localhost, which is not be reachable from your phone. Open the app from the tunnel URL and refresh."
       );
     }
 
@@ -153,7 +153,10 @@ export default function PersonalNonMalaysianPassportQRCode() {
           Back
         </button>
 
-        <Link href="/" className="flex items-center gap-2">
+        <Link 
+          href="/" 
+          className="flex items-center gap-2"
+        >
           <Image
             src="/images/logo/logo-light.svg"
             alt="Logo"
@@ -162,7 +165,7 @@ export default function PersonalNonMalaysianPassportQRCode() {
             className="block dark:invert-0 invert"
           />
 
-          <h1 className="text-2xl font-bold uppercase tracking-tight text-gray-800 dark:text-white">
+          <h1 className="text-lg sm:text-2xl font-bold uppercase tracking-tight text-gray-800 dark:text-white truncate">
             DTCOB
           </h1>
         </Link>

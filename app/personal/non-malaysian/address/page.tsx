@@ -3,7 +3,7 @@
 import React, { useState, useEffect, ChangeEvent } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import ChevronLeftIcon from "@/icons/chevron-left.svg";
 
 interface AddressFields {
@@ -29,126 +29,181 @@ interface AddressSectionProps {
     field: keyof AddressFields,
     value: string
   ) => void;
+  disabled?: boolean;
+  headerRight?: React.ReactNode;
 }
+
+const COUNTRIES = [
+  "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Antigua and Barbuda", "Argentina", "Armenia", "Australia", "Austria", "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium", "Belize", "Benin", "Bhutan", "Bolivia", "Bosnia and Herzegovina", "Botswana", "Brazil", "Brunei", "Bulgaria", "Burkina Faso", "Burundi", "Cabo Verde", "Cambodia", "Cameroon", "Canada", "Central African Republic", "Chad", "Chile", "China", "Colombia", "Comoros", "Congo", "Costa Rica", "Croatia", "Cuba", "Cyprus", "Czech Republic", "Denmark", "Djibouti", "Dominica", "Dominican Republic", "Ecuador", "Egypt", "El Salvador", "Equatorial Guinea", "Eritrea", "Estonia", "Eswatini", "Ethiopia", "Fiji", "Finland", "France", "Gabon", "Gambia", "Georgia", "Germany", "Ghana", "Greece", "Grenada", "Guatemala", "Guinea", "Guinea-Bissau", "Guyana", "Haiti", "Honduras", "Hungary", "Iceland", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Israel", "Italy", "Jamaica", "Japan", "Jordan", "Kazakhstan", "Kenya", "Kiribati", "Kuwait", "Kyrgyzstan", "Laos", "Latvia", "Lebanon", "Lesotho", "Liberia", "Libya", "Liechtenstein", "Lithuania", "Luxembourg", "Madagascar", "Malawi", "Malaysia", "Maldives", "Mali", "Malta", "Marshall Islands", "Mauritania", "Mauritius", "Mexico", "Micronesia", "Moldova", "Monaco", "Mongolia", "Montenegro", "Morocco", "Mozambique", "Myanmar", "Namibia", "Nauru", "Nepal", "Netherlands", "New Zealand", "Nicaragua", "Niger", "Nigeria", "North Korea", "North Macedonia", "Norway", "Oman", "Pakistan", "Palau", "Palestine", "Panama", "Papua New Guinea", "Paraguay", "Peru", "Philippines", "Poland", "Portugal", "Qatar", "Romania", "Russia", "Rwanda", "Saint Kitts and Nevis", "Saint Lucia", "Saint Vincent and the Grenadines", "Samoa", "San Marino", "Sao Tome and Principe", "Saudi Arabia", "Senegal", "Serbia", "Seychelles", "Sierra Leone", "Singapore", "Slovakia", "Slovenia", "Solomon Islands", "Somalia", "South Africa", "South Korea", "South Sudan", "Spain", "Sri Lanka", "Sudan", "Suriname", "Sweden", "Switzerland", "Syria", "Tajikistan", "Tanzania", "Thailand", "Timor-Leste", "Togo", "Tonga", "Trinidad and Tobago", "Tunisia", "Turkey", "Turkmenistan", "Tuvalu", "Uganda", "Ukraine", "United Arab Emirates", "United Kingdom", "United States", "Uruguay", "Uzbekistan", "Vanuatu", "Venezuela", "Vietnam", "Yemen", "Zambia", "Zimbabwe"
+];
 
 const AddressSection = ({
   title,
   type,
   addressData,
   updateField,
-}: AddressSectionProps) => (
-  <div className="flex-1">
-    <h2 className="block mb-6 text-md font-bold text-[#3D405B] dark:text-white border-b border-gray-200 dark:border-gray-800 pb-2">
-      {title}
-    </h2>
-
-    <div className="space-y-5">
-      <div>
-        <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-          Address Line 1 <span className="text-red-500">*</span>
-        </label>
-
-        <input
-          type="text"
-          className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
-          placeholder="House no, Building name"
-          value={addressData[type].streetAddress1}
-          onChange={(e: ChangeEvent<HTMLInputElement>) =>
-            updateField(type, "streetAddress1", e.target.value)
-          }
-        />
+  disabled = false,
+  lockedCountry = false,
+  headerRight,
+}: AddressSectionProps & { lockedCountry?: boolean }) => {
+  const inputBaseClasses = `w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 disabled:opacity-60 disabled:bg-gray-100 disabled:cursor-not-allowed dark:disabled:bg-gray-800/80 dark:disabled:border-gray-700 appearance-none`;
+  
+  return (
+    <div className="flex-1">
+      <div className="flex justify-between items-end mb-6 border-b border-gray-200 dark:border-gray-800 pb-2">
+        <h2 className="block text-md font-bold text-[#3D405B] dark:text-white">
+          {title}
+        </h2>
+        {headerRight && <div>{headerRight}</div>}
       </div>
 
-      <div>
-        <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-          Address Line 2 <span className="text-red-500">*</span>
-        </label>
-
-        <input
-          type="text"
-          className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
-          placeholder="Street name, Area"
-          value={addressData[type].streetAddress2}
-          onChange={(e: ChangeEvent<HTMLInputElement>) =>
-            updateField(type, "streetAddress2", e.target.value)
-          }
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-5">
+      <div className="space-y-5">
         <div>
           <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-            Postal Code <span className="text-red-500">*</span>
+            Address 1 <span className="text-red-500">*</span>
           </label>
 
           <input
             type="text"
-            className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
-            placeholder="e.g. 47610"
-            value={addressData[type].postal}
+            className={`${inputBaseClasses} appearance-none`}
+            placeholder="Enter your house number, building name"
+            value={addressData[type].streetAddress1}
+            disabled={disabled}
             onChange={(e: ChangeEvent<HTMLInputElement>) =>
-              updateField(type, "postal", e.target.value)
+              updateField(type, "streetAddress1", e.target.value.replace(/[^a-zA-Z0-9,.\-\/ ]/g, ""))
             }
           />
         </div>
 
         <div>
           <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-            City <span className="text-red-500">*</span>
+            Address 2 <span className="text-red-500">*</span>
           </label>
 
           <input
             type="text"
-            className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
-            placeholder="e.g. Subang Jaya"
-            value={addressData[type].city}
+            className={`${inputBaseClasses} appearance-none`}
+            placeholder="Enter your street name, area"
+            value={addressData[type].streetAddress2}
+            disabled={disabled}
             onChange={(e: ChangeEvent<HTMLInputElement>) =>
-              updateField(type, "city", e.target.value)
-            }
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-5">
-        <div>
-          <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-            State <span className="text-red-500">*</span>
-          </label>
-
-          <input
-            type="text"
-            className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
-            placeholder="e.g. Selangor"
-            value={addressData[type].state}
-            onChange={(e: ChangeEvent<HTMLInputElement>) =>
-              updateField(type, "state", e.target.value)
+              updateField(type, "streetAddress2", e.target.value.replace(/[^a-zA-Z0-9,.\-\/ ]/g, ""))
             }
           />
         </div>
 
-        <div>
-          <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-            Country <span className="text-red-500">*</span>
-          </label>
+        <div className="grid grid-cols-2 gap-5">
+          <div>
+            <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
+              Postal Code <span className="text-red-500">*</span>
+            </label>
 
-          <input
-            type="text"
-            className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
-            placeholder="e.g. United Kingdom"
-            value={addressData[type].country}
-            onChange={(e: ChangeEvent<HTMLInputElement>) =>
-              updateField(type, "country", e.target.value)
-            }
-          />
+            <input
+              type="text"
+              maxLength={5}
+              className={`${inputBaseClasses} appearance-none`}
+              placeholder="Enter your postal code"
+              value={addressData[type].postal}
+              disabled={disabled}
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                updateField(type, "postal", e.target.value.replace(/[^0-9]/g, ""))
+              }
+            />
+          </div>
+
+          <div>
+            <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
+              City <span className="text-red-500">*</span>
+            </label>
+
+            <input
+              type="text"
+              className={`${inputBaseClasses} appearance-none`}
+              placeholder="Enter your city"
+              value={addressData[type].city}
+              disabled={disabled}
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                updateField(type, "city", e.target.value.replace(/[^a-zA-Z ]/g, ""))
+              }
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-5">
+          <div>
+            <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
+              State <span className="text-red-500">*</span>
+            </label>
+
+            <input
+              type="text"
+              className={`${inputBaseClasses} appearance-none`}
+              placeholder="Enter your state"
+              value={addressData[type].state}
+              disabled={disabled}
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                updateField(type, "state", e.target.value.replace(/[^a-zA-Z ]/g, ""))
+              }
+            />
+          </div>
+          
+          <div>
+            <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
+              Country <span className="text-red-500">*</span>
+            </label>
+
+            {lockedCountry ? (
+              <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
+                <span className="text-sm font-bold text-gray-700 dark:text-gray-200">
+                  {addressData[type].country || "Malaysia"}
+                </span>
+              </div>
+            ) : (
+              <div className="relative">
+                <select
+                  className={`${inputBaseClasses} ${
+                    !addressData[type].country ? "!text-gray-400 dark:!text-gray-400" : ""
+                  }`}
+                  value={addressData[type].country}
+                  disabled={disabled}
+                  onChange={(e) => updateField(type, "country", e.target.value)}
+                >
+                  <option value="" disabled>
+                    Select Country
+                  </option>
+                  {COUNTRIES.map((c) => <option key={c} value={c} className="text-gray-800 dark:text-white">{c}</option>)}
+                </select>
+
+                <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
+                  <svg
+                    className="w-4 h-4 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 export default function PersonalNonMalaysianAddress() {
   const router = useRouter();
   const [mounted, setMounted] = useState<boolean>(false);
+
+  const searchParams = useSearchParams();
+  const journeyId = searchParams.get("journeyId") || (typeof window !== "undefined" ? localStorage.getItem("journeyId") : "") || "";
 
   const [addressData, setAddressData] = useState<AddressState>({
     permanentAddress: {
@@ -173,64 +228,83 @@ export default function PersonalNonMalaysianAddress() {
     setMounted(true);
   }, []);
 
-  const isFormValid =
-  Object.values(addressData.permanentAddress).every(
-    (val) => val.trim() !== ""
-  ) &&
-  Object.values(addressData.mailingAddress).every(
-    (val) => val.trim() !== ""
-  );
+  useEffect(() => {
+    if (addressData.mailingAddress.country === "") {
+      updateField("mailingAddress", "country", "Malaysia");
+    }
+  }, [addressData.mailingAddress.country]);
 
-// Updates one field inside either permanentAddress or mailingAddress.
-const updateField = (
-  type: keyof AddressState,
-  field: keyof AddressFields,
-  value: string
-) => {
-  setAddressData((prev) => ({
-    ...prev,
-    [type]: {
-      ...prev[type],
-      [field]: value,
-    },
-  }));
-};
-
-// Saves the residential and mailing address before moving to the application details page.
-const handleNavigation = () => {
-  // Convert frontend address field names into backend database field names.
-  const addressInfo = {
-    address: {
-      add_type: "Home",
-      add_1: addressData.permanentAddress.streetAddress1,
-      add_2: addressData.permanentAddress.streetAddress2,
-      postcode: addressData.permanentAddress.postal,
-      city: addressData.permanentAddress.city,
-      state: addressData.permanentAddress.state,
-      country: addressData.permanentAddress.country,
-    },
-
-    mailingAddress: {
-      add_type: "Mailing",
-      add_1: addressData.mailingAddress.streetAddress1,
-      add_2: addressData.mailingAddress.streetAddress2,
-      postcode: addressData.mailingAddress.postal,
-      city: addressData.mailingAddress.city,
-      state: addressData.mailingAddress.state,
-      country: addressData.mailingAddress.country,
-    },
+  const checkAddressValid = (address: AddressFields) => {
+    return (
+      address.streetAddress1.trim() !== "" &&
+      address.streetAddress2.trim() !== "" &&
+      address.postal.length === 5 &&
+      address.city.trim() !== "" &&
+      address.state.trim() !== "" &&
+      address.country.trim() !== ""
+    );
   };
 
-  // Store address data temporarily for the final backend submission.
-  localStorage.setItem("nonMsianAddress", JSON.stringify(addressInfo));
+  const isFormValid =
+    checkAddressValid(addressData.permanentAddress) &&
+    checkAddressValid(addressData.mailingAddress);
 
-  router.push("/personal/non-malaysian/application");
-};
+  const updateField = (
+    type: keyof AddressState,
+    field: keyof AddressFields,
+    value: string
+  ) => {
+    setAddressData((prev) => {
+      const newData = {
+        ...prev,
+        [type]: {
+          ...prev[type],
+          [field]: value,
+        },
+      };
+
+      return newData;
+    });
+  };
+
+  const saveAddressToLocalStorage = () => {
+    const addressInfo = {
+      address: {
+        add_type: "Home",
+        add_1: addressData.permanentAddress.streetAddress1,
+        add_2: addressData.permanentAddress.streetAddress2,
+        postcode: addressData.permanentAddress.postal,
+        city: addressData.permanentAddress.city,
+        state: addressData.permanentAddress.state,
+        country: addressData.permanentAddress.country,
+      },
+
+      mailingAddress: {
+        add_type: "Mailing",
+        add_1: addressData.mailingAddress.streetAddress1,
+        add_2: addressData.mailingAddress.streetAddress2,
+        postcode: addressData.mailingAddress.postal,
+        city: addressData.mailingAddress.city,
+        state: addressData.mailingAddress.state,
+        country: addressData.mailingAddress.country,
+      },
+    };
+
+    localStorage.setItem(
+      "nonMsianAddress",
+      JSON.stringify(addressInfo)
+    );
+  };
+
+  const handleNavigation = () => {
+    saveAddressToLocalStorage();
+    router.push("/personal/non-malaysian/application");
+  };
 
   if (!mounted) return null;
 
   return (
-    <div className="relative flex flex-col items-center min-h-screen px-4 py-20 bg-[#F9FAFB] dark:bg-gray-950 overflow-hidden">
+    <div className="relative flex flex-col items-center min-h-[100dvh] px-4 py-20 bg-[#F9FAFB] dark:bg-gray-950 overflow-hidden">
       <div className="absolute top-0 left-0 w-full leading-none z-0 pointer-events-none opacity-20">
         <svg
           className="relative block w-full h-24 sm:h-32 md:h-48 lg:h-64"
@@ -264,17 +338,26 @@ const handleNavigation = () => {
         </svg>
       </div>
 
-      <div className="absolute top-6 left-4 right-4 flex justify-between items-center max-w-7xl mx-auto w-full z-20">
+      <div className="absolute top-6 left-4 right-4 flex justify-between items-center max-w-7xl mx-auto z-20 overflow-hidden">
         <button
           type="button"
-          onClick={() => router.push("/personal/non-malaysian/info")}
+          onClick={() => { 
+            saveAddressToLocalStorage();
+            router.push(
+              `/personal/non-malaysian/info?journeyId=${encodeURIComponent(journeyId)}`
+            );
+          }}
           className="inline-flex items-center text-sm text-gray-600 dark:text-white/80 transition-colors hover:text-gray-900 dark:hover:text-white"
         >
           <ChevronLeftIcon className="w-5 h-5" />
+
           Back
         </button>
 
-        <Link href="/" className="flex items-center gap-2">
+        <Link 
+          href="/" 
+          className="flex items-center gap-2"
+        >
           <Image
             src="/images/logo/logo-light.svg"
             alt="Logo"
@@ -283,14 +366,14 @@ const handleNavigation = () => {
             className="block dark:invert-0 invert"
           />
 
-          <h1 className="text-2xl font-bold uppercase tracking-tight text-gray-800 dark:text-white">
+          <h1 className="text-lg sm:text-2xl font-bold uppercase tracking-tight text-gray-800 dark:text-white truncate">
             DTCOB
           </h1>
         </Link>
       </div>
 
-      <div className="relative w-full max-w-5xl mt-10 z-10">
-        <div className="mb-12 text-center">
+      <div className="relative w-full max-w-5xl mt-10 z-10 animate-in fade-in duration-500">
+        <div className="mb-8 text-center">
           <h1 className="mb-3 font-bold text-gray-800 text-title-sm dark:text-white sm:text-title-md">
             Enter Your Address Details
           </h1>
@@ -313,6 +396,7 @@ const handleNavigation = () => {
             type="mailingAddress"
             addressData={addressData}
             updateField={updateField}
+            lockedCountry={true}
           />
         </div>
 

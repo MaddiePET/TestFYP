@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import ChevronLeftIcon from "@/icons/chevron-left.svg";
 
 type Step = "input" | "otp";
+type MessageType = "success" | "error" | "";
 
 export default function PersonalNonMalaysianEmail() {
   const router = useRouter();
@@ -18,14 +19,13 @@ export default function PersonalNonMalaysianEmail() {
   const [isLoading, setIsLoading] = useState(false);
   const [timer, setTimer] = useState(0);
   const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState<MessageType>("");
 
   const otpInputs = useRef<(HTMLInputElement | null)[]>([]);
 
   const searchParams = useSearchParams();
-  const journeyId =
-    searchParams.get("journeyId") ||
-    (typeof window !== "undefined" ? localStorage.getItem("journeyId") : "") ||
-    "";
+
+  const journeyId = searchParams.get("journeyId") || (typeof window !== "undefined" ? localStorage.getItem("journeyId") : "") || "";
 
   useEffect(() => {
     setMounted(true);
@@ -49,133 +49,123 @@ export default function PersonalNonMalaysianEmail() {
   };
 
   const handleSendOtp = async (e?: React.FormEvent) => {
-  // Prevent the form from refreshing the page when the Continue button is clicked.
-  if (e) e.preventDefault();
+    if (e) e.preventDefault();
 
-  // Start loading state and clear any previous success or error message.
-  setIsLoading(true);
-  setMessage("");
+    setIsLoading(true);
+    setMessage("");
+    setMessageType("");
 
-  if (!journeyId) {
-    setMessage("Journey ID missing. Please restart passport verification.");
-    setIsLoading(false);
-    return;
-  }
-
-  try {
-    // Call the backend API route that generates and sends the OTP email.
-    const res = await fetch("/api/otp/email/send", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email }),
-    });
-
-    const data = await res.json();
-
-    // If the API returns an error, show the message and stop the flow.
-    if (!res.ok) {
-      setMessage(data.error || "Failed to send email OTP.");
+    if (!journeyId) {
+      setMessage("Journey ID missing. Please restart passport verification.");
+      setMessageType("error");
       setIsLoading(false);
       return;
     }
 
-    // Move the user to the OTP input screen after the email is sent.
-    setStep("otp");
+    try {
+      const res = await fetch("/api/otp/email/send", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
 
-    // Start the resend countdown timer.
-    setTimer(60);
+      const data = await res.json();
 
-    // Show a success message to the user.
-    setMessage("OTP sent successfully. Please check your email.");
-  } catch (error) {
-    // Log the technical error for debugging and show a user-friendly message.
-    console.error("Send OTP error:", error);
-    setMessage("Something went wrong while sending the OTP.");
-  } finally {
-    // Stop loading state whether the request succeeds or fails.
-    setIsLoading(false);
-  }
-};
+      if (!res.ok) {
+        setMessage(data.error || "Failed to send email OTP.");
+        setMessageType("error");
+        setIsLoading(false);
+        return;
+      }
+
+      setStep("otp");
+      setTimer(60);
+      setMessage("OTP sent successfully. Please check your email.");
+      setMessageType("success");
+    } catch (error) {
+      console.error("Send OTP error:", error);
+      setMessage("Something went wrong while sending the OTP.");
+      setMessageType("error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleVerifyOtp = async () => {
-  // Combine the 6 separate OTP input boxes into one OTP string.
-  const enteredOtp = otp.join("");
+    const enteredOtp = otp.join("");
 
-  // Start loading state and clear previous messages.
-  setIsLoading(true);
-  setMessage("");
+    setIsLoading(true);
+    setMessage("");
+    setMessageType("");
 
-  try {
-    // Call the backend API route that verifies the email and OTP.
-    const res = await fetch("/api/otp/email/verify", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email,
-        otp: enteredOtp,
-      }),
-    });
+    try {
+      const res = await fetch("/api/otp/email/verify", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          otp: enteredOtp,
+        }),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    // If the OTP is wrong, expired, or missing, show the API error message.
-    if (!res.ok) {
-      setMessage(data.error || "Invalid OTP. Please try again.");
+      if (!res.ok) {
+        setMessage(data.error || "Invalid OTP. Please try again.");
+        setMessageType("error");
+        setIsLoading(false);
+        return;
+      }
+
+      localStorage.setItem(
+        "nonMsianEmail",
+        JSON.stringify({
+          email: email,
+          emailVerified: true,
+        })
+      );
+
+      const statusRes = await fetch(
+        `/api/ekyc/status?journeyId=${encodeURIComponent(journeyId)}`
+      );
+
+      const statusData = await statusRes.json();
+      console.log("Status API response:", statusData);
+
+      const passportNo =
+        statusData?.id_num ||
+        statusData?.data?.id_num ||
+        statusData?.identity?.id_num ||
+        "";
+
+      if (!passportNo) {
+        console.error("Missing Passport number from journey status:", statusData);
+        setMessage("Passport number missing. Please restart Passport verification.");
+        setMessageType("error");
+        setIsLoading(false);
+        return;
+      }
+
+      router.push(
+        `/personal/non-malaysian/info?id_type=passport&id_num=${encodeURIComponent(passportNo)}&journeyId=${encodeURIComponent(journeyId)}`
+      );
+    } catch (error) {
+      console.error("Verify OTP error:", error);
+      setMessage("Something went wrong while verifying the OTP.");
+      setMessageType("error");
+    } finally {
       setIsLoading(false);
-      return;
     }
-
-    // Save the verified email temporarily so it can be used during final submission.
-    localStorage.setItem(
-      "nonMsianEmail",
-      JSON.stringify({
-        email: email,
-        emailVerified: true,
-      })
-    );
-
-    // GET PASSPORT NUMBER FROM PREVIOUS STEP TO PASS TO NEXT PAGE
-    const statusRes = await fetch(
-      `/api/ekyc/status?journeyId=${encodeURIComponent(journeyId)}`
-    );
-
-    const statusData = await statusRes.json();
-
-    console.log("Status API response:", statusData);
-
-    const passportNo =
-      statusData?.id_num ||
-      statusData?.data?.id_num ||
-      statusData?.identity?.id_num ||
-      "";
-
-    if (!passportNo) {
-      console.error("Missing passport number from journey status:", statusData);
-      setMessage("Passport number missing. Please restart passport verification.");
-      setIsLoading(false);
-      return;
-    }
-
-    router.push(
-      `/personal/non-malaysian/info?id_type=passport&id_num=${encodeURIComponent(passportNo)}&journeyId=${encodeURIComponent(journeyId)}`
-    );
-  } catch (error) {
-    // Log the technical error for debugging and show a user-friendly message.
-    console.error("Verify OTP error:", error);
-    setMessage("Something went wrong while verifying the OTP.");
-  } finally {
-    // Stop loading state whether the request succeeds or fails.
-    setIsLoading(false);
-  }
-};
+  };
 
   const handleOtpChange = (value: string, index: number) => {
     const cleanValue = value.replace(/[^0-9]/g, "");
     const newOtp = [...otp];
+    
     if (cleanValue.length > 1) {
       const pastedChars = cleanValue.slice(0, 6).split("");
       pastedChars.forEach((char, i) => {
@@ -197,7 +187,7 @@ export default function PersonalNonMalaysianEmail() {
   };
 
   return (
-    <div className="relative flex flex-col items-center justify-center min-h-screen px-4 py-20 bg-[#F9FAFB] dark:bg-gray-950 overflow-hidden">
+    <div className="relative flex flex-col items-center justify-center min-h-[100dvh] px-4 py-20 bg-[#F9FAFB] dark:bg-gray-950 overflow-hidden">
       <div className="absolute top-0 left-0 w-full leading-none z-0 pointer-events-none opacity-20">
         <svg 
           className="relative block w-full h-24 sm:h-32 md:h-48 lg:h-64" 
@@ -208,7 +198,7 @@ export default function PersonalNonMalaysianEmail() {
             className="fill-[#3D405B]/80" 
             d="M0,192L48,197.3C96,203,192,213,288,192C384,171,480,117,576,117.3C672,117,768,171,864,192C960,213,1056,203,1152,176C1248,149,1344,107,1392,85.3L1440,64L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"
           />
-
+          
           <path 
             className="fill-[#3D405B]" 
             d="M0,128L48,138.7C96,149,192,171,288,176C384,181,480,171,576,144C672,117,768,75,864,69.3C960,64,1056,96,1152,112C1248,128,1344,128,1392,128L1440,128L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"
@@ -230,18 +220,20 @@ export default function PersonalNonMalaysianEmail() {
         </svg>
       </div>
 
-      <div className="absolute top-6 left-4 right-4 flex justify-between items-center max-w-7xl mx-auto w-full z-20">
+      <div className="absolute top-6 left-4 right-4 flex justify-between items-center max-w-7xl mx-auto z-20 overflow-hidden">
         <button
           type="button"
           onClick={handleGlobalBack}
           className="inline-flex items-center text-sm text-gray-600 dark:text-white/80 transition-colors hover:text-gray-900 dark:hover:text-white"
         >
           <ChevronLeftIcon className="w-5 h-5" />
-
           Back
         </button>
 
-        <Link href="/" className="flex items-center gap-2">
+        <Link 
+          href="/" 
+          className="flex items-center gap-2"
+        >
           <Image 
             src="/images/logo/logo-light.svg" 
             alt="Logo" 
@@ -249,8 +241,8 @@ export default function PersonalNonMalaysianEmail() {
             height={40} 
             className="block dark:invert-0 invert" 
           />
-
-          <h1 className="text-2xl font-bold uppercase tracking-tight text-gray-800 dark:text-white">
+          
+          <h1 className="text-lg sm:text-2xl font-bold uppercase tracking-tight text-gray-800 dark:text-white truncate">
             DTCOB
           </h1>
         </Link>
@@ -263,11 +255,22 @@ export default function PersonalNonMalaysianEmail() {
               <h1 className="mb-3 font-bold text-gray-800 text-title-sm dark:text-white sm:text-title-md">
                 Enter Your Email
               </h1>
-
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 Please provide your email address to proceed with the registration.
               </p>
             </div>
+
+            {message && (
+              <div
+                className={`mb-4 w-full p-4 rounded-lg border text-xs text-center font-medium shadow-sm ${
+                  messageType === "success"
+                    ? "bg-green-50 border-green-200 text-green-600"
+                    : "bg-red-50 border-red-200 text-red-600"
+                }`}
+              >
+                {message}
+              </div>
+            )}
 
             <form 
               onSubmit={handleSendOtp} 
@@ -277,14 +280,13 @@ export default function PersonalNonMalaysianEmail() {
                 <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
                   Email Address<span className="text-red-500">*</span>
                 </label>
-
                 <input 
                   type="email" 
                   required 
-                  placeholder="name@example.com" 
+                  placeholder="Enter your email" 
                   className="w-full px-4 py-2.5 text-sm transition-all bg-white border-2 rounded-xl outline-none border-gray-200 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:placeholder-gray-400 dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40" 
                   value={email} 
-                  onChange={(e) => setEmail(e.target.value)} 
+                  onChange={(e) => setEmail(e.target.value.replace(/[^a-zA-Z0-9@.]/g, ""))} 
                 />
               </div>
 
@@ -309,11 +311,22 @@ export default function PersonalNonMalaysianEmail() {
               <h1 className="mb-3 font-bold text-gray-800 text-title-sm dark:text-white sm:text-title-md">
                 Verify Your Email
               </h1>
-
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 We've sent a 6-digit code to <span className="font-bold text-gray-900 dark:text-white">{email}</span>. Please provide the code to proceed with the registration.
               </p>
             </div>
+
+            {message && (
+              <div
+                className={`mb-4 w-full p-4 rounded-lg border text-xs text-center font-medium shadow-sm ${
+                  messageType === "success"
+                    ? "bg-green-50 border-green-200 text-green-600"
+                    : "bg-red-50 border-red-200 text-red-600"
+                }`}
+              >
+                {message}
+              </div>
+            )}
             
             <div className="space-y-6">
               <div className="flex justify-center gap-2">
@@ -331,12 +344,6 @@ export default function PersonalNonMalaysianEmail() {
                   />
                 ))}
               </div>
-              
-              {message && (
-              <p className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm text-center">
-                {message}
-              </p>
-            )}
               
               <button 
                 type="button" 
@@ -373,7 +380,6 @@ export default function PersonalNonMalaysianEmail() {
         <div className="mt-5 text-center">
           <p className="text-sm font-normal">
             <span className="text-gray-500 dark:text-gray-400">Having trouble? </span>
-            
             <Link 
               href="/support" 
               className="font-semibold text-blue-700 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
@@ -391,7 +397,8 @@ export default function PersonalNonMalaysianEmail() {
           >
             <path 
               fillRule="evenodd" 
-              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"
+              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" 
+              clipRule="evenodd"
             />
           </svg>
 
@@ -403,7 +410,7 @@ export default function PersonalNonMalaysianEmail() {
 
       <footer className="relative mt-8 text-xs text-gray-400 dark:text-gray-200 text-center z-10">
         &copy; {new Date().getFullYear()} DTCOB Banking Services. All rights reserved.
-      </footer                                                          >
+      </footer>
     </div>
   );
 }

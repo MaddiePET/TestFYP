@@ -1,13 +1,18 @@
 import { NextResponse } from "next/server";
-import { lookupJPNIdentity } from "../../../../jpn-db/jpn-api.mjs";
-import { lookupJIMIdentity } from "../../../../jim-db/jim-api.mjs";
+import { lookupJPNIdentity } from "../../../../jpn-db/jpn-api";
+import { lookupJIMIdentity } from "../../../../jim-db/jim-api";
+import { lookupSSMBusinesses } from "../../../../ssm-db/ssm-api.js";
 
 async function lookupIdentity(idType: string, idNum: string) {
   if (!idNum) return null;
 
   const normalizedIdType = idType.toLowerCase();
 
-  if (normalizedIdType === "ic") {
+  if (
+    normalizedIdType === "ic" ||
+    normalizedIdType === "mykad" ||
+    normalizedIdType === "nric"
+  ) {
     return await lookupJPNIdentity(idNum);
   }
 
@@ -21,12 +26,41 @@ async function lookupIdentity(idType: string, idNum: string) {
 export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
+
+    const lookup = url.searchParams.get("lookup");
     const idType = url.searchParams.get("id_type");
     const idNum = url.searchParams.get("id_num");
 
-    if (!idType || !idNum) {
+    if (!idNum) {
       return NextResponse.json(
-        { error: "Missing id_type or id_num query parameters" },
+        { error: "Missing id_num query parameter" },
+        { status: 400 }
+      );
+    }
+
+    if (lookup === "ssm_businesses") {
+      const businesses = await lookupSSMBusinesses(idNum);
+
+      if (businesses.length === 0) {
+        return NextResponse.json({
+          success: true,
+          source: "SSM",
+          message: "No registered business linked with your IC number.",
+          businesses: [],
+        });
+      }
+
+      return NextResponse.json({
+        success: true,
+        source: "SSM",
+        message: "Linked businesses found",
+        businesses,
+      });
+    }
+
+    if (!idType) {
+      return NextResponse.json(
+        { error: "Missing id_type query parameter" },
         { status: 400 }
       );
     }
@@ -42,15 +76,18 @@ export async function GET(req: Request) {
 
     return NextResponse.json({
       success: true,
-      ...result,
-      full_name: result.full_name || result.name || `${result.fname} ${result.lname}`.trim(),
-      id_num: result.ic_number || result.passport_no || idNum,
+      source: result.source,
+      identity: result.identity,
+      formData: result.formData,
+      full_name: result.formData.full_name,
+      id_num: result.formData.id_number,
     });
   } catch (error: any) {
     console.error("Identity lookup error:", error);
 
     return NextResponse.json(
       {
+        success: false,
         error: error.message || "Failed to lookup identity",
       },
       { status: 500 }

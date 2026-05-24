@@ -8,8 +8,6 @@ import ChevronLeftIcon from "@/icons/chevron-left.svg";
 
 export default function PersonalNonMalaysianInfo() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const journeyId = searchParams.get("journeyId") || "";
 
   const [mounted, setMounted] = useState(false);
   const [formData, setFormData] = useState({
@@ -17,7 +15,7 @@ export default function PersonalNonMalaysianInfo() {
     fullName: "",
     passportNumber: "",
     dobDay: "",
-    dobMonth: "January",
+    dobMonth: "",
     dobYear: "",
     issuingOffice: "",
     nationality: "",
@@ -26,6 +24,10 @@ export default function PersonalNonMalaysianInfo() {
   });
   const [lookupStatus, setLookupStatus] = useState<"idle" | "fetching" | "done" | "not-found">("idle");
   const [lookupError, setLookupError] = useState<string | null>(null);
+
+  const searchParams = useSearchParams();
+  
+  const journeyId = searchParams.get("journeyId") || "";
 
   const formatDateForFields = (value: unknown) => {
     if (!value) return { day: "", month: "January", year: "" };
@@ -108,19 +110,49 @@ export default function PersonalNonMalaysianInfo() {
     setMounted(true);
     if (typeof window === "undefined") return;
 
+    const currentJourneyId = searchParams.get("journeyId") || "";
+    const savedJourneyId = localStorage.getItem("nonMsianJourneyId");
+
+    if (currentJourneyId && savedJourneyId && savedJourneyId !== currentJourneyId) { localStorage.removeItem("nonMsianInfo");
+      localStorage.removeItem("nonMsianAddress");
+      localStorage.removeItem("nonMsianApplication");
+      localStorage.removeItem("nonMsianIdType");
+      localStorage.removeItem("nonMsianIdNum");
+    }
+
+    if (currentJourneyId) {
+      localStorage.setItem("nonMsianJourneyId", currentJourneyId);
+    }
     const savedInfo = JSON.parse(localStorage.getItem("nonMsianInfo") || "{}") || {};
+
     const queryParams = new URLSearchParams(window.location.search);
-    const idType = queryParams.get("id_type") || savedInfo.id_type || "passport";
-    const idNum = queryParams.get("id_num") || savedInfo.id_num || "";
+
+    const idType =
+      queryParams.get("id_type") ||
+      localStorage.getItem("nonMsianIdType") ||
+      savedInfo.id_type ||
+      "passport";
+
+    const idNum =
+      queryParams.get("id_num") ||
+      localStorage.getItem("nonMsianIdNum") ||
+      savedInfo.id_num ||
+      "";
 
     if (idNum) {
-      setFormData((prev) => ({ ...prev, passportNumber: idNum }));
+      localStorage.setItem("nonMsianIdType", idType);
+      localStorage.setItem("nonMsianIdNum", idNum);
+
+      setFormData((prev) => ({
+        ...prev,
+        passportNumber: idNum,
+      }));
+
       fetchIdentity(idType, idNum);
     }
   }, []);
 
   const handleNavigation = () => {
-    //convert month name into month number
     const months: Record<string, string> = {
       January: "01",
       February: "02",
@@ -136,7 +168,6 @@ export default function PersonalNonMalaysianInfo() {
       December: "12",
     };
 
-    // save passport and personal details for final submission
     const nonMsianInfo = {
       id_type: "Passport",
       id_num: formData.passportNumber,
@@ -152,8 +183,15 @@ export default function PersonalNonMalaysianInfo() {
     };
 
     localStorage.setItem("nonMsianInfo", JSON.stringify(nonMsianInfo));
+    localStorage.setItem("nonMsianIdType", "passport");
+    localStorage.setItem("nonMsianIdNum", formData.passportNumber);
+    localStorage.setItem("nonMsianJourneyId", journeyId);
 
-    router.push("/personal/non-malaysian/address");
+    router.push(
+      `/personal/non-malaysian/address?id_type=passport&id_num=${encodeURIComponent(
+        formData.passportNumber
+      )}&journeyId=${encodeURIComponent(journeyId)}`
+    );
   };
 
   const isFormValid =
@@ -165,6 +203,7 @@ export default function PersonalNonMalaysianInfo() {
     formData.expiryDate.trim() !== "";
 
   if (!mounted) return null;
+
   return (
     <div className="relative flex flex-col items-center justify-center min-h-screen px-4 py-20 bg-[#F9FAFB] dark:bg-gray-950 overflow-hidden">
       <div className="absolute top-0 left-0 w-full leading-none z-0 pointer-events-none opacity-20">
@@ -200,7 +239,7 @@ export default function PersonalNonMalaysianInfo() {
         </svg>
       </div>
 
-      <div className="absolute top-6 left-4 right-4 flex justify-between items-center max-w-7xl mx-auto w-full z-20">
+      <div className="absolute top-6 left-4 right-4 flex justify-between items-center max-w-7xl mx-auto z-20 overflow-hidden">
         <button
           type="button"
           onClick={() => 
@@ -215,7 +254,10 @@ export default function PersonalNonMalaysianInfo() {
           Back
         </button>
 
-        <Link href="/" className="flex items-center gap-2">
+        <Link 
+          href="/" 
+          className="flex items-center gap-2"
+        >
           <Image 
             src="/images/logo/logo-light.svg" 
             alt="Logo" 
@@ -224,7 +266,7 @@ export default function PersonalNonMalaysianInfo() {
             className="block dark:invert-0 invert" 
           />
           
-          <h1 className="text-2xl font-bold uppercase tracking-tight text-gray-800 dark:text-white">
+          <h1 className="text-lg sm:text-2xl font-bold uppercase tracking-tight text-gray-800 dark:text-white truncate">
             DTCOB
           </h1>
         </Link>
@@ -282,12 +324,14 @@ export default function PersonalNonMalaysianInfo() {
                     Full Name<span className="text-red-500">*</span>
                   </label>
 
-                  <input 
-                    type="text" 
-                    className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none" 
-                    value={formData.fullName} 
-                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })} 
-                  />
+                  <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
+                    <input
+                      type="text"
+                      readOnly
+                      className="text-sm font-bold text-gray-700 dark:text-gray-200"
+                      value={formData.fullName}
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -296,12 +340,14 @@ export default function PersonalNonMalaysianInfo() {
                   Passport Number<span className="text-red-500">*</span>
                 </label>
 
-                <input 
-                  type="text" 
-                  className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none" 
-                  value={formData.passportNumber} 
-                  onChange={(e) => setFormData({ ...formData, passportNumber: e.target.value })} 
-                />
+                <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
+                  <input
+                    type="text"
+                    readOnly
+                    className="text-sm font-bold text-gray-700 dark:text-gray-200"
+                    value={formData.passportNumber}
+                  />
+                </div>
               </div>
 
               <div>
@@ -309,80 +355,32 @@ export default function PersonalNonMalaysianInfo() {
                   Date of Birth<span className="text-red-500">*</span>
                 </label>
 
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="relative">
-                    <select 
-                      value={formData.dobDay} 
-                      onChange={(e) => setFormData({ ...formData, dobDay: e.target.value })} 
-                      className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
-                    >
-                      {Array.from({ length: 31 }, (_, i) => (i + 1).toString().padStart(2, "0")).map((opt) => <option key={opt} value={opt}>{opt}</option>)}
-                    </select>
-                    
-                    <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
-                      <svg 
-                        className="w-4 h-4 text-gray-400" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
-                      >
-                        <path 
-                          strokeLinecap="round" 
-                          strokeLinejoin="round" 
-                          strokeWidth="2" d="M19 9l-7 7-7-7" 
-                        />
-                      </svg>
-                    </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
+                    <input
+                      type="text"
+                      readOnly
+                      className="w-full min-w-0 bg-transparent text-sm font-bold text-gray-700 dark:text-gray-200 outline-none cursor-not-allowed"
+                      value={formData.dobDay}
+                    />
                   </div>
 
-                  <div className="relative">
-                    <select 
-                      value={formData.dobMonth} 
-                      onChange={(e) => setFormData({ ...formData, dobMonth: e.target.value })} 
-                      className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
-                    >
-                      {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map((opt) => <option key={opt} value={opt}>{opt}</option>)}
-                    </select>
-
-                    <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
-                      <svg 
-                        className="w-4 h-4 text-gray-400" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
-                      >
-                        <path 
-                          strokeLinecap="round" 
-                          strokeLinejoin="round" 
-                          strokeWidth="2" d="M19 9l-7 7-7-7" 
-                        />
-                      </svg>
-                    </div>
+                  <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
+                    <input
+                      type="text"
+                      readOnly
+                      className="w-full min-w-0 bg-transparent text-sm font-bold text-gray-700 dark:text-gray-200 outline-none cursor-not-allowed"
+                      value={formData.dobMonth}
+                    />
                   </div>
 
-                  <div className="relative">
-                    <select 
-                      value={formData.dobYear} 
-                      onChange={(e) => setFormData({ ...formData, dobYear: e.target.value })} 
-                      className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
-                    >
-                      {Array.from({ length: 100 }, (_, i) => (2025 - i).toString()).map((opt) => <option key={opt} value={opt}>{opt}</option>)}
-                    </select>
-                    
-                    <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
-                      <svg 
-                        className="w-4 h-4 text-gray-400" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
-                      >
-                        <path 
-                          strokeLinecap="round" 
-                          strokeLinejoin="round" 
-                          strokeWidth="2" d="M19 9l-7 7-7-7" 
-                        />
-                      </svg>
-                    </div>
+                  <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
+                    <input
+                      type="text"
+                      readOnly
+                      className="w-full min-w-0 bg-transparent text-sm font-bold text-gray-700 dark:text-gray-200 outline-none cursor-not-allowed"
+                      value={formData.dobYear}
+                    />
                   </div>
                 </div>
               </div>
@@ -394,12 +392,14 @@ export default function PersonalNonMalaysianInfo() {
                   ID Issuing Office<span className="text-red-500">*</span>
                 </label>
 
-                <input 
-                  type="text" 
-                  className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none" 
-                  value={formData.issuingOffice} 
-                  onChange={(e) => setFormData({ ...formData, issuingOffice: e.target.value })} 
-                />
+                <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
+                  <input
+                    type="text"
+                    readOnly
+                    className="text-sm font-bold text-gray-700 dark:text-gray-200"
+                    value={formData.issuingOffice}
+                  />
+                </div>
               </div>
 
               <div>
@@ -407,12 +407,14 @@ export default function PersonalNonMalaysianInfo() {
                   Nationality<span className="text-red-500">*</span>
                 </label>
 
-                <input 
-                  type="text" 
-                  className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none" 
-                  value={formData.nationality} 
-                  onChange={(e) => setFormData({ ...formData, nationality: e.target.value })} 
-                />
+                <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
+                  <input
+                    type="text"
+                    readOnly
+                    className="text-sm font-bold text-gray-700 dark:text-gray-200"
+                    value={formData.nationality}
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -421,12 +423,14 @@ export default function PersonalNonMalaysianInfo() {
                     Date of Issue<span className="text-red-500">*</span>
                   </label>
 
-                  <input 
-                    type="text" 
-                    className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none" 
-                    value={formData.issueDate} 
-                    onChange={(e) => setFormData({ ...formData, issueDate: e.target.value })} 
-                  />
+                  <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
+                    <input
+                      type="text"
+                      readOnly
+                      className="w-full min-w-0 bg-transparent text-sm font-bold text-gray-700 dark:text-gray-200 outline-none cursor-not-allowed"
+                      value={formData.issueDate}
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -434,12 +438,14 @@ export default function PersonalNonMalaysianInfo() {
                     Date of Expiry <span className="text-red-500">*</span>
                   </label>
 
-                  <input 
-                    type="text" 
-                    className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none" 
-                    value={formData.expiryDate} 
-                    onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })} 
-                  />
+                  <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
+                    <input
+                      type="text"
+                      readOnly
+                      className="w-full min-w-0 bg-transparent text-sm font-bold text-gray-700 dark:text-gray-200 outline-none cursor-not-allowed"
+                      value={formData.expiryDate}
+                    />
+                  </div>
                 </div>
               </div>
             </div>

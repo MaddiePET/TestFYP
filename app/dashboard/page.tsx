@@ -229,10 +229,10 @@ export default function Dashboard() {
   ];
 
   const recentOrders = [
-    { id: 1, user: { name: "Lindsey Thompson", email: "lindsey@example.com", image: "/images/user/user-01.jpg" }, product: "MacBook Pro", price: "RM 2,399", status: "Completed" },
-    { id: 2, user: { name: "Angelica Ramos", email: "angelica@example.com", image: "/images/user/user-02.jpg" }, product: "iPhone 15 Pro", price: "RM 999", status: "Pending" },
-    { id: 3, user: { name: "Dayne Fraser", email: "dayne@example.com", image: "/images/user/user-03.jpg" }, product: "Apple Watch", price: "RM 399", status: "Canceled" },
-    { id: 4, user: { name: "Kaiya George", email: "kaiya@example.com", image: "/images/user/user-04.jpg" }, product: "Magic Keyboard", price: "RM 159", status: "Completed" },
+    { id: 1, user: { name: "Lindsey Thompson", email: "lindsey@example.com", image: "/images/user/user-05.jpg" }, product: "MacBook Pro", price: "RM 2,399", status: "Completed" },
+    { id: 2, user: { name: "Angelica Ramos", email: "angelica@example.com", image: "/images/user/user-06.jpg" }, product: "iPhone 15 Pro", price: "RM 999", status: "Pending" },
+    { id: 3, user: { name: "Dayne Fraser", email: "dayne@example.com", image: "/images/user/user-07.jpg" }, product: "Apple Watch", price: "RM 399", status: "Canceled" },
+    { id: 4, user: { name: "Kaiya George", email: "kaiya@example.com", image: "/images/user/user-08.jpg" }, product: "Magic Keyboard", price: "RM 159", status: "Completed" },
   ];
 
   return (

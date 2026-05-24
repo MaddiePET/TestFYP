@@ -28,11 +28,14 @@ export default function PersonalUserVerification() {
       }
       
       localStorage.setItem("journeyId", journeyData.journeyId);
+
       setSelectedOption('new');
       setIsLoading(false);
     } catch (error) {
       console.error("Error creating journey:", error);
+
       alert("Error creating journey. Please try again.");
+      
       setIsLoading(false);
     }
   };
@@ -80,7 +83,7 @@ export default function PersonalUserVerification() {
         </svg>
       </div>
 
-      <div className="absolute top-6 left-4 right-4 flex justify-between items-center max-w-7xl mx-auto w-full z-20">
+      <div className="absolute top-6 left-4 right-4 flex justify-between items-center max-w-7xl mx-auto z-20 overflow-hidden">
         <button
           type="button"
           onClick={() => router.push("/")}
@@ -91,7 +94,10 @@ export default function PersonalUserVerification() {
           Home
         </button>
 
-        <Link href="/" className="flex items-center gap-2">
+        <Link 
+          href="/" 
+          className="flex items-center gap-2"
+        >
           <Image 
             src="/images/logo/logo-light.svg" 
             alt="Logo" 
@@ -100,7 +106,7 @@ export default function PersonalUserVerification() {
             className="block dark:invert-0 invert"
           />
 
-          <h1 className="text-2xl font-bold uppercase tracking-tight text-gray-800 dark:text-white">
+          <h1 className="text-lg sm:text-2xl font-bold uppercase tracking-tight text-gray-800 dark:text-white truncate">
             DTCOB
           </h1>
         </Link>

@@ -49,14 +49,21 @@ const CustomSelect = ({ label, value, onChange, options, required = false }: Cus
     <div className="relative">
       <select 
         required={required} 
-        className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none" 
+        className={`w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none ${
+          !value ? "!text-gray-400" : ""
+        }`} 
         value={value} 
         onChange={onChange}
       >
-        <option value="">
+        <option value="" disabled className="text-gray-400">
           Please Select
         </option>
-        {options.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value} className="text-gray-800 dark:text-white">
+            {opt.label}
+          </option>
+        ))}
       </select>
 
       <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
@@ -91,13 +98,18 @@ export default function PersonalNonMalaysianApplication() {
     sourceOfIncome: "",
     isOfAge: null as boolean | null,
   });
-  const [documents, setDocuments] = useState<DocEntry[]>([
-    { id: Date.now(), name: "", preview: null }
-  ]);
+  const [documents, setDocuments] = useState<DocEntry[]>([{ id: Date.now(), name: "", preview: null }]);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [userAddress, setUserAddress] = useState<string>("");
   const [isLocating, setIsLocating] = useState(false);
   const [preferredBranch, setPreferredBranch] = useState("");
+
+  const isFormValid = 
+  formData.occupation !== "" &&
+  formData.incomeRange !== "" &&
+  formData.employmentType !== "" &&
+  formData.sourceOfIncome !== "" &&
+  formData.isOfAge === true;
 
   useEffect(() => {
     setMounted(true);
@@ -111,7 +123,6 @@ export default function PersonalNonMalaysianApplication() {
     setDocuments(documents.map(d => d.id === id ? { ...d, ...fields } : d));
   };
 
-  // Converts an uploaded file into Base64 so it can be sent to the backend.
   const fileToBase64 = (file: File): Promise<string> => {
    return new Promise((resolve, reject) => {
      const reader = new FileReader();
@@ -124,7 +135,6 @@ export default function PersonalNonMalaysianApplication() {
     });
 };
 
-  // Handles document upload and stores both the file name and Base64 file data.
   const handleFile = async (id: number, file: File | undefined) => {
    const allowedTypes = [
      "application/pdf",
@@ -181,35 +191,31 @@ export default function PersonalNonMalaysianApplication() {
     return distA - distB;
   });
 
-  // Saves employment, income, supporting document, and branch details before account creation.
-const handleApplicationContinue = () => {
-  // Convert application form data into the structure expected by the backend route.
-  const applicationData = {
-    savings_account: {
-      occupation: formData.occupation,
-      monthly_income: formData.incomeRange,
-      income_source: formData.sourceOfIncome,
-      employment_type: formData.employmentType,
-      is18: formData.isOfAge,
-    },
+  const handleApplicationContinue = () => {
+    const applicationData = {
+      savings_account: {
+        occupation: formData.occupation,
+        monthly_income: formData.incomeRange,
+        income_source: formData.sourceOfIncome,
+        employment_type: formData.employmentType,
+        is18: formData.isOfAge,
+      },
 
-    // Prepare supporting document details for database insertion.
-    non_msian_supporting_docs: documents.map((doc) => ({
-      doc_name: doc.name,
-      doc_file: doc.fileBase64 || null 
-    })),
+      non_msian_supporting_docs: documents.map((doc) => ({
+        doc_name: doc.name,
+        doc_file: doc.fileBase64 || null 
+      })),
 
-    preferredBranch,
+      preferredBranch,
+    };
+
+    localStorage.setItem(
+      "nonMsianApplication",
+      JSON.stringify(applicationData)
+    );
+
+    router.push("/personal/non-malaysian/account_creation");
   };
-
-  // Store application details temporarily until the final account creation page submits everything.
-  localStorage.setItem(
-    "nonMsianApplication",
-    JSON.stringify(applicationData)
-  );
-
-  router.push("/personal/non-malaysian/account_creation");
-};
 
   const handleBack = () => {
     if (step > 1){
@@ -256,7 +262,7 @@ const handleApplicationContinue = () => {
         </svg>
       </div>
 
-      <div className="absolute top-6 left-4 right-4 flex justify-between items-center max-w-7xl mx-auto w-full z-20">
+      <div className="absolute top-6 left-4 right-4 flex justify-between items-center max-w-7xl mx-auto z-20 overflow-hidden">
         <button 
           onClick={handleBack} 
           className="inline-flex items-center text-sm text-gray-600 dark:text-white/80 transition-colors hover:text-gray-900 dark:hover:text-white"
@@ -266,7 +272,10 @@ const handleApplicationContinue = () => {
           Back
         </button>
 
-        <Link href="/" className="flex items-center gap-2">
+        <Link 
+          href="/" 
+          className="flex items-center gap-2"
+        >
           <Image 
             src="/images/logo/logo-light.svg" 
             alt="Logo" 
@@ -275,7 +284,7 @@ const handleApplicationContinue = () => {
             className="block dark:invert-0 invert" 
           />
 
-          <h1 className="text-2xl font-bold uppercase tracking-tight text-gray-800 dark:text-white">
+          <h1 className="text-lg sm:text-2xl font-bold uppercase tracking-tight text-gray-800 dark:text-white truncate">
             DTCOB
           </h1>
         </Link>
@@ -301,33 +310,46 @@ const handleApplicationContinue = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
                 <CustomSelect 
                   label="Occupation" 
-                  required value={formData.occupation} 
-                  onChange={(e) => setFormData({...formData, occupation: e.target.value})} 
-                  options={[{value: "accounting", label: "Accounting"}, {value: "student", label: "Student"}, {value: "engineer", label: "Engineer"}]}
+                  required 
+                  value={formData.occupation} 
+                  onChange={(e) => setFormData({...formData, occupation: e.target.value})}
+                  options={[
+                    {value: "accounting", label: "Accounting"},
+                    {value: "student", label: "Student"},
+                    {value: "engineer", label: "Engineer"}
+                  ]}
                 />
 
                 <CustomSelect 
                   label="Monthly Income Range" 
                   required 
                   value={formData.incomeRange} 
-                  onChange={(e) => setFormData({...formData, incomeRange: e.target.value})} 
-                  options={[{value: "1001-3000", label: "RM1,001 - RM3,000"}, {value: "3001-5000", label: "RM3,001 - RM5,000"}]}
+                  onChange={(e) => setFormData({...formData, incomeRange: e.target.value})}
+                  options={[
+                    {value: "1-1000", label: "RM1 - RM1,000"},
+                    {value: "1001-3000", label: "RM1,001 - RM3,000"}
+                  ]}
                 />
 
                 <CustomSelect 
                   label="Employment Type" 
                   required 
                   value={formData.employmentType} 
-                  onChange={(e) => setFormData({...formData, employmentType: e.target.value})} 
-                  options={[{value: "private", label: "Private"}, {value: "self-employed", label: "Self Employed"}]}
+                  onChange={(e) => setFormData({...formData, employmentType: e.target.value})}
+                  options={[
+                    {value: "government", label: "Government"},
+                    {value: "private", label: "Private"}
+                  ]}
                 />
 
                 <CustomSelect 
                   label="Source of Income" 
                   required 
                   value={formData.sourceOfIncome} 
-                  onChange={(e) => setFormData({...formData, sourceOfIncome: e.target.value})} 
-                  options={[{value: "salary", label: "Salary"}]}
+                  onChange={(e) => setFormData({...formData, sourceOfIncome: e.target.value})}
+                  options={[
+                    {value: "salary", label: "Salary"}
+                  ]}
                 />
               </div>
 
@@ -379,7 +401,7 @@ const handleApplicationContinue = () => {
 
                   <button 
                     type="submit" 
-                    disabled={!formData.isOfAge} 
+                    disabled={!isFormValid} 
                     className="inline-flex items-center justify-center w-full px-4 py-3 text-sm font-bold transition rounded-lg bg-[#3D405B] text-white hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d] disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed dark:disabled:bg-gray-800 dark:disabled:text-gray-600 shadow-theme-xs"
                   >
                     Continue
@@ -445,7 +467,10 @@ const handleApplicationContinue = () => {
                       placeholder="e.g. Working Permit, Visa, Letter of Confirmation" 
                       className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40" 
                       value={doc.name} 
-                      onChange={(e) => updateDoc(doc.id, { name: e.target.value })} 
+                      onChange={(e) => {
+                        const sanitized = e.target.value.replace(/[^a-zA-Z0-9_ ]/g, "");
+                        updateDoc(doc.id, { name: sanitized });
+                      }}
                     />
                   </div>
 
@@ -704,7 +729,7 @@ const handleApplicationContinue = () => {
             <div className="pt-10 flex flex-col items-center">
               <p className="mb-6 text-xs text-gray-500 dark:text-gray-400 text-center">
                 By clicking continue, you confirm that all selected information is correct.
-               </p>
+              </p>
               
               <button 
                 onClick={handleApplicationContinue}

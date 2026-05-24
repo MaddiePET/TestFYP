@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import ChevronLeftIcon from "@/icons/chevron-left.svg";
 import Label from "@/components/form/Label";
+
 type Step = "input" | "otp";
 
 export default function PersonalNonMalaysianPhone() {
@@ -21,6 +22,7 @@ export default function PersonalNonMalaysianPhone() {
   const otpInputs = useRef<(HTMLInputElement | null)[]>([]);
 
   const searchParams = useSearchParams();
+  
   const journeyId = searchParams.get("journeyId") || "";
 
   useEffect(() => {
@@ -29,9 +31,11 @@ export default function PersonalNonMalaysianPhone() {
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
+
     if (timer > 0) {
       interval = setInterval(() => setTimer((prev) => prev - 1), 1000);
     }
+    
     return () => clearInterval(interval);
   }, [timer]);
 
@@ -41,13 +45,17 @@ export default function PersonalNonMalaysianPhone() {
     if (step === "otp") {
       setStep("input");
     } else {
-      router.push("/personal/non-malaysian/face_verification");
+      router.push(
+        `/personal/non-malaysian/face_verification?journeyId=${encodeURIComponent(journeyId || "")}`
+      );
     }
   };
 
   const handleSendOtp = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+
     setIsLoading(true);
+
     setTimeout(() => {
       setIsLoading(false);
       setStep("otp");
@@ -55,39 +63,45 @@ export default function PersonalNonMalaysianPhone() {
     }, 800);
   };
 
- // Verifies the OTP and stores the phone number for the final application submission.
-const handleVerifyOtp = () => {
-  setIsLoading(true);
+  const handleVerifyOtp = () => {
+    setIsLoading(true);
 
-  setTimeout(() => {
-    // Save phone details temporarily so the final account creation page can submit them to the backend.
-    localStorage.setItem(
-      "nonMsianPhone",
-      JSON.stringify({
-        ph_no_1: phoneNumber,
-      })
-    );
+    setTimeout(() => {
+      console.log("Phone number being saved:", phoneNumber);
 
-    setIsLoading(false);
+      localStorage.setItem(
+        "nonMsianPhone",
+        JSON.stringify({
+          ph_no: phoneNumber,
+        })
+      );
+      console.log("Saved phone:", localStorage.getItem("nonMsianPhone"));
 
-    // Move to the email verification step.
-    router.push(`/personal/non-malaysian/email?journeyId=${encodeURIComponent(journeyId)}`);
-  }, 800);
-};
+      setIsLoading(false);
+
+      router.push(`/personal/non-malaysian/email?journeyId=${encodeURIComponent(journeyId)}`);
+    }, 800);
+  };
 
   const handleOtpChange = (value: string, index: number) => {
     const cleanValue = value.replace(/[^0-9]/g, "");
     const newOtp = [...otp];
+
     if (cleanValue.length > 1) {
       const pastedChars = cleanValue.slice(0, 6).split("");
+
       pastedChars.forEach((char, i) => {
         if (index + i < 6) newOtp[index + i] = char;
       });
+
       setOtp(newOtp);
+
       otpInputs.current[Math.min(index + pastedChars.length, 5)]?.focus();
     } else {
       newOtp[index] = cleanValue;
+
       setOtp(newOtp);
+
       if (cleanValue && index < 5) otpInputs.current[index + 1]?.focus();
     }
   };
@@ -133,7 +147,7 @@ const handleVerifyOtp = () => {
         </svg>
       </div>
 
-      <div className="absolute top-6 left-4 right-4 flex justify-between items-center max-w-7xl mx-auto w-full z-20">
+      <div className="absolute top-6 left-4 right-4 flex justify-between items-center max-w-7xl mx-auto z-20 overflow-hidden">
         <button
           type="button"
           onClick={handleGlobalBack}
@@ -144,7 +158,10 @@ const handleVerifyOtp = () => {
           Back
         </button>
 
-        <Link href="/" className="flex items-center gap-2">
+        <Link 
+          href="/" 
+          className="flex items-center gap-2"
+        >
           <Image 
             src="/images/logo/logo-light.svg" 
             alt="Logo" 
@@ -153,7 +170,7 @@ const handleVerifyOtp = () => {
             className="block dark:invert-0 invert" 
           />
           
-          <h1 className="text-2xl font-bold uppercase tracking-tight text-gray-800 dark:text-white">
+          <h1 className="text-lg sm:text-2xl font-bold uppercase tracking-tight text-gray-800 dark:text-white truncate">
             DTCOB
           </h1>
         </Link>
@@ -194,8 +211,9 @@ const handleVerifyOtp = () => {
 
                   <input
                     type="tel"
+                    maxLength={10} 
                     required
-                    placeholder="123456789"
+                    placeholder="Enter your mobile number"
                     className="w-full px-4 py-2.5 text-sm font-medium transition-all bg-white border-2 rounded-r-xl outline-none border-gray-200 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:placeholder-gray-400 dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40"
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value.replace(/[^0-9]/g, ""))}
@@ -205,9 +223,9 @@ const handleVerifyOtp = () => {
 
               <button 
                 type="submit" 
-                disabled={isLoading || phoneNumber.length < 8} 
+                disabled={isLoading || phoneNumber.length < 9} 
                 className={`inline-flex items-center justify-center w-full px-4 py-3 text-sm font-bold transition rounded-lg shadow-theme-xs ${
-                  phoneNumber.length >= 8 
+                  phoneNumber.length >= 9 
                   ? 'bg-[#3D405B] text-white hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d]' 
                   : 'bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600'
                 }`}
@@ -246,6 +264,7 @@ const handleVerifyOtp = () => {
                   />
                 ))}
               </div>
+
               <button 
                 type="button" 
                 onClick={handleVerifyOtp} 

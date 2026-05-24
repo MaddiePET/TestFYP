@@ -6,19 +6,20 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 
 function PersonalNonMalaysianMobilePassportCapture() {
-  const router = useRouter();
+  const MAX_ATTEMPTS = 3;
 
-  const searchParams = useSearchParams();
-  const journeyId = searchParams.get("journeyId") || "";
+  const router = useRouter();
 
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [failCount, setFailCount] = useState(0);
 
-  const MAX_ATTEMPTS = 3;
-
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const searchParams = useSearchParams();
+    
+  const journeyId = searchParams.get("journeyId") || "";
 
   useEffect(() => {
     const checkInitialStatus = async () => {
@@ -44,6 +45,22 @@ function PersonalNonMalaysianMobilePassportCapture() {
 
     checkInitialStatus();
   }, [journeyId]);
+
+  const compressImage = (base64: string, quality = 0.6): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new window.Image(); 
+      img.src = `data:image/jpeg;base64,${base64}`;
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const scale = Math.min(800 / img.width, 1);
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        const ctx = canvas.getContext("2d");
+        ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", quality).split(",")[1]);
+      };
+    });
+  };
 
   const handleCapture = async (
     event: React.ChangeEvent<HTMLInputElement>
@@ -95,7 +112,6 @@ function PersonalNonMalaysianMobilePassportCapture() {
         throw new Error("Passport number could not be extracted");
       }
 
-
       if (okayidResult.status !== "success") {
         throw new Error(okayidResult.message || "unrecognized");
       }
@@ -120,6 +136,19 @@ function PersonalNonMalaysianMobilePassportCapture() {
         throw new Error("not meeting quality standards");
       }
 
+      const identityRes = await fetch(
+        `/api/identity/lookup?id_type=passport&id_num=${encodeURIComponent(passportNo)}`
+      );
+
+      const identityData = await identityRes.json();
+
+      if (!identityRes.ok || !identityData.success) {
+        throw new Error("Identity was not found in government records");
+      }
+
+      const compressedBase64 = await compressImage(base64String); 
+      localStorage.setItem("ekyc_id_image", compressedBase64);
+      
       await fetch("/api/ekyc/status", {
         method: "POST",
         headers: {
@@ -145,9 +174,7 @@ function PersonalNonMalaysianMobilePassportCapture() {
 
       if (remaining > 0) {
         setErrorMessage(
-          `Your image is ${reason}. Please try again. You have ${remaining} attempt${
-            remaining > 1 ? "s" : ""
-          } remaining.`
+          `Verification failed: ${reason}. You have ${remaining} attempt${remaining > 1 ? "s" : ""} remaining.`
         );
       } else {
         setErrorMessage(
@@ -210,7 +237,6 @@ function PersonalNonMalaysianMobilePassportCapture() {
       </div>
 
       <header className="absolute top-6 left-0 w-full px-8 flex justify-end items-center max-w-7xl mx-auto z-20">
-        <Link href="/" className="flex items-center gap-2">
           <Image
             src="/images/logo/logo-light.svg"
             alt="Logo"
@@ -219,10 +245,9 @@ function PersonalNonMalaysianMobilePassportCapture() {
             className="block dark:invert-0 invert"
           />
 
-          <h1 className="text-2xl font-bold uppercase tracking-tight text-gray-800 dark:text-white">
+          <h1 className="text-lg sm:text-2xl font-bold uppercase tracking-tight text-gray-800 dark:text-white truncate">
             DTCOB
           </h1>
-        </Link>
       </header>
 
       <main className="relative w-full max-w-2xl z-10 flex flex-col items-center">

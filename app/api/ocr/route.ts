@@ -20,7 +20,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const pythonScriptPath = path.join(process.cwd(), "engines", "ocr_engine.py");
     
     return await new Promise<NextResponse>((resolve) => {
-      // Use "python3" for Mac
       const pythonProcess = spawn("python", [pythonScriptPath, tempFilePath]);
 
       let stdout = "";
@@ -28,14 +27,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
       pythonProcess.stdout.on("data", (data) => { stdout += data.toString(); });
       
-      // NEW: Capture the actual error from Python
       pythonProcess.stderr.on("data", (data) => { stderr += data.toString(); });
 
       pythonProcess.on("close", (code) => {
         if (fs.existsSync(tempFilePath)) fs.unlinkSync(tempFilePath);
 
         if (code !== 0) {
-          console.error("Python Error:", stderr); // This shows in your VS Code terminal
+          console.error("Python Error:", stderr);
           resolve(NextResponse.json({ error: stderr || "Python script crashed" }, { status: 500 }));
         } else {
           resolve(NextResponse.json({ data: stdout.trim() }));
