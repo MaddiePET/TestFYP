@@ -38,7 +38,7 @@ export async function POST(req: Request) {
 
     if (!customerIdNum || !customer.full_name || !customer.dob) {
       return NextResponse.json(
-        { error: "Customer IC number, full name, and date of birth are required." },
+        { error: "Customer MyKad number, full name, and date of birth are required." },
         { status: 400 }
       );
     }

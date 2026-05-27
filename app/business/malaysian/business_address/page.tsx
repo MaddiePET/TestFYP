@@ -239,7 +239,7 @@ export default function BusinessMalaysianBusinessAddress() {
     });
 
     router.push(
-      `/business/malaysian/contacts?id_type=${encodeURIComponent(idType)}&id_num=${encodeURIComponent(idNum)}&journeyId=${encodeURIComponent(journeyId)}`
+      `/business/malaysian/business_otp?id_type=${encodeURIComponent(idType)}&id_num=${encodeURIComponent(idNum)}&journeyId=${encodeURIComponent(journeyId)}`
     );
   };
 
@@ -248,16 +248,20 @@ export default function BusinessMalaysianBusinessAddress() {
     formData?.businessAddress?.businessAddress?.addressLine2,
     formData?.businessAddress?.businessAddress?.postcode,
     formData?.businessAddress?.businessAddress?.state,
-    "Malaysia"
-  ].filter(Boolean).join(", ");
+    formData?.businessAddress?.businessAddress?.country,
+  ]
+    .filter(Boolean)
+    .join(", ");
 
   const verifiedBusinessAddress = [
     businessAddress.addressLine1,
     businessAddress.addressLine2,
     businessAddress.postcode,
     businessAddress.state,
-    "Malaysia"
-  ].filter(Boolean).join(", ");
+    businessAddress.country,
+  ]
+    .filter(Boolean)
+    .join(", ");
 
   const isStep1Valid = isAddressValid(businessAddress) && useBusinessAsMailing !== null;
   const isStep2Valid = isAddressValid(mailingAddress);
@@ -345,7 +349,7 @@ export default function BusinessMalaysianBusinessAddress() {
 
               <div className="relative p-4 mb-8 rounded-2xl border-2 transition-all duration-300 text-center backdrop-blur-sm border-[#F0CA8E] bg-white/90 shadow-lg ring-4 ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#F0CA8E] dark:ring-[#F0CA8E]/20">
                 <p className="text-sm font-bold text-blue-600 dark:text-blue-400 text-center">
-                  {registeredSSMAddress || "Address not available"}
+                  {registeredSSMAddress}
                 </p>
 
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">

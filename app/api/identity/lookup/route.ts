@@ -45,7 +45,7 @@ export async function GET(req: Request) {
         return NextResponse.json({
           success: true,
           source: "SSM",
-          message: "No registered business linked with your IC number.",
+          message: "No registered business linked with your MyKad number.",
           businesses: [],
         });
       }
@@ -70,7 +70,7 @@ export async function GET(req: Request) {
     if (!result) {
       return NextResponse.json({
         success: false,
-        message: "Identity not found in government databases",
+        message: "Identity not found in government databases.",
       });
     }
 

@@ -41,15 +41,15 @@ function initializeJPN() {
 
 const JPN_CITIZENS_COLLECTION = "jpn_citizens";
 
-function getTitleFromSex(sex?: string) {
+function getGenderFromSex(sex?: string) {
   const normalizedSex = sex?.toLowerCase();
 
   if (normalizedSex === "lelaki" || normalizedSex === "male" || normalizedSex === "m") {
-    return "Mr.";
+    return "M";
   }
 
   if (normalizedSex === "perempuan" || normalizedSex === "female" || normalizedSex === "f") {
-    return "Ms.";
+    return "F";
   }
 
   return "";
@@ -75,7 +75,7 @@ function formatJPNFormData(data: any) {
   return {
     id_type: "mykad",
     id_number: data.ic_number,
-    title: getTitleFromSex(data.sex),
+    gender: getGenderFromSex(data.sex),
     full_name: data.full_name,
     date_of_birth: data.date_of_birth,
     phone_number: data.phone_registered,

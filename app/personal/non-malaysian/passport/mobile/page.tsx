@@ -394,8 +394,8 @@ function PersonalNonMalaysianMobilePassportCapture() {
 
                 <ul className="list-disc ml-4 space-y-1">
                   <li>Ensure the MRZ code (bottom two lines) is clearly visible.</li>
-
                   <li>Avoid fingers or shadows covering any information.</li>
+                  <li>Do not hold the passport too far away — ensure the entire passport is clearly within the frame.</li>
                 </ul>
               </div>
             </div>

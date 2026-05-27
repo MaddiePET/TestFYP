@@ -45,7 +45,7 @@ export async function POST(req: Request) {
         extractedDob: personalInfo.dob
       });
       return NextResponse.json(
-        { error: "Customer IC number, full name, and date of birth are required." },
+        { error: "Customer MyKad number, full name, and date of birth are required." },
         { status: 400 }
       );
     }

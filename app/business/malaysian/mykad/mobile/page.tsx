@@ -441,6 +441,7 @@ function BusinessMalaysianMobileMyKadCapture() {
                 <ul className="list-disc ml-4 space-y-1">
                   <li>Ensure all details are clearly visible and not cut off.</li>
                   <li>Information is not obscured by fingers or shadows.</li>
+                  <li>Do not hold the MyKad too far away — ensure the entire card is clearly within the frame.</li>
                 </ul>
               </div>
             </div>

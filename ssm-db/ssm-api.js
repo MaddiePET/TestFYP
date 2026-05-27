@@ -42,10 +42,8 @@ export async function lookupSSMBusinesses(icNumber) {
   const cleanedIC = cleanIC(icNumber);
   const db = getSSMFirestore();
 
-  // Convert the raw user IC input into the exact deterministic SHA-256 search fingerprint
   const hashedICIndex = hashLookup(cleanedIC);
 
-  // Query the database using the blind index column instead of the plaintext field
   const personSnapshot = await db
     .collection("ssm_business_person")
     .where("ic_number_hash", "==", hashedICIndex)
@@ -79,7 +77,6 @@ export async function lookupSSMBusinesses(icNumber) {
 
     console.log("SSM company data:", company);
 
-    // Decrypt the corporate strings using the "ssm" key identifier before sending to the client UI
     businesses.push({
       id: companySurrogateKey,
       brn: decrypt(company.registration_number, "ssm"),

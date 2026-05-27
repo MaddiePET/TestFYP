@@ -381,7 +381,7 @@ export default function BusinessMalaysianOTP() {
                 </h3>
 
                 <p className="text-xs leading-relaxed text-gray-500 dark:text-gray-400">
-                  Receive code at your business email address.
+                  Receive code at your personal email address.
                 </p>
               </div>
 
@@ -684,7 +684,7 @@ export default function BusinessMalaysianOTP() {
             </div>
 
             <div className="mt-5 p-4 rounded-xl flex gap-3 border transition-all text-left backdrop-blur-sm bg-blue-50/80 border-blue-200 dark:bg-blue-900/30 dark:border-blue-500/50 dark:shadow-[0_0_15px_rgba(59,130,246,0.1)]">
-               <svg 
+              <svg 
                 className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" 
                 fill="currentColor" 
                 viewBox="0 0 20 20"

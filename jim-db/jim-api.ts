@@ -41,15 +41,15 @@ function initializeJIM() {
 
 const JIM_NONRESIDENTS_COLLECTION = "jim_nonresidents";
 
-function getTitleFromSex(sex?: string) {
+function getGenderFromSex(sex?: string) {
   const normalizedSex = sex?.toLowerCase();
 
   if (normalizedSex === "male" || normalizedSex === "m") {
-    return "Mr.";
+    return "M";
   }
 
   if (normalizedSex === "female" || normalizedSex === "f") {
-    return "Ms.";
+    return "F";
   }
 
   return "";
@@ -76,7 +76,7 @@ function formatJIMFormData(data: any) {
   return {
     id_type: "passport",
     id_number: data.passport_no,
-    title: getTitleFromSex(data.sex),
+    gender: getGenderFromSex(data.sex),
     full_name: data.full_name,
     date_of_birth: data.date_of_birth,
     sex: data.sex,

@@ -15,7 +15,7 @@ export default function PersonalNonMalaysianInfo() {
   const [lookupStatus, setLookupStatus] = useState<"idle" | "fetching" | "done" | "not-found">("idle");
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    title: "",
+    gender: "",
     fullName: "",
     passportNumber: "",
     dobDay: "",
@@ -59,9 +59,9 @@ export default function PersonalNonMalaysianInfo() {
   const normalizeIdentity = (identity: any, idType: string, idNum: string) => {
     const dob = identity.dob || identity.birth_date || identity.date_of_birth || identity.dob_date || identity.dobDate || "";
     const { day, month, year } = formatDateForFields(dob);
-    
+
     return {
-      title: identity.title || "",
+      gender: identity.gender || identity.sex || "",
       fullName: identity.full_name || identity.name || identity.fullName || "",
       passportNumber: identity.passport_number || identity.passport_no || identity.passportNo || identity.document_number || idNum,
       dobDay: day || "",
@@ -108,7 +108,7 @@ export default function PersonalNonMalaysianInfo() {
     const currentJourneyId = searchParams.get("journeyId") || "";
     const savedJourneyId = localStorage.getItem("nonMsianJourneyId");
 
-    if (currentJourneyId && savedJourneyId && savedJourneyId !== currentJourneyId) { 
+    if (savedJourneyId && savedJourneyId !== currentJourneyId) { 
       localStorage.removeItem("nonMsianInfo");
       localStorage.removeItem("nonMsianAddress");
       localStorage.removeItem("nonMsianApplication");
@@ -125,9 +125,6 @@ export default function PersonalNonMalaysianInfo() {
     const idNum = queryParams.get("id_num") || localStorage.getItem("nonMsianIdNum") || "";
 
     if (idNum) {
-      localStorage.setItem("nonMsianIdType", idType);
-      localStorage.setItem("nonMsianIdNum", idNum);
-
       setFormData((prev) => ({
         ...prev,
         passportNumber: idNum,
@@ -149,6 +146,7 @@ export default function PersonalNonMalaysianInfo() {
       full_name: formData.fullName,
       dob: `${formData.dobYear}-${months[formData.dobMonth]}-${formData.dobDay}`,
       non_msian_details: {
+        gender: formData.gender,
         pp_issue_office: formData.issuingOffice,
         pp_issue_date: formData.issueDate,
         pp_exp_date: formData.expiryDate,
@@ -167,6 +165,7 @@ export default function PersonalNonMalaysianInfo() {
   };
 
   const isFormValid =
+    formData.gender !== "" &&
     formData.fullName.trim() !== "" &&
     formData.passportNumber.trim() !== "" &&
     formData.issuingOffice.trim() !== "" &&
@@ -258,19 +257,54 @@ export default function PersonalNonMalaysianInfo() {
         <div className="bg-white dark:bg-gray-900 p-6 sm:p-10 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm backdrop-blur-sm bg-white/90 dark:bg-gray-900/90">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
             <div className="space-y-6">
-              <div className="grid grid-cols-4 gap-4">
-                <div className="col-span-1">
+              
+              <div>
+                <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
+                  Full Name<span className="text-red-500">*</span>
+                </label>
+
+                <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
+                  <input
+                    type="text"
+                    readOnly
+                    className="w-full text-sm font-bold text-gray-700 dark:text-gray-200 bg-transparent outline-none"
+                    value={formData.fullName}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div>
                   <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-                    Title<span className="text-red-500">*</span>
+                    Passport Number<span className="text-red-500">*</span>
+                  </label>
+
+                  <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
+                    <input
+                      type="text"
+                      readOnly
+                      className="w-full text-sm font-bold text-gray-700 dark:text-gray-200 bg-transparent outline-none"
+                      value={formData.passportNumber}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
+                    Gender<span className="text-red-500">*</span>
                   </label>
 
                   <div className="relative">
                     <select 
-                      value={formData.title} 
-                      onChange={(e) => setFormData({ ...formData, title: e.target.value })} 
+                      value={formData.gender} 
+                      onChange={(e) => setFormData({ ...formData, gender: e.target.value })} 
                       className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
                     >
-                      {["Mr.", "Ms.", "Mrs.", "Dr.", "Prof."].map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+                      <option value="" disabled>Select</option>
+                      <option value="M">M</option>
+                      <option value="F">F</option>
+                      <option value="Non-binary">Non-binary</option>
+                      <option value="Prefer not to say">Prefer not to say</option>
                     </select>
 
                     <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
@@ -289,36 +323,6 @@ export default function PersonalNonMalaysianInfo() {
                       </svg>
                     </div>
                   </div>
-                </div>
-
-                <div className="col-span-3">
-                  <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-                    Full Name<span className="text-red-500">*</span>
-                  </label>
-
-                  <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
-                    <input
-                      type="text"
-                      readOnly
-                      className="text-sm font-bold text-gray-700 dark:text-gray-200"
-                      value={formData.fullName}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
-                  Passport Number<span className="text-red-500">*</span>
-                </label>
-
-                <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
-                  <input
-                    type="text"
-                    readOnly
-                    className="text-sm font-bold text-gray-700 dark:text-gray-200"
-                    value={formData.passportNumber}
-                  />
                 </div>
               </div>
 
@@ -368,7 +372,7 @@ export default function PersonalNonMalaysianInfo() {
                   <input 
                     type="text" 
                     readOnly 
-                    className="text-sm font-bold text-gray-700 dark:text-gray-200" 
+                    className="w-full text-sm font-bold text-gray-700 dark:text-gray-200 bg-transparent outline-none" 
                     value={formData.issuingOffice} 
                   />
                 </div>
@@ -383,7 +387,7 @@ export default function PersonalNonMalaysianInfo() {
                   <input 
                     type="text" 
                     readOnly 
-                    className="text-sm font-bold text-gray-700 dark:text-gray-200" 
+                    className="w-full text-sm font-bold text-gray-700 dark:text-gray-200 bg-transparent outline-none" 
                     value={formData.nationality} 
                   />
                 </div>
@@ -456,7 +460,7 @@ export default function PersonalNonMalaysianInfo() {
         </div>
       </div>
 
-      <footer className="relative mt-8 text-xs text-gray-400 dark:text-gray-500 text-center z-10">
+      <footer className="relative mt-12 text-xs text-gray-400 dark:text-gray-500 text-center z-10">
         &copy; {new Date().getFullYear()} DTCOB Banking Services. All rights reserved.
       </footer>
     </div>
