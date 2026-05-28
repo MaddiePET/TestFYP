@@ -77,7 +77,7 @@ function BusinessMalaysianMobileFaceCapture() {
       const formData = new FormData();
       formData.append("journeyId", journeyId);
       formData.append("selfie", selfieFile);
-      formData.append("passport", base64ToBlob(idCardBase64), "idcard.jpg");
+      formData.append("idCard", base64ToBlob(idCardBase64), "idcard.jpg");
 
       const faceApiRes = await fetch("/api/ekyc/okayface", {
         method: "POST",
@@ -100,17 +100,44 @@ function BusinessMalaysianMobileFaceCapture() {
           throw new Error(liveResult.message || "OkayLive failed");
         }
 
-        await fetch("/api/ekyc/status", {
-          method: "POST",
-          headers: { 
-            "Content-Type": "application/json" 
-          },
-          body: JSON.stringify({ 
-            journeyId, status: "face_verified" 
-          }),
-        });
-        
-        setSuccess(true);
+      const scorecardRes = await fetch(
+        `/api/ekyc/scorecard?journeyId=${encodeURIComponent(journeyId)}`
+      );
+
+      const scorecardResult = await scorecardRes.json();
+      console.log("Scorecard result:", scorecardResult);
+
+      if (!scorecardRes.ok || scorecardResult.status !== "success") {
+        throw new Error(scorecardResult.error || "Scorecard check failed");
+      }
+
+      const scorecardList = scorecardResult.scorecardResultList as any[] | undefined;
+      const hasFailedFacialVerification = scorecardList?.some((item) =>
+        item.checkResultList?.some(
+         (check: any) =>
+           check.checkType === "facialVerification" &&
+           check.checkStatus === "F"
+        )
+      );
+
+      if (hasFailedFacialVerification) {
+        throw new Error ("Face does not match thr MyKad photo");
+      }
+
+      await fetch("/api/ekyc/status" , {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          journeyId,
+          status:"face_verified",
+          scorecard: scorecardResult,
+        }),
+      });
+
+      setSuccess(true);
+
       } else {
         throw new Error(faceResult.message || "Face could not be verified");
       }
