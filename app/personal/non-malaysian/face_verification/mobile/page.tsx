@@ -100,17 +100,46 @@ function PersonalNonMalaysianMobileFaceCapture() {
           throw new Error(liveResult.message || "OkayLive failed");
         }
 
+        const scorecardRes = await fetch(
+          `/api/ekyc/scorecard?journeyId=${encodeURIComponent(journeyId)}`
+        );
+
+        const scorecardResult = await scorecardRes.json();
+
+        console.log("Scorecard result:", scorecardResult);
+
+        if(!scorecardRes.ok || scorecardResult.status !=="success") {
+          throw new Error(scorecardResult.error || "Scorecard check failed");
+        }
+
+        const scorecardList = scorecardResult.scorecardResultList as any [] | undefined;
+
+        const hasFailedFacialVerification = scorecardList?.some((item)=>
+          item.checkResultList?.some(
+            (check: any) =>
+              check.checkType === "facialVerification" &&
+              check.checkStatus === "F"
+          )
+        );
+
+        if (hasFailedFacialVerification) {
+          throw new Error("Face does not match the passport photo");
+        }
+
         await fetch("/api/ekyc/status", {
           method: "POST",
           headers: { 
             "Content-Type": "application/json" 
           },
           body: JSON.stringify({ 
-            journeyId, status: "face_verified" 
+            journeyId, 
+            status: "face_verified",
+            scorecard: scorecardResult,
           }),
         });
         
         setSuccess(true);
+
       } else {
         throw new Error(faceResult.message || "Face could not be verified");
       }
