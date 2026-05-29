@@ -270,9 +270,10 @@ export default function LogIn() {
                       type="text"
                       value={username}
                       onChange={(e) => {
-                        setUsername(e.target.value);
+                        const cleanedValue = e.target.value.replace(/[^a-zA-Z0-9]/g, "");
+                        setUsername(cleanedValue);
                         setUsernameError("");
-                        checkUsername(e.target.value);
+                        checkUsername(cleanedValue);
                       }}
                       required
                     />
@@ -285,23 +286,20 @@ export default function LogIn() {
                 <button
                   type="submit"
                   disabled={isValidating || username.length === 0}
-                  className="inline-flex items-center justify-center w-full px-4 py-3 text-sm font-bold text-white transition rounded-lg bg-[#3D405B] shadow-theme-xs hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d]"                >
+                  className="inline-flex items-center justify-center w-full px-4 py-3 text-sm font-bold text-white transition rounded-lg bg-[#3D405B] shadow-theme-xs hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d]"                
+                >
                   Continue
                 </button>
               </div>
             </form>
 
             <div className="mt-5 text-center">
-              <p className="text-sm font-normal">
-                <span className="text-gray-500 dark:text-gray-400">Having trouble? </span>
-                
-                <Link 
-                  href="/support" 
-                  className="font-semibold text-blue-700 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
-                >
-                  Contact Support
-                </Link>
-              </p>
+              <Link 
+                href="/reset_password" 
+                className="text-sm font-semibold text-blue-700 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+              >
+                Forgot password?
+              </Link>
             </div>
           </div>
         )}
@@ -359,16 +357,12 @@ export default function LogIn() {
             </div>
             
             <div className="mt-5 text-center">
-              <p className="text-sm font-normal">
-                <span className="text-gray-500 dark:text-gray-400">Having trouble? </span>
-
-                <Link 
-                  href="/support" 
-                  className="font-semibold text-blue-700 hover:text-blue-800 dark:text-blue-400"
-                >
-                  Contact Support
-                </Link>
-              </p>
+              <Link 
+                href="/reset_password" 
+                className="text-sm font-semibold text-blue-700 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+              >
+                Forgot password?
+              </Link>
             </div>
           </div>
         )}
@@ -446,7 +440,7 @@ export default function LogIn() {
 
                 <div className="text-center">
                   <Link 
-                    href="/reset-password" 
+                    href="/reset_password" 
                     className="text-sm font-semibold text-blue-700 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
                   >
                     Forgot password?
