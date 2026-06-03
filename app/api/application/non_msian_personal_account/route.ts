@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { hashPassword } from "@/scripts/hashpw";
 import { encrypt, hashLookup } from "@/lib/cryptoSecurity";
+import { sendAccountConfirmationEmail } from "@/lib/sendAccountConfirmationEmail";
 export const runtime = "nodejs";
 
 function generateAccountNumber() {
@@ -59,9 +60,38 @@ export async function POST(req: Request) {
     );
 
     const statusData = await statusRes.json();
+    console.log("DEBUG statusData:", statusData);
+
+    const scorecardLists = statusData.scorecard?.scorecardResultList || [];
+
+    let totalChecks = 0;
+    let passedChecks = 0;
+
+    for (const scorecardItem of scorecardLists) {
+      const checks = scorecardItem.checkResultList || [];
+
+      for (const check of checks) {
+        totalChecks++;
+
+        if (check.checkStatus === "P") {
+         passedChecks++;
+        }
+      }
+    }
+
+    if (totalChecks === 0) {
+      return NextResponse.json(
+        { error: "No scorecard checks found for this journey." },
+        { status: 400 }
+      );
+    }
+
+    const scorecardResult = Number(((passedChecks / totalChecks) * 100).toFixed(2));
+
+    console.log("DEBUG scorecardResult:", scorecardResult);
+
     const statusIdType = statusData.id_type?.toLowerCase();
     const statusIdNum = statusData.id_num?.replace(/\s/g, "").toUpperCase().trim();
-
     if (
       statusData.status !== "face_verified" ||
       !["passport", "international_passport"].includes(statusIdType) ||
@@ -89,6 +119,8 @@ export async function POST(req: Request) {
       ph_no: customer.ph_no || "",
       email: customer.email || "",
     };
+
+    const idNumHash = hashLookup(cleanCustomer.id_num);
 
     const cleanUser = {
       username: user.username || "",
@@ -153,6 +185,43 @@ export async function POST(req: Request) {
       mailingAddId = mailingAddressResult.rows[0].add_id;
     }
 
+   const existingCustomerResult = await client.query(
+    `
+    SELECT cust_id
+    FROM banka."Customer"
+    WHERE id_num_hash = $1
+    `,
+    [idNumHash]
+  );
+
+  let custId: number;
+
+  if (existingCustomerResult.rows.length > 0) {
+    custId = existingCustomerResult.rows[0].cust_id;
+
+    await client.query(
+      `
+      UPDATE banka."Customer"
+      SET
+        full_name = $1,
+        id_type = $2,
+        dob = $3,
+        ph_no = $4,
+        email = $5,
+        home_add = $6
+      WHERE cust_id = $7
+      `,
+      [
+        encrypt(cleanCustomer.full_name, "banka"),
+        cleanCustomer.id_type,
+        cleanCustomer.dob,
+        encrypt(cleanCustomer.ph_no, "banka"),
+        encrypt(cleanCustomer.email, "banka"),
+        homeAddId,
+        custId,
+      ]
+    );
+  } else {
     const customerResult = await client.query(
       `
       INSERT INTO banka."Customer" (
@@ -169,7 +238,7 @@ export async function POST(req: Request) {
       RETURNING cust_id
       `,
       [
-        hashLookup(cleanCustomer.id_num),
+        idNumHash,
         encrypt(cleanCustomer.id_num, "banka"),
         encrypt(cleanCustomer.full_name, "banka"),
         cleanCustomer.id_type,
@@ -180,7 +249,8 @@ export async function POST(req: Request) {
       ]
     );
 
-    const custId = customerResult.rows[0].cust_id;
+    custId = customerResult.rows[0].cust_id;
+  }
 
     if (!cleanUser.password) {
       throw new Error("Password is missing");
@@ -249,7 +319,36 @@ export async function POST(req: Request) {
       ]
     );
 
+    await client.query(
+       `
+       INSERT INTO banka."Journey" (
+         journey_id,
+         cust_id,
+         application_date,
+         approval_date,
+         scorecard_result
+      )
+      VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, $3)
+      `,
+      [
+        journeyId,
+        custId,
+        scorecardResult,
+      ]
+    );
+
     await client.query("COMMIT");
+
+    try {
+      await sendAccountConfirmationEmail({
+         to: cleanCustomer.email,
+         fullName: cleanCustomer.full_name,
+         accountType: "Non-Malaysian Savings Account",
+         accountNo: savingsResult.rows[0].account_no,
+    });
+} catch (emailError) {
+  console.error("Confirmation email failed:", emailError);
+}
 
     return NextResponse.json(
       {
