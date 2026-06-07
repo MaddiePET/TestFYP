@@ -28,7 +28,7 @@ type Account = {
   email: string;
   phone: string;
   avatar: string;
-  type: "Personal" | "Business";
+  type: "Savings" | "Business";
   isMalaysian: boolean;
 };
 
@@ -110,7 +110,7 @@ export default function AdminLayoutContent({ children }: { children: React.React
   const [loggedInUser, setLoggedInUser] = useState<{name: string, avatar: string, email: string} | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalStep, setModalStep] = useState(1);
-  const [selectedType, setSelectedType] = useState<"Personal" | "Business" | null>(null);
+  const [selectedType, setSelectedType] = useState<"Savings" | "Business" | null>(null);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
   const [otpStep, setOtpStep] = useState(1);
@@ -141,7 +141,7 @@ export default function AdminLayoutContent({ children }: { children: React.React
         name: loggedInUser.name,
         email: loggedInUser.email,
         avatar: loggedInUser.avatar, 
-        type: "Personal" as const,
+        type: "Savings" as const,
         isMalaysian: true,
         phone: ""
       };
@@ -189,6 +189,17 @@ export default function AdminLayoutContent({ children }: { children: React.React
             if (data && data.avatar) {
               setLoggedInUser(prev => prev ? { ...prev, avatar: data.avatar } : null);
               localStorage.setItem("currentUserAvatar", data.avatar);
+            }
+            if (data?.id_num && data.id_num !== "undefined") {
+              localStorage.setItem("currentIdNum", data.id_num);
+            }
+
+            if (data?.cust_id) {
+              localStorage.setItem("currentCustId", String(data.cust_id));
+            }
+
+            if (data?.user_id) {
+              localStorage.setItem("currentUserId", String(data.user_id));
             }
           })
           .catch((err) => {
@@ -268,7 +279,7 @@ export default function AdminLayoutContent({ children }: { children: React.React
 
   const handleOpenAccountModal = () => {
     const currentAcc = accounts.find(acc => acc.name === currentAccountName);
-    if (currentAcc && currentAcc.type === "Personal" && !currentAcc.isMalaysian) {
+    if (currentAcc && currentAcc.type === "Savings" && !currentAcc.isMalaysian) {
       setCanCreateBusiness(false);
     } else {
       setCanCreateBusiness(true);
@@ -279,18 +290,61 @@ export default function AdminLayoutContent({ children }: { children: React.React
   };
 
   const handleConfirmCreation = () => {
-    const currentAcc = accounts.find(acc => acc.name === currentAccountName);
-    if (selectedType === "Business") {
-      router.push("/business/malaysian/info");
-    } else {
-      if (currentAcc && !currentAcc.isMalaysian) {
-        router.push("/personal/non-malaysian/info");
-      } else {
-        router.push("/personal/malaysian/info");
-      }
+  const currentAcc = accounts.find(acc => acc.name === currentAccountName);
+  const storedIdNum = localStorage.getItem("currentIdNum");
+  const idNum = storedIdNum && storedIdNum !== "undefined" ? storedIdNum : "";
+  const storedCustId = localStorage.getItem("currentCustId");
+  const custId = storedCustId && storedCustId !== "undefined" ? storedCustId : "";
+
+  if (!custId) {
+  alert("Unable to find your customer profile. Please log in again.");
+  setIsModalOpen(false);
+  router.push("/login");
+  return;
+}
+
+  if (selectedType === "Business") {
+    const idNum = localStorage.getItem("currentIdNum") || "";
+
+    const journeyId =
+      typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random()}`;
+
+    if (!idNum) {
+      alert("Unable to find your identity number. Please log in again.");
+      setIsModalOpen(false);
+      router.push("/login");
+      return;
     }
+
+    localStorage.setItem("journeyId", journeyId);
+    localStorage.setItem("id_type", "ic");
+    localStorage.setItem("id_num", idNum);
+    localStorage.setItem("mode", "existing_customer");
+
+    router.push(
+      `/business/malaysian/info?id_type=ic&icust_id=${encodeURIComponent(
+        custId
+      )}&id_type=ic&id_num=${encodeURIComponent(
+        idNum
+      )}&journeyId=${encodeURIComponent(
+        journeyId
+      )}&mode=existing_customer`
+    );
+
     setIsModalOpen(false);
-  };
+    return;
+  }
+
+  if (currentAcc && !currentAcc.isMalaysian) {
+    router.push("/personal/non-malaysian/info");
+  } else {
+    router.push("/personal/malaysian/info");
+  }
+
+  setIsModalOpen(false);
+};
 
   const handleHeaderToggle = () => {
     if (window.innerWidth >= 1024) toggleSidebar(); else toggleMobileSidebar();
@@ -896,25 +950,25 @@ export default function AdminLayoutContent({ children }: { children: React.React
 
               <div className={`grid grid-cols-1 gap-6 ${canCreateBusiness ? 'sm:grid-cols-2' : 'max-w-xs mx-auto'}`}>
                 <div 
-                  onClick={() => setSelectedType("Personal")} 
+                  onClick={() => setSelectedType("Savings")} 
                   className={`relative cursor-pointer p-8 rounded-2xl border-2 transition-all duration-300 flex flex-col items-center text-center group backdrop-blur-sm ${
-                    selectedType === "Personal" 
+                    selectedType === "Savings" 
                       ? 'border-[#F0CA8E] bg-white shadow-lg ring-4 ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#F0CA8E] dark:ring-[#3D405B]/40' 
                       : 'border-gray-200 bg-white/70 hover:border-[#F0CA8E]/50 dark:border-gray-800 dark:bg-gray-900/70'
                   }`}
                 >
-                  {selectedType === "Personal" && (
+                  {selectedType === "Savings" && (
                     <div className="absolute top-3 right-3 bg-[#F0CA8E] text-white p-1 rounded-full shadow-sm">
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
                   )}
-                  <h3 className={`text-lg font-bold mb-2 ${selectedType === "Personal" ? 'text-[#3D405B] dark:text-white' : 'text-gray-800 dark:text-white'}`}>
-                    Personal Account
+                  <h3 className={`text-lg font-bold mb-2 ${selectedType === "Savings" ? 'text-[#3D405B] dark:text-white' : 'text-gray-800 dark:text-white'}`}>
+                    Savings Account
                   </h3>
                   <p className="text-xs leading-relaxed text-gray-500 dark:text-gray-400">
-                    Create a new personal banking account
+                    Create a new savings banking account
                   </p>
                 </div>
 

@@ -17,6 +17,7 @@ export async function GET(
         c.full_name,
         c.ph_no,
         c.email,
+        c.id_num,
         sa.occupation,
         a.add_1,
         a.add_2,
@@ -63,6 +64,14 @@ export async function GET(
       plainEmail = user.email || "";
     }
 
+    let plainIdNum = "";
+
+    try {
+      plainIdNum = user.id_num ? decrypt(user.id_num, "banka") : "";
+    } catch {
+      plainIdNum = "";
+    }
+
     let avatarString = "";
     if (user.img) {
       if (Buffer.isBuffer(user.img)) {
@@ -80,7 +89,10 @@ export async function GET(
     }
 
     return NextResponse.json({
+      user_id: user.user_id,
+      cust_id: user.cust_id,
       username: user.username,
+      id_num: plainIdNum,
       name: plainFullName,
       fullName: plainFullName,
       email: plainEmail,

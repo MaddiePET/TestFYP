@@ -6,10 +6,11 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import ChevronLeftIcon from "@/icons/chevron-left.svg";
 import { saveToStorage } from "@/lib/storage";
+import { useFormData } from "@/context/FormContext";
 
 export default function BusinessMalaysianInfo() {
   const router = useRouter();
-
+  const { formData: globalFormData, setFormData: setGlobalFormData } = useFormData();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -32,7 +33,30 @@ export default function BusinessMalaysianInfo() {
   });
 
   const searchParams = useSearchParams();
+  const custIdFromParams =
+  searchParams.get("cust_id") ||
+  (typeof window !== "undefined" ? localStorage.getItem("currentCustId") : "") ||
+  "";
+  
 
+  const mode =
+  searchParams.get("mode") ||
+  (typeof window !== "undefined" ? localStorage.getItem("mode") : "") ||
+  "new_user";
+
+  
+
+
+  const idNumFromParams =
+    searchParams.get("id_num") ||
+    (typeof window !== "undefined" ? localStorage.getItem("id_num") : "") ||
+    "";
+
+  console.log("INFO PAGE LOADED");
+  console.log("mode:", mode);
+  console.log("custIdFromParams:", custIdFromParams);
+  console.log("idNumFromParams:", idNumFromParams);
+  
   const journeyId = searchParams.get("journeyId") || (typeof window !== "undefined" ? localStorage.getItem("journeyId") : "") || "";
 
   const formatDateForFields = (value: unknown) => {
@@ -110,37 +134,70 @@ export default function BusinessMalaysianInfo() {
     }
   };
 
+
   useEffect(() => {
-    setMounted(true);
+  setMounted(true);
 
-    if (typeof window === "undefined") return;
+  if (typeof window === "undefined") return;
 
-    const currentJourneyId = searchParams.get("journeyId") || "";
-    const savedJourneyId = localStorage.getItem("journeyId");
+  if (mode) localStorage.setItem("mode", mode);
+  if (journeyId) localStorage.setItem("journeyId", journeyId);
+  if (idNumFromParams) localStorage.setItem("id_num", idNumFromParams);
+  localStorage.setItem("id_type", "ic");
 
-    if (savedJourneyId && savedJourneyId !== currentJourneyId) {
-      localStorage.removeItem("personalInfo");
-      localStorage.removeItem("homeAddress");
-      localStorage.removeItem("mailingAddress");
-      localStorage.removeItem("id_num");
-      localStorage.removeItem("id_type");
-    }
+  if (mode === "new_user") {
+    fetchIdentity("ic", idNumFromParams);
+  }
+}, [mode, journeyId, idNumFromParams]);
 
-    localStorage.setItem("journeyId", currentJourneyId);
+  useEffect(() => {
+  async function loadExistingCustomer() {
+    if (mode !== "existing_customer") return;
 
-    const queryParams = new URLSearchParams(window.location.search);
-    const idType = queryParams.get("id_type") || localStorage.getItem("id_type") || "ic";
-    const idNum = queryParams.get("id_num") || localStorage.getItem("id_num") || "";
+    if (!custIdFromParams && !idNumFromParams) return;
 
-    if (idNum) {
+    try {
+      const lookupUrl = custIdFromParams
+        ? `/api/customer/lookup?cust_id=${encodeURIComponent(custIdFromParams)}`
+        : `/api/customer/lookup?id_num=${encodeURIComponent(idNumFromParams)}`;
+
+      console.log("INFO PAGE MODE:", mode);
+      console.log("INFO PAGE CUSTOMER LOOKUP URL:", lookupUrl);
+      const res = await fetch(lookupUrl);
+      const data = await res.json();
+
+      if (!data.success) {
+        alert("Unable to load your existing customer details. Please log in again.");
+        router.push("/login");
+        return;
+      }
+
+      const customer = data.customer;
+      const { day, month, year } = formatDateForFields(customer.dob);
+
       setFormData((prev) => ({
         ...prev,
-        nric: idNum,
+        gender: customer.gender || "",
+        nric: customer.id_num || "",
+        fullName: customer.full_name || "",
+        dobDay: day || "",
+        dobMonth: month || "",
+        dobYear: year || "",
+        phoneNumber: (customer.ph_no || "").replace(/^\+?60/, ""),
+        add1: customer.add_1 || "",
+        add2: customer.add_2 || "",
+        postal: customer.postcode || "",
+        state: customer.state || "",
+        country: customer.country || "Malaysia",
       }));
-
-      fetchIdentity(idType, idNum);
+    } catch (error) {
+      console.error("Existing customer load error:", error);
+      alert("Unable to load existing customer details.");
     }
-  }, []); 
+  }
+
+  loadExistingCustomer();
+}, [mode, custIdFromParams, idNumFromParams]);
 
   const handleNext = async () => {
    if (isSubmitting) return;
@@ -191,13 +248,46 @@ export default function BusinessMalaysianInfo() {
     saveToStorage("id_num", formData.nric);
     saveToStorage("id_type", "ic");
 
-    router.push(`/business/malaysian/business_particulars?id_type=ic&id_num=${encodeURIComponent(formData.nric)}&journeyId=${encodeURIComponent(journeyId)}`);
-  } catch (error) { 
-      console.error("Submission error:", error);
-      setSubmitError("Failed to save application data.");
-    } finally {
-      setIsSubmitting(false);
+    setGlobalFormData({
+      ...globalFormData,
+      applicationMode: mode,
+      journeyId,
+      idType: "ic",
+      idNum: formData.nric,
+      personalInfo: {
+        ...personalInfo,
+        fullName: formData.fullName,
+        full_name: formData.fullName,
+        id_type: "IC",
+        add1: formData.add1,
+        add2: formData.add2,
+        postal: formData.postal,
+        state: formData.state,
+        country: formData.country,
+      },
+      homeAddress,
+    });
+
+    if (mode === "existing_customer") {
+      router.push(
+        `/business/malaysian/business_particulars?id_type=ic&id_num=${encodeURIComponent(
+          formData.nric
+        )}&journeyId=${encodeURIComponent(journeyId)}&mode=${encodeURIComponent(mode)}`
+      );  
+      return;
     }
+
+    // keep the original new-user route here
+    router.push(
+      `/business/malaysian/otp?id_type=ic&id_num=${encodeURIComponent(
+        formData.nric
+      )}&journeyId=${encodeURIComponent(journeyId)}&mode=${encodeURIComponent(mode)}`
+    );  } catch (error) { 
+          console.error("Submission error:", error);
+          setSubmitError("Failed to save application data.");
+        } finally {
+          setIsSubmitting(false);
+        }
   };
 
   const isFormValid = 
@@ -248,19 +338,22 @@ export default function BusinessMalaysianInfo() {
       </div>
 
       <div className="absolute top-6 left-4 right-4 flex justify-between items-center max-w-7xl mx-auto z-20 overflow-hidden">
-        <button
-          type="button"
-          onClick={() => 
-            router.push(
-              `/business/malaysian/otp?journeyId=${encodeURIComponent(journeyId)}`
-            )
-          }
-          className="inline-flex items-center text-sm text-gray-600 dark:text-white/80 transition-colors hover:text-gray-900 dark:hover:text-white"
-        >
-          <ChevronLeftIcon className="w-5 h-5" />
-          
-          Back
-        </button>
+        {mode !== "existing_customer" ? (
+          <button
+            type="button"
+            onClick={() =>
+              router.push(
+                `/business/malaysian/otp?journeyId=${encodeURIComponent(journeyId)}`
+              )
+            }
+            className="inline-flex items-center text-sm text-gray-600 dark:text-white/80 transition-colors hover:text-gray-900 dark:hover:text-white"
+          >
+            <ChevronLeftIcon className="w-5 h-5" />
+            Back
+          </button>
+        ) : (
+          <div />
+        )}
 
         <Link   
           href="/" 
@@ -340,8 +433,8 @@ export default function BusinessMalaysianInfo() {
                       <option value="" disabled>Select</option>
                       <option value="M">M</option>
                       <option value="F">F</option>
-                      <option value="Non-binary">Non-binary</option>
-                      <option value="Prefer not to say">Prefer not to say</option>
+                      <option value="NB">Non-binary</option>
+                      <option value="NONE">Prefer not to say</option>
                     </select>
 
                     <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">

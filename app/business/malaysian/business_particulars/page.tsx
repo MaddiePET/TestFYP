@@ -29,44 +29,45 @@ export default function BusinessMalaysianBusinessParticulars() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const journeyId = searchParams.get("journeyId") || (typeof window !== "undefined" ? localStorage.getItem("journeyId") : "") || "";
-  const idType = searchParams.get("id_type") || (typeof window !== "undefined" ? localStorage.getItem("id_type") : "") || "ic";
-  const idNum = searchParams.get("id_num") || (typeof window !== "undefined" ? localStorage.getItem("id_num") : "") || "";
-  
+  const journeyId =
+    searchParams.get("journeyId") ||
+    (typeof window !== "undefined" ? localStorage.getItem("journeyId") : "") ||
+    "";
+
+  const idType =
+    searchParams.get("id_type") ||
+    (typeof window !== "undefined" ? localStorage.getItem("id_type") : "") ||
+    "ic";
+
+  const idNum =
+    searchParams.get("id_num") ||
+    (typeof window !== "undefined" ? localStorage.getItem("id_num") : "") ||
+    "";
+
+  const mode =
+    searchParams.get("mode") ||
+    (typeof window !== "undefined" ? localStorage.getItem("mode") : "") ||
+    "new_user";
+
+  const { formData: globalFormData, setFormData: setGlobalFormData } =
+    useFormData();
+
   const [mounted, setMounted] = useState<boolean>(false);
   const [step, setStep] = useState<number>(1);
   const [selectedBusinessId, setSelectedBusinessId] = useState<string>("");
 
-  const { formData: globalFormData, setFormData: setGlobalFormData } = useFormData();
-
-  useEffect(() => {
-    setMounted(true);
-    
-    const verifySession = async () => {
-      const jId = localStorage.getItem("journeyId") || journeyId;
-      if (!jId) {
-        router.push("/business/user_verification");
-        return;
-      }
-      
-      try {
-        const res = await fetch(`/api/ekyc/status?journeyId=${encodeURIComponent(jId)}`);
-        const data = await res.json();
-        
-        if (data.status !== "face_verified") {
-          router.push("/business/malaysian/face_verification");
-        }
-      } catch (e) {
-        console.error("Session verification failed", e);
-      }
-    };
-
-    if (mounted) verifySession();
-  }, [mounted, journeyId, router]);
-  
   const [linkedBusinesses, setLinkedBusinesses] = useState<Business[]>([]);
   const [loadingBusinesses, setLoadingBusinesses] = useState<boolean>(true);
   const [businessError, setBusinessError] = useState<string>("");
+
+  const [businessAlreadyRegistered, setBusinessAlreadyRegistered] =
+    useState<boolean>(false);
+
+  const [existingAccountNo, setExistingAccountNo] = useState<string>("");
+  const [checkingExistingBusiness, setCheckingExistingBusiness] =
+    useState<boolean>(false);
+
+  const [solePropBlockedMessage, setSolePropBlockedMessage] = useState("");
 
   const [formData, setFormData] = useState({
     businessName: "",
@@ -85,8 +86,9 @@ export default function BusinessMalaysianBusinessParticulars() {
       state: "",
       country: "Malaysia",
     },
-    
   });
+
+  const ACCOUNT_CREATION_PATH = "/business/malaysian/account_creation";
 
   useEffect(() => {
     setMounted(true);
@@ -96,7 +98,42 @@ export default function BusinessMalaysianBusinessParticulars() {
     if (journeyId) localStorage.setItem("journeyId", journeyId);
     if (idType) localStorage.setItem("id_type", idType);
     if (idNum) localStorage.setItem("id_num", idNum);
-  }, [journeyId, idType, idNum]);
+    if (mode) localStorage.setItem("mode", mode);
+  }, [journeyId, idType, idNum, mode]);
+
+  useEffect(() => {
+    const verifySession = async () => {
+      if (mode === "existing_customer") {
+        return;
+      }
+
+      const jId =
+        typeof window !== "undefined"
+          ? localStorage.getItem("journeyId") || journeyId
+          : journeyId;
+
+      if (!jId) {
+        router.push("/business/user_verification");
+        return;
+      }
+
+      try {
+        const res = await fetch(
+          `/api/ekyc/status?journeyId=${encodeURIComponent(jId)}`
+        );
+
+        const data = await res.json();
+
+        if (data.status !== "face_verified") {
+          router.push("/business/malaysian/face_verification");
+        }
+      } catch (e) {
+        console.error("Session verification failed", e);
+      }
+    };
+
+    verifySession();
+  }, [mode, journeyId, router]);
 
   useEffect(() => {
     async function fetchLinkedBusinesses() {
@@ -108,7 +145,9 @@ export default function BusinessMalaysianBusinessParticulars() {
         }
 
         const response = await fetch(
-          `/api/identity/lookup?lookup=ssm_businesses&id_num=${encodeURIComponent(idNum)}`
+          `/api/identity/lookup?lookup=ssm_businesses&id_num=${encodeURIComponent(
+            idNum
+          )}`
         );
 
         const data = await response.json();
@@ -131,45 +170,96 @@ export default function BusinessMalaysianBusinessParticulars() {
     fetchLinkedBusinesses();
   }, [idNum]);
 
-  useEffect(() => {
-    if (selectedBusinessId) {
-      const biz = linkedBusinesses.find((b) => b.id === selectedBusinessId);
-      if (biz) {
-        console.log("Business raw start date:", biz.start_date);
-        const [y, m, d] = biz.start_date.split("-");
-        const extractedAddress = biz.address || {
-        addressLine1: (biz as any).bus_add1 || "",
-        addressLine2: (biz as any).bus_addr2 || "",
-        postcode: (biz as any).bus_postcode || "",
-        state: (biz as any).bus_state || "",
-        country: (biz as any).country || "Malaysia",
-      };
-
-      setFormData({
-        businessName: biz.name || "",
-        brn: biz.brn || "",
-        msicCode: biz.msicCode || "",
-        msicName: biz.msicName || "",
-        day: d || "",
-        month: m || "",
-        year: y || "",
-        businessType: biz.type || "",
-        role: "",
-        businessAddress: extractedAddress,
-      });
+  const checkExistingCurrentAccount = async (regNo: string, businessType: string) => {
+    if (!regNo) {
+      setBusinessAlreadyRegistered(false);
+      setExistingAccountNo("");
+      setSolePropBlockedMessage("");
+      return;
     }
+
+    try {
+      setCheckingExistingBusiness(true);
+
+      const response = await fetch(
+        `/api/current_account/check_business?reg_no=${encodeURIComponent(regNo)}`
+      );
+
+      const data = await response.json();
+
+      const isSoleProp =
+        businessType.toLowerCase().includes("sole proprietorship");
+
+      if (response.ok && data.success && data.exists) {
+        setBusinessAlreadyRegistered(true);
+        setExistingAccountNo(data.account_no || "");
+
+        if (isSoleProp) {
+          setSolePropBlockedMessage(
+            "A current account already exists for this sole proprietorship."
+          );
+        } else {
+          setSolePropBlockedMessage("");
+        }
+      } else {
+        setBusinessAlreadyRegistered(false);
+        setExistingAccountNo("");
+        setSolePropBlockedMessage("");
+      }
+    } catch (error) {
+      console.error("Failed to check existing current account:", error);
+      setBusinessAlreadyRegistered(false);
+      setExistingAccountNo("");
+      setSolePropBlockedMessage("");
+    } finally {
+      setCheckingExistingBusiness(false);
+    }
+  };
+
+  useEffect(() => {
+  if (!selectedBusinessId) return;
+
+  const biz = linkedBusinesses.find((b) => b.id === selectedBusinessId);
+
+  if (!biz) return;
+
+  const [y = "", m = "", d = ""] = (biz.start_date || "").split("-");
+
+  const extractedAddress = biz.address || {
+    addressLine1: (biz as any).bus_add1 || "",
+    addressLine2: (biz as any).bus_addr2 || "",
+    postcode: (biz as any).bus_postcode || "",
+    state: (biz as any).bus_state || "",
+    country: (biz as any).country || "Malaysia",
+  };
+
+  setFormData({
+    businessName: biz.name || "",
+    brn: biz.brn || "",
+    msicCode: biz.msicCode || "",
+    msicName: biz.msicName || "",
+    day: d || "",
+    month: m || "",
+    year: y || "",
+    businessType: biz.type || "",
+    role: "",
+    businessAddress: extractedAddress,
+  });
+
+  if (biz.brn) {
+    checkExistingCurrentAccount(biz.brn, biz.type || "");
   }
 }, [selectedBusinessId, linkedBusinesses]);
 
   const handleBack = () => {
     if (step === 1) {
       router.push(
-      `/business/malaysian/info?id_type=${encodeURIComponent(
-        idType
-      )}&id_num=${encodeURIComponent(idNum)}&journeyId=${encodeURIComponent(
-        journeyId
-      )}`
-    );
+        `/business/malaysian/info?id_type=${encodeURIComponent(
+          idType
+        )}&id_num=${encodeURIComponent(idNum)}&journeyId=${encodeURIComponent(
+          journeyId
+        )}&mode=${encodeURIComponent(mode)}`
+      );
     } else {
       setStep(1);
     }
@@ -181,59 +271,94 @@ export default function BusinessMalaysianBusinessParticulars() {
 
   const handleFinalSubmit = () => {
     const biz = linkedBusinesses.find((b) => b.id === selectedBusinessId);
-    
-    if (biz) {
-      const normalizedBusiness = {
-        reg_no: biz.brn || "",
-        bus_name: biz.name || "",
-        start_date: biz.start_date || "",
-        bus_type: biz.type || "",
-        msic_code: biz.msicCode || "",
-        msic_name: biz.msicName || "",
-        role: formData.role || "Owner",
-        bus_add1: formData.businessAddress.addressLine1,
-        bus_addr2: formData.businessAddress.addressLine2,
-        bus_postcode: formData.businessAddress.postcode,
-        bus_state: formData.businessAddress.state,
-      };
 
-      saveToStorage("selectedBusiness", biz);
-      saveToStorage("businessParticulars", normalizedBusiness);
-      saveToStorage("ssmCompanyData", biz);
-
-      setGlobalFormData({
-        ...globalFormData,
-        journeyId,
-        idType,
-        idNum,
-        businessParticulars: {
-          bus_name: formData.businessName,
-          reg_no: formData.brn,
-          start_date: `${formData.year}-${formData.month.padStart(2, "0")}-${formData.day.padStart(2, "0")}`, 
-          bus_type: formData.businessType, 
-          role: formData.role,
-          msic_code: formData.msicCode,
-          msic_name: formData.msicName,
-        },
-        businessAddress: {
-          businessAddress: formData.businessAddress, 
-          mailingAddress: {
-            addressLine1: "",
-            addressLine2: "",
-            postcode: "",
-            state: "",
-            country: "Malaysia",
-          },
-          isMailingSameAsBusiness: null,
-          preferredBranch: "",
-        },
-      });
+    if (!biz) {
+      setBusinessError("Please select a business before continuing.");
+      return;
     }
 
-    router.push(`/business/malaysian/business_address?id_type=${encodeURIComponent(idType)}&id_num=${encodeURIComponent(idNum)}&journeyId=${encodeURIComponent(journeyId)}`);
+    const normalizedBusiness = {
+      reg_no: biz.brn || "",
+      bus_name: biz.name || "",
+      start_date: biz.start_date || "",
+      bus_type: biz.type || "",
+      msic_code: biz.msicCode || "",
+      msic_name: biz.msicName || "",
+      role: formData.role || "Owner",
+      bus_add1: formData.businessAddress.addressLine1,
+      bus_addr2: formData.businessAddress.addressLine2,
+      bus_postcode: formData.businessAddress.postcode,
+      bus_state: formData.businessAddress.state,
+      current_account_exists: businessAlreadyRegistered,
+      existing_account_no: existingAccountNo,
+    };
+
+    const businessAddressData = {
+      businessAddress: formData.businessAddress,
+      mailingAddress: {
+        addressLine1: "",
+        addressLine2: "",
+        postcode: "",
+        state: "",
+        country: "Malaysia",
+      },
+      isMailingSameAsBusiness: null,
+      preferredBranch: "",
+    };
+
+    saveToStorage("selectedBusiness", biz);
+    saveToStorage("businessParticulars", normalizedBusiness);
+    saveToStorage("ssmCompanyData", biz);
+    saveToStorage("businessAddress", businessAddressData);
+    saveToStorage("currentAccountExists", businessAlreadyRegistered);
+    saveToStorage("existingAccountNo", existingAccountNo);
+
+    setGlobalFormData({
+      ...globalFormData,
+      journeyId,
+      idType,
+      idNum,
+      applicationMode: mode,
+      businessParticulars: {
+        bus_name: formData.businessName,
+        reg_no: formData.brn,
+        start_date: `${formData.year}-${formData.month.padStart(
+          2,
+          "0"
+        )}-${formData.day.padStart(2, "0")}`,
+        bus_type: formData.businessType,
+        role: formData.role,
+        msic_code: formData.msicCode,
+        msic_name: formData.msicName,
+        currentAccountExists: businessAlreadyRegistered,
+        existingAccountNo,
+      },
+      businessAddress: businessAddressData,
+    });
+
+    if (businessAlreadyRegistered) {
+      router.push(
+        `${ACCOUNT_CREATION_PATH}?id_type=${encodeURIComponent(
+          idType
+        )}&id_num=${encodeURIComponent(idNum)}&journeyId=${encodeURIComponent(
+          journeyId
+        )}&mode=${encodeURIComponent(
+          mode
+        )}&existing_account_no=${encodeURIComponent(existingAccountNo)}`
+      );
+      return;
+    }
+
+    router.push(
+      `/business/malaysian/business_address?id_type=${encodeURIComponent(
+        idType
+      )}&id_num=${encodeURIComponent(idNum)}&journeyId=${encodeURIComponent(
+        journeyId
+      )}&mode=${encodeURIComponent(mode)}`
+    );
   };
 
-  const isFormValid = 
+  const isFormValid =
     formData.businessName.trim() !== "" &&
     formData.brn.trim() !== "" &&
     formData.msicCode.trim() !== "" &&
@@ -242,8 +367,8 @@ export default function BusinessMalaysianBusinessParticulars() {
     formData.month.trim() !== "" &&
     formData.year.trim() !== "" &&
     formData.businessType.trim() !== "" &&
-    formData.role.trim() !== "";
-
+    formData.role.trim() !== "" &&
+    !checkingExistingBusiness;
   if (!mounted) return null;
 
   return (
@@ -377,6 +502,12 @@ export default function BusinessMalaysianBusinessParticulars() {
                   </div>
                 );
               })}
+
+              {solePropBlockedMessage && (
+                <p className="text-sm text-center text-red-500 font-medium">
+                  {solePropBlockedMessage}
+                </p>
+              )}
             </div>
 
             <div className="mt-8 flex flex-col items-center">
@@ -392,7 +523,7 @@ export default function BusinessMalaysianBusinessParticulars() {
                 <button
                   type="button"
                   onClick={handleNext}
-                  disabled={!selectedBusinessId || loadingBusinesses}
+                  disabled={!selectedBusinessId || loadingBusinesses || !!solePropBlockedMessage}
                   className="inline-flex items-center justify-center w-full px-4 py-3 text-sm font-bold transition rounded-lg shadow-theme-xs bg-[#3D405B] text-white hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d] disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed dark:disabled:bg-gray-800 dark:disabled:text-gray-600 active:scale-[0.98]"
                 >
                   Continue
@@ -429,6 +560,19 @@ export default function BusinessMalaysianBusinessParticulars() {
 
             <div className="space-y-6">
               <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                {businessAlreadyRegistered && (
+                  <div className="md:col-span-2 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800 dark:border-blue-500/40 dark:bg-blue-900/20 dark:text-blue-200">
+                    This business already has a registered current account. Business address and
+                    contact verification will be skipped. You will continue directly to account
+                    creation and be added to the existing current account.
+                  </div>
+                )}
+
+                {checkingExistingBusiness && (
+                  <div className="md:col-span-2 rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
+                    Checking whether this business already has a current account...
+                  </div>
+                )}
                 <div className="md:col-span-2">
                   <label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
                     Business Name
