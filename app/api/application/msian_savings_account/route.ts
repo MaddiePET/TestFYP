@@ -7,11 +7,20 @@ export const runtime = "nodejs";
 
 function generateAccountNumber() {
   let accountNo = "";
-
   for (let i = 0; i < 16; i++) {
     accountNo += Math.floor(Math.random() * 10).toString();
   }
   return accountNo;
+}
+
+function mapGender(frontendGender: string) {
+  switch (frontendGender) {
+    case "M": return "M";
+    case "F": return "F";
+    case "Non-binary": return "NB";
+    case "Prefer not to say": return "NONE";
+    default: return "NONE"; // Fallback
+  }
 }
 
 export async function POST(req: Request) {
@@ -22,7 +31,7 @@ export async function POST(req: Request) {
 
     const {
       journeyId,
-      isExistingCustomer, // Destructured bypass flag from frontend
+      isExistingCustomer, 
       customer,
       homeAddress,
       mailingAddress,
@@ -49,7 +58,6 @@ export async function POST(req: Request) {
     const normalizedIdNum = customerIdNum.replace(/-/g, "").trim();
     const isExisting = isExistingCustomer === true;
 
-    // Only require journeyId if this is a new customer going through standard eKYC
     if (!isExisting && !journeyId) {
       return NextResponse.json(
         { error: "Missing eKYC journey ID." },
@@ -57,16 +65,14 @@ export async function POST(req: Request) {
       );
     }
 
-    let scorecardResult = 100.00; // Default score for bypassed verification
+    let scorecardResult = 100.00;
 
-    // 1. Skip eKYC and scorecard validation if isExistingCustomer is true
     if (!isExisting) {
       const statusRes = await fetch(
         `${req.headers.get("origin") || "http://localhost:3000"}/api/ekyc/status?journeyId=${encodeURIComponent(journeyId)}`
       );
 
       const statusData = await statusRes.json();
-      console.log("DEBUG statusData:", statusData);
 
       const scorecardLists = statusData.scorecard?.scorecardResultList || [];
 
@@ -75,10 +81,8 @@ export async function POST(req: Request) {
 
       for (const scorecardItem of scorecardLists) {
         const checks = scorecardItem.checkResultList || [];
-
         for (const check of checks) {
           totalChecks++;
-
           if (check.checkStatus === "P") {
             passedChecks++;
           }
@@ -93,7 +97,6 @@ export async function POST(req: Request) {
       }
 
       scorecardResult = Number(((passedChecks / totalChecks) * 100).toFixed(2));
-      console.log("DEBUG scorecardResult:", scorecardResult);
 
       const statusIdType = statusData.id_type?.toLowerCase();
       const statusIdNum = statusData.id_num?.replace(/-/g, "").trim();
@@ -125,6 +128,7 @@ export async function POST(req: Request) {
       dob: customer.dob,
       ph_no: customer.ph_no || "",
       email: customer.email || "",
+      gender: mapGender(customer.gender),
     };
     
     const idNumHash = hashLookup(cleanCustomer.id_num);
@@ -218,7 +222,6 @@ export async function POST(req: Request) {
 
       if (existingSavingsResult.rows.length > 0) {
         await client.query("ROLLBACK");
-
         return NextResponse.json(
           {
             error: "You already have a savings account with us. Please log in to continue.",
@@ -237,8 +240,9 @@ export async function POST(req: Request) {
           dob = $3,
           ph_no = $4,
           email = $5,
-          home_add = $6
-        WHERE cust_id = $7
+          home_add = $6,
+          gender = $7
+        WHERE cust_id = $8
         `,
         [
           encrypt(cleanCustomer.full_name, "banka"),
@@ -247,6 +251,7 @@ export async function POST(req: Request) {
           encrypt(cleanCustomer.ph_no, "banka"),
           encrypt(cleanCustomer.email, "banka"),
           homeAddId,
+          cleanCustomer.gender,
           custId,
         ]
       );
@@ -261,9 +266,10 @@ export async function POST(req: Request) {
           dob,
           ph_no,
           email,
-          home_add
+          home_add,
+          gender
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         RETURNING cust_id
         `,
         [
@@ -275,14 +281,13 @@ export async function POST(req: Request) {
           encrypt(cleanCustomer.ph_no, "banka"),
           encrypt(cleanCustomer.email, "banka"),
           homeAddId,
+          cleanCustomer.gender,
         ]
       );
       custId = customerResult.rows[0].cust_id;
     }
 
-    if (!cleanUser.password) {
-      throw new Error("Password is missing");
-    }
+    if (!cleanUser.password) throw new Error("Password is missing");
 
     const usernameCheck = await client.query(
       `SELECT user_id FROM banka."User" WHERE LOWER(username) = LOWER($1)`,
@@ -299,7 +304,6 @@ export async function POST(req: Request) {
     const hashedPassword = await hashPassword(cleanUser.password);
 
     let profileBuffer: Buffer | null = null;
-
     if (user.img) {
       profileBuffer = user.img.startsWith("data:image")
         ? Buffer.from(user.img.split(",")[1], "base64")
@@ -334,12 +338,8 @@ export async function POST(req: Request) {
         `SELECT account_no FROM banka."Savings_account" WHERE account_no = $1`,
         [accountNo]
       );
-
-      if (checkAccount.rows.length === 0) {
-        accountExists = false;
-      } else {
-        accountNo = generateAccountNumber();
-      }
+      if (checkAccount.rows.length === 0) accountExists = false;
+      else accountNo = generateAccountNumber();
     }
 
     const savingsResult = await client.query(
@@ -365,10 +365,7 @@ export async function POST(req: Request) {
       SET account_no = $1
       WHERE cust_id = $2
       `,
-      [
-        encrypt(accountNo, "banka"),
-        custId
-      ]
+      [encrypt(accountNo, "banka"), custId]
     );
 
     await client.query(
@@ -418,7 +415,6 @@ export async function POST(req: Request) {
   } catch (error: any) {
     await client.query("ROLLBACK");
     console.error("Malaysian savings account error:", error);
-
     return NextResponse.json(
       { error: error.message || "Failed to create Malaysian savings account application" },
       { status: 500 }

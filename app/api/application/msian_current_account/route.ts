@@ -111,49 +111,59 @@ export async function POST(req: Request) {
     console.log("DEBUG business scorecardResult:", scorecardResult);
 
     await client.query("BEGIN");
-
-    const personalAddress = {
-      add_1: personalInfo.add_1 || personalInfo.streetAddress || personalInfo.add1 || "",
-      add_2: personalInfo.add_2 || personalInfo.city || personalInfo.add2 || "",
-      postcode: personalInfo.postcode || personalInfo.postal || "",
-      state: personalInfo.state || "",
-      country: personalInfo.country || "Malaysia",
-    };
-
-    if (!personalAddress.add_1) {
-      throw new Error("Personal residential address Line 1 parameter is empty.");
-    }
-
-    const homeAddressRes = await client.query(
-      `
-      INSERT INTO banka."Address" (add_1, add_2, postcode, state, country)
-      VALUES ($1, $2, $3, $4, $5)
-      RETURNING add_id
-      `,
-      [
-        enc(personalAddress.add_1),
-        enc(personalAddress.add_2),
-        enc(personalAddress.postcode),
-        enc(personalAddress.state),
-        enc(personalAddress.country),
-      ]
-    );
-
-    const homeAddId = homeAddressRes.rows[0].add_id;
-
+    
     const identityLookupHash = hashLookup(cleanIdNum);
 
     const existingCustomerCheck = await client.query(
-      `SELECT cust_id FROM banka."Customer" WHERE id_num_hash = $1`,
+      `
+      SELECT cust_id, home_add
+      FROM banka."Customer"
+      WHERE id_num_hash = $1
+      LIMIT 1
+      `,
       [identityLookupHash]
     );
 
     let custId: number;
+    let homeAddId: number | null = null;
 
     if (existingCustomerCheck.rows.length > 0) {
       custId = existingCustomerCheck.rows[0].cust_id;
-      console.log(`[CURRENT ACCOUNT] Existing profile found. Linking current account to master cust_id: ${custId}`);
+      homeAddId = existingCustomerCheck.rows[0].home_add;
+
+      console.log(
+        `[CURRENT ACCOUNT] Existing customer found. Reusing cust_id: ${custId}, home_add: ${homeAddId}`
+      );
     } else {
+      const personalAddress = {
+        add_1: personalInfo.add_1 || personalInfo.streetAddress || personalInfo.add1 || "",
+        add_2: personalInfo.add_2 || personalInfo.city || personalInfo.add2 || "",
+        postcode: personalInfo.postcode || personalInfo.postal || "",
+        state: personalInfo.state || "",
+        country: personalInfo.country || "Malaysia",
+      };
+
+      if (!personalAddress.add_1) {
+        throw new Error("Personal residential address Line 1 parameter is empty.");
+      }
+
+      const homeAddressRes = await client.query(
+        `
+        INSERT INTO banka."Address" (add_1, add_2, postcode, state, country)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING add_id
+        `,
+        [
+          enc(personalAddress.add_1),
+          enc(personalAddress.add_2),
+          enc(personalAddress.postcode),
+          enc(personalAddress.state),
+          enc(personalAddress.country),
+        ]
+      );
+
+      homeAddId = homeAddressRes.rows[0].add_id;
+
       const customerRes = await client.query(
         `
         INSERT INTO banka."Customer" (
@@ -162,11 +172,12 @@ export async function POST(req: Request) {
           full_name,
           id_type,
           dob,
+          gender,
           ph_no,
           email,
           home_add
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         RETURNING cust_id
         `,
         [
@@ -175,11 +186,13 @@ export async function POST(req: Request) {
           enc(customerFullName),
           personalInfo.id_type || "IC",
           personalInfo.dob,
+          personalInfo.gender,
           enc(phoneVerification.phoneNumber || personalInfo.ph_no_1 || personalInfo.ph_no),
           enc(contactInfo.email || personalInfo.email),
           homeAddId,
         ]
       );
+
       custId = customerRes.rows[0].cust_id;
     }
 
@@ -296,57 +309,122 @@ export async function POST(req: Request) {
       mailingAddId = mailingAddressRes.rows[0].add_id;
     }
 
-    let accountNo = generateAccountNumber();
-    let accountExists = true;
+    const regNoRaw =
+      businessParticulars.registration_number ||
+      businessParticulars.reg_no ||
+      businessParticulars.brn;
 
-    while (accountExists) {
-      const checkAccount = await client.query(
-        `SELECT account_no FROM banka."Current_account" WHERE account_no = $1`,
-        [accountNo]
-      );
+    const regNoHash = hash(regNoRaw);
 
-      if (checkAccount.rows.length === 0) {
-        accountExists = false;
-      } else {
-        accountNo = generateAccountNumber();
-      }
+    if (!regNoRaw || !regNoHash) {
+      throw new Error("Business registration number is missing.");
     }
+
+    const businessType =
+      businessParticulars.business_type ||
+      businessParticulars.bus_type ||
+      "";
+
+    const normalizedBusinessType = businessType.toLowerCase();
+
+    const isSoleProprietorship =
+      normalizedBusinessType.includes("sole proprietorship");
+
+    const existingCurrentAccountRes = await client.query(
+      `
+      SELECT account_no
+      FROM banka."Current_account"
+      WHERE reg_no_hash = $1
+      LIMIT 1
+      `,
+      [regNoHash]
+    );
+
+    let existingAccountNo: string | null = null;
+
+    if (existingCurrentAccountRes.rows.length > 0) {
+      existingAccountNo = existingCurrentAccountRes.rows[0].account_no;
+    }
+
+    if (existingAccountNo && isSoleProprietorship) {
+      throw new Error("A current account already exists for this sole proprietorship.");
+    }
+
+    let accountNo = existingAccountNo;
+
+    if (!accountNo) {
+      accountNo = generateAccountNumber();
+      let accountExists = true;
+
+      while (accountExists) {
+        const checkAccount = await client.query(
+          `SELECT account_no FROM banka."Current_account" WHERE account_no = $1`,
+          [accountNo]
+        );
+
+        if (checkAccount.rows.length === 0) {
+          accountExists = false;
+        } else {
+          accountNo = generateAccountNumber();
+        }
+      }
+
+      await client.query(
+        `
+        INSERT INTO banka."Current_account" (
+          account_no,
+          user_id,
+          reg_no_hash,
+          reg_no,
+          bus_name,
+          bus_ph_no,
+          bus_email,
+          start_date,
+          bus_type,
+          bus_add_id,
+          mail_add_id,
+          role,
+          msic_code,
+          msic_name
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+        `,
+        [
+          accountNo,
+          userId,
+          regNoHash,
+          enc(regNoRaw),
+          enc(businessParticulars.business_name || businessParticulars.bus_name),
+          enc(businessContact.bus_ph_no || businessContact.phoneNumber),
+          enc(businessContact.bus_email || businessContact.email),
+          businessParticulars.start_date || null,
+          businessType || null,
+          businessAddId,
+          mailingAddId,
+          businessParticulars.role || null,
+          businessParticulars.msic_code || null,
+          businessParticulars.msic_name || null,
+        ]
+      );
+    }
+
+    const currentAccountRole =
+      businessParticulars.role ||
+      (isSoleProprietorship ? "Owner" : "Partner");
 
     await client.query(
       `
-      INSERT INTO banka."Current_account" (
-        account_no,
+      INSERT INTO banka."Current_account_user" (
         user_id,
-        reg_no_hash,
-        reg_no,
-        bus_name,
-        bus_ph_no,
-        bus_email,
-        start_date,
-        bus_type,
-        bus_add_id,
-        mail_add_id,
-        role,
-        msic_code,
-        msic_name
+        account_no,
+        role
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+      VALUES ($1, $2, $3)
       `,
       [
-        accountNo,
         userId,
-        hash(businessParticulars.registration_number || businessParticulars.reg_no),
-        enc(businessParticulars.registration_number || businessParticulars.reg_no),
-        enc(businessParticulars.business_name || businessParticulars.bus_name),
-        enc(businessContact.bus_ph_no || businessContact.phoneNumber),
-        enc(businessContact.bus_email || businessContact.email),
-        businessParticulars.start_date || null,
-        businessParticulars.business_type || businessParticulars.bus_type || null,
-        businessAddId,
-        mailingAddId,
-        businessParticulars.role || null,
-        businessParticulars.msic_code || null,
-        businessParticulars.msic_name || null,
+        accountNo,
+        currentAccountRole,
       ]
     );
 

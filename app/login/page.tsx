@@ -152,6 +152,9 @@ export default function LogIn() {
         localStorage.setItem("currentAccount", data.name || "");
         localStorage.setItem("currentUserAvatar", data.avatar || ""); 
         localStorage.setItem("currentUserEmail", data.email || "");
+        localStorage.setItem("currentUserId", String(data.user_id));
+        localStorage.setItem("currentCustId", String(data.cust_id));
+        localStorage.setItem("currentIdNum", data.id_num);
       } catch (storageError) {
         console.warn("Session allocation limits hit, pruning avatar storage.");
         localStorage.setItem("currentUserAvatar", "");

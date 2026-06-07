@@ -13,6 +13,16 @@ function generateAccountNumber() {
   return accountNo;
 }
 
+function mapGender(frontendGender: string) {
+  switch (frontendGender) {
+    case "M": return "M";
+    case "F": return "F";
+    case "Non-binary": return "NB";
+    case "Prefer not to say": return "NONE";
+    default: return "NONE";
+  }
+}
+
 export async function POST(req: Request) {
   const client = await pool.connect();
 
@@ -60,7 +70,6 @@ export async function POST(req: Request) {
     );
 
     const statusData = await statusRes.json();
-    console.log("DEBUG statusData:", statusData);
 
     const scorecardLists = statusData.scorecard?.scorecardResultList || [];
 
@@ -69,10 +78,8 @@ export async function POST(req: Request) {
 
     for (const scorecardItem of scorecardLists) {
       const checks = scorecardItem.checkResultList || [];
-
       for (const check of checks) {
         totalChecks++;
-
         if (check.checkStatus === "P") {
          passedChecks++;
         }
@@ -87,8 +94,6 @@ export async function POST(req: Request) {
     }
 
     const scorecardResult = Number(((passedChecks / totalChecks) * 100).toFixed(2));
-
-    console.log("DEBUG scorecardResult:", scorecardResult);
 
     const statusIdType = statusData.id_type?.toLowerCase();
     const statusIdNum = statusData.id_num?.replace(/\s/g, "").toUpperCase().trim();
@@ -111,6 +116,8 @@ export async function POST(req: Request) {
       country: homeAddress.country || "",
     };
 
+    const rawGender = customer.gender || customer.non_msian_details?.gender || "";
+
     const cleanCustomer = {
       id_num: normalizedPassportNum,
       full_name: customer.full_name || "",
@@ -118,6 +125,7 @@ export async function POST(req: Request) {
       dob: customer.dob,
       ph_no: customer.ph_no || "",
       email: customer.email || "",
+      gender: mapGender(rawGender), // <-- MAP GENDER HERE
     };
 
     const idNumHash = hashLookup(cleanCustomer.id_num);
@@ -206,8 +214,9 @@ export async function POST(req: Request) {
           dob = $3,
           ph_no = $4,
           email = $5,
-          home_add = $6
-        WHERE cust_id = $7
+          home_add = $6,
+          gender = $7
+        WHERE cust_id = $8
         `,
         [
           encrypt(cleanCustomer.full_name, "banka"),
@@ -216,6 +225,7 @@ export async function POST(req: Request) {
           encrypt(cleanCustomer.ph_no, "banka"),
           encrypt(cleanCustomer.email, "banka"),
           homeAddId,
+          cleanCustomer.gender,
           custId,
         ]
       );
@@ -230,9 +240,10 @@ export async function POST(req: Request) {
           dob,
           ph_no,
           email,
-          home_add
+          home_add,
+          gender
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         RETURNING cust_id
         `,
         [
@@ -244,14 +255,13 @@ export async function POST(req: Request) {
           encrypt(cleanCustomer.ph_no, "banka"),
           encrypt(cleanCustomer.email, "banka"),
           homeAddId,
+          cleanCustomer.gender,
         ]
       );
       custId = customerResult.rows[0].cust_id;
     }
 
-    if (!cleanUser.password) {
-      throw new Error("Password is missing");
-    }
+    if (!cleanUser.password) throw new Error("Password is missing");
 
     const usernameCheck = await client.query(
       `SELECT user_id FROM banka."User" WHERE LOWER(username) = LOWER($1)`,
@@ -268,7 +278,6 @@ export async function POST(req: Request) {
     const hashedPassword = await hashPassword(cleanUser.password);
 
     let profileBuffer: Buffer | null = null;
-
     if (user.img) {
       profileBuffer = user.img.startsWith("data:image")
         ? Buffer.from(user.img.split(",")[1], "base64")
@@ -303,12 +312,8 @@ export async function POST(req: Request) {
         `SELECT account_no FROM banka."Savings_account" WHERE account_no = $1`,
         [accountNo]
       );
-
-      if (checkAccount.rows.length === 0) {
-        accountExists = false;
-      } else {
-        accountNo = generateAccountNumber();
-      }
+      if (checkAccount.rows.length === 0) accountExists = false;
+      else accountNo = generateAccountNumber();
     }
 
     const savingsResult = await client.query(
@@ -334,10 +339,7 @@ export async function POST(req: Request) {
       SET account_no = $1
       WHERE cust_id = $2
       `,
-      [
-        encrypt(accountNo, "banka"),
-        custId
-      ]
+      [encrypt(accountNo, "banka"), custId]
     );
     
     await client.query(
@@ -386,7 +388,6 @@ export async function POST(req: Request) {
   } catch (error: any) {
     await client.query("ROLLBACK");
     console.error("Non-Malaysian savings account error:", error);
-
     return NextResponse.json(
       { error: error.message || "Failed to create account application" },
       { status: 500 }

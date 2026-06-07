@@ -17,6 +17,7 @@ export async function GET(
         c.full_name,
         c.ph_no,
         c.email,
+        c.id_num,
         sa.occupation,
         sa.account_no AS savings_account_no,
         ca.account_no AS current_account_no,
@@ -67,6 +68,14 @@ export async function GET(
       plainEmail = user.email || "";
     }
 
+    let plainIdNum = "";
+
+    try {
+      plainIdNum = user.id_num ? decrypt(user.id_num, "banka") : "";
+    } catch {
+      plainIdNum = "";
+    }
+
     let avatarString = "";
     if (user.img) {
       if (Buffer.isBuffer(user.img)) {
@@ -86,7 +95,10 @@ export async function GET(
     const accountNo = user.savings_account_no || user.current_account_no || "N/A";
 
     return NextResponse.json({
+      user_id: user.user_id,
+      cust_id: user.cust_id,
       username: user.username,
+      id_num: plainIdNum,
       name: plainFullName,
       fullName: plainFullName,
       email: plainEmail,
