@@ -174,22 +174,20 @@ export async function POST(req: Request) {
         cust_id,
         username,
         password,
-        status,
         img,
         sec_phrase,
         branch
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING user_id
       `,
       [
         custId,
         targetUsername,
         hashedPassword,
-        "PENDING",
         profileBuffer,
-        account.securityPhrase || "",
-        businessAddressData.preferredBranch || "Main Corporate Branch",
+        account.securityPhrase,
+        businessAddressData.preferredBranch || "Main Branch",
       ]
     );
     const userId = userRes.rows[0].user_id;
