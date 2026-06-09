@@ -19,6 +19,8 @@ export async function GET(
         c.email,
         c.id_num,
         sa.occupation,
+        sa.account_no AS savings_account_no,
+        ca.account_no AS current_account_no,
         a.add_1,
         a.add_2,
         a.postcode,
@@ -29,6 +31,8 @@ export async function GET(
         ON u.cust_id = c.cust_id
       LEFT JOIN banka."Savings_account" AS sa
         ON u.user_id = sa.user_id
+      LEFT JOIN banka."Current_account" AS ca
+        ON u.user_id = ca.user_id
       LEFT JOIN banka."Address" AS a
         ON c.home_add = a.add_id
       WHERE LOWER(u.username) = LOWER($1)
@@ -88,6 +92,8 @@ export async function GET(
       avatarString = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(plainFullName || "User")}`;
     }
 
+    const accountNo = user.savings_account_no || user.current_account_no || "N/A";
+
     return NextResponse.json({
       user_id: user.user_id,
       cust_id: user.cust_id,
@@ -104,6 +110,7 @@ export async function GET(
       postalCode: user.postcode || "",
       address: [user.add_1, user.add_2].filter(Boolean).join(", "),
       location: [user.state, user.country].filter(Boolean).join(", "),
+      accountNo: accountNo,
     });
   } catch (err) {
     console.error("PROFILE ROUTE ERROR:", err);

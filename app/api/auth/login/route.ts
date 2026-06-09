@@ -94,7 +94,6 @@ export async function POST(req: Request) {
       id_num: plainIdNum,
       avatar: avatarBase64,
     });
-
   } catch (err) {
     console.error("CRITICAL EXCEPTION IN LOGIN HANDLER:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
