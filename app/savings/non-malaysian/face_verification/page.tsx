@@ -249,7 +249,7 @@ export default function SavingsNonMalaysianFaceQRCode() {
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-[#F0CA8E]" />
                 </span>
                 
-                Waiting for face scan...
+                Waiting for Face scan...
               </div>
             )}
           </div>

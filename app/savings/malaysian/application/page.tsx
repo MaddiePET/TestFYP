@@ -110,6 +110,7 @@ export default function SavingsMalaysianApplication() {
       const personalInfoStr = localStorage.getItem("personalInfo");
       if (personalInfoStr) {
         const personalInfo = JSON.parse(personalInfoStr);
+
         if (personalInfo.dob) {
           const dobDate = new Date(personalInfo.dob);
           const today = new Date();
@@ -134,6 +135,7 @@ export default function SavingsMalaysianApplication() {
 
   const handleRequestLocation = () => {
     setIsLocating(true);
+
     if (!navigator.geolocation) {
       alert("Geolocation not supported");
       setIsLocating(false);
@@ -153,6 +155,7 @@ export default function SavingsMalaysianApplication() {
         }
         setIsLocating(false);
       },
+      
       () => {
         alert("Location access denied.");
         setIsLocating(false);

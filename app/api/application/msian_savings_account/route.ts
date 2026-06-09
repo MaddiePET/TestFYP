@@ -150,65 +150,24 @@ export async function POST(req: Request) {
 
     await client.query("BEGIN");
 
-    const homeAddressResult = await client.query(
-      `
-      INSERT INTO banka."Address" (add_1, add_2, postcode, state, country)
-      VALUES ($1, $2, $3, $4, $5)
-      RETURNING add_id
-      `,
-      [
-        cleanHomeAddress.add_1,
-        cleanHomeAddress.add_2,
-        cleanHomeAddress.postcode,
-        cleanHomeAddress.state,
-        cleanHomeAddress.country,
-      ]
-    );
-
-    const homeAddId = homeAddressResult.rows[0].add_id;
+    let custId: number;
+    let homeAddId = null;
     let mailingAddId = null;
 
-    if (mailingAddress) {
-      const cleanMailingAddress = {
-        add_1: mailingAddress.add_1 || "",
-        add_2: mailingAddress.add_2 || "",
-        postcode: mailingAddress.postcode || "",
-        state: mailingAddress.state || "",
-        country: mailingAddress.country || "Malaysia",
-      };
-
-      const mailingAddressResult = await client.query(
-        `
-        INSERT INTO banka."Address" (add_1, add_2, postcode, state, country)
-        VALUES ($1, $2, $3, $4, $5)
-        RETURNING add_id
-        `,
-        [
-          cleanMailingAddress.add_1,
-          cleanMailingAddress.add_2,
-          cleanMailingAddress.postcode,
-          cleanMailingAddress.state,
-          cleanMailingAddress.country,
-        ]
-      );
-
-      mailingAddId = mailingAddressResult.rows[0].add_id;
-    }
-    
     const existingCustomerResult = await client.query(
       `
-      SELECT cust_id
+      SELECT cust_id, home_add
       FROM banka."Customer"
       WHERE id_num_hash = $1
       `,
       [idNumHash]
     );
 
-    let custId: number;
-
     if (existingCustomerResult.rows.length > 0) {
       custId = existingCustomerResult.rows[0].cust_id;
+      homeAddId = existingCustomerResult.rows[0].home_add;
 
+      // Verify if they already have a savings account
       const existingSavingsResult = await client.query(
         `
         SELECT s.account_no
@@ -231,31 +190,54 @@ export async function POST(req: Request) {
         );
       }
 
-      await client.query(
+      // No write operations or updates are performed on banka."Customer" for existing customer journeys.
+    } else {
+      // Create home address
+      const homeAddressResult = await client.query(
         `
-        UPDATE banka."Customer"
-        SET
-          full_name = $1,
-          id_type = $2,
-          dob = $3,
-          ph_no = $4,
-          email = $5,
-          home_add = $6,
-          gender = $7
-        WHERE cust_id = $8
+        INSERT INTO banka."Address" (add_1, add_2, postcode, state, country)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING add_id
         `,
         [
-          encrypt(cleanCustomer.full_name, "banka"),
-          cleanCustomer.id_type,
-          cleanCustomer.dob,
-          encrypt(cleanCustomer.ph_no, "banka"),
-          encrypt(cleanCustomer.email, "banka"),
-          homeAddId,
-          cleanCustomer.gender,
-          custId,
+          cleanHomeAddress.add_1,
+          cleanHomeAddress.add_2,
+          cleanHomeAddress.postcode,
+          cleanHomeAddress.state,
+          cleanHomeAddress.country,
         ]
       );
-    } else {
+
+      homeAddId = homeAddressResult.rows[0].add_id;
+
+      if (mailingAddress) {
+        const cleanMailingAddress = {
+          add_1: mailingAddress.add_1 || "",
+          add_2: mailingAddress.add_2 || "",
+          postcode: mailingAddress.postcode || "",
+          state: mailingAddress.state || "",
+          country: mailingAddress.country || "Malaysia",
+        };
+
+        const mailingAddressResult = await client.query(
+          `
+          INSERT INTO banka."Address" (add_1, add_2, postcode, state, country)
+          VALUES ($1, $2, $3, $4, $5)
+          RETURNING add_id
+          `,
+          [
+            cleanMailingAddress.add_1,
+            cleanMailingAddress.add_2,
+            cleanMailingAddress.postcode,
+            cleanMailingAddress.state,
+            cleanMailingAddress.country,
+          ]
+        );
+
+        mailingAddId = mailingAddressResult.rows[0].add_id;
+      }
+
+      // Create new customer record
       const customerResult = await client.query(
         `
         INSERT INTO banka."Customer" (
@@ -295,6 +277,7 @@ export async function POST(req: Request) {
     );
 
     if (usernameCheck.rows.length > 0) {
+      await client.query("ROLLBACK");
       return NextResponse.json(
         { error: "This username is already taken. Please choose another." },
         { status: 400 }
@@ -312,6 +295,7 @@ export async function POST(req: Request) {
       profileBuffer = Buffer.alloc(0);
     }
 
+    // Push details straight to the user table linking to custId
     const userResult = await client.query(
       `
       INSERT INTO banka."User" (cust_id, username, password, img, sec_phrase, branch)
@@ -359,33 +343,28 @@ export async function POST(req: Request) {
       ]
     );
 
-    await client.query(
-      `
-      UPDATE banka."Customer"
-      SET account_no = $1
-      WHERE cust_id = $2
-      `,
-      [encrypt(accountNo, "banka"), custId]
-    );
+    // The update statement setting account_no on banka."Customer" has been completely removed.
 
-    await client.query(
-      `
-      INSERT INTO banka."Journey" (
-        journey_id,
-        cust_id,
-        application_date,
-        approval_date,
-        scorecard_result
-      )
-      VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, $3)
-      ON CONFLICT (journey_id) DO NOTHING
-      `,
-      [
-        journeyId || `BYPASS-${custId}-${Date.now()}`,
-        custId,
-        scorecardResult,
-      ]
-    );
+    if (!isExisting) {
+      await client.query(
+        `
+        INSERT INTO banka."Journey" (
+          journey_id,
+          cust_id,
+          application_date,
+          approval_date,
+          scorecard_result
+        )
+        VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, $3)
+        ON CONFLICT (journey_id) DO NOTHING
+        `,
+        [
+          journeyId || `BYPASS-${custId}-${Date.now()}`,
+          custId,
+          scorecardResult,
+        ]
+      );
+    }
 
     await client.query("COMMIT");
 

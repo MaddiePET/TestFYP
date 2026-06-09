@@ -5,7 +5,6 @@ import dynamic from "next/dynamic";
 import Image from "next/image";
 import { ApexOptions } from "apexcharts";
 import { worldMill } from "@react-jvectormap/world";
-
 import Badge from "@/components/ui/badge/Badge";
 import ArrowDownIcon from "@/icons/arrow-down.svg";
 import ArrowUpIcon from "@/icons/arrow-up.svg";

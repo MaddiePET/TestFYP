@@ -38,6 +38,8 @@ export async function POST(req: Request) {
   try {
     const data = await req.json();
     
+    const journeyId = data.journeyId;
+
     const personalInfo = data.personalInfo || {};
     const contactInfo = data.contactInfo || {};
     const businessContact = data.businessContact || {};
@@ -61,11 +63,66 @@ export async function POST(req: Request) {
       );
     }
 
-    await client.query("BEGIN");
+    if (!journeyId) {
+      return NextResponse.json(
+        { error: "Missing eKYC journey ID." },
+        { status: 400 }
+      );
+    }
 
     const cleanIdNum = String(customerIdNum).replace(/-/g, "").trim().toUpperCase();
-    const identityLookupHash = hashLookup(cleanIdNum);
 
+    // Fetch eKYC verification status
+    const statusRes = await fetch(
+      `${req.headers.get("origin") || "http://localhost:3000"}/api/ekyc/status?journeyId=${encodeURIComponent(journeyId)}`
+    );
+
+    const statusData = await statusRes.json();
+    console.log("DEBUG business statusData:", statusData);
+
+    const statusIdType = statusData.id_type?.toLowerCase();
+    const statusIdNum = statusData.id_num?.replace(/-/g, "").trim().toUpperCase();
+
+    // Verify eKYC matches current user payload
+    if (
+      statusData.status !== "face_verified" ||
+      !["ic", "mykad", "nric"].includes(statusIdType) ||
+      statusIdNum !== cleanIdNum
+    ) {
+      return NextResponse.json(
+        { error: "eKYC session was not verified. Please restart MyKad verification." },
+        { status: 403 }
+      );
+    }
+
+    // Process eKYC scorecard checks
+    const scorecardLists = statusData.scorecard?.scorecardResultList || [];
+    let totalChecks = 0;
+    let passedChecks = 0;
+
+    for (const scorecardItem of scorecardLists) {
+      const checks = scorecardItem.checkResultList || [];
+      for (const check of checks) {
+        totalChecks++;
+        if (check.checkStatus === "P") {
+          passedChecks++;
+        }
+      }
+    }
+
+    if (totalChecks === 0) {
+      return NextResponse.json(
+        { error: "No scorecard checks found for this journey." },
+        { status: 400 }
+      );
+    }
+
+    const scorecardResult = Number(((passedChecks / totalChecks) * 100).toFixed(2));
+    console.log("DEBUG business scorecardResult:", scorecardResult);
+
+    await client.query("BEGIN");
+
+    const identityLookupHash = hashLookup(cleanIdNum);
     const customerPhone = personalInfo.ph_no || phoneVerification.phoneNumber || personalInfo.ph_no_1 || businessContact.bus_ph_no || businessContact.phoneNumber || "";
     const customerEmail = personalInfo.email || contactInfo.email || businessContact.bus_email || businessContact.email || "";
     const customerGender = mapGender(personalInfo.gender);
@@ -407,6 +464,24 @@ export async function POST(req: Request) {
       WHERE cust_id = $2
       `,
       [enc(accountNo), custId]
+    );
+
+    await client.query(
+      `
+      INSERT INTO banka."Journey" (
+        journey_id,
+        cust_id,
+        application_date,
+        approval_date,
+        scorecard_result
+      )
+      VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, $3)
+      `,
+      [
+        journeyId,
+        custId,
+        scorecardResult,
+      ]
     );
 
     await client.query("COMMIT");

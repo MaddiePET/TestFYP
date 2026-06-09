@@ -39,6 +39,7 @@ export default function SavingsMalaysianAccountCreation() {
     let email = "";
 
     const savedContactData = localStorage.getItem("contactInfo");
+
     if (savedContactData) {
       try {
         const parsed = JSON.parse(savedContactData);
@@ -50,6 +51,7 @@ export default function SavingsMalaysianAccountCreation() {
 
     if (!email) {
       const savedPersonalInfo = localStorage.getItem("personalInfo");
+
       if (savedPersonalInfo) {
         try {
           const parsed = JSON.parse(savedPersonalInfo);
@@ -88,6 +90,7 @@ export default function SavingsMalaysianAccountCreation() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+
     if (file) {
       setProfileFile(file);
       const reader = new FileReader();
@@ -105,7 +108,6 @@ export default function SavingsMalaysianAccountCreation() {
       setSubmitError(null);
 
       const journeyId = localStorage.getItem("journeyId") || "";
-      
       const isExistingCustomer = localStorage.getItem("mode") === "existing_customer";
 
       const phoneVerification = JSON.parse(localStorage.getItem("phoneVerification") || "{}");
@@ -140,7 +142,7 @@ export default function SavingsMalaysianAccountCreation() {
 
       const payload = {
         journeyId,
-        isExistingCustomer, // Flag indicating backend to skip scorecard validation check
+        isExistingCustomer,
         mode: isExistingCustomer ? "existing_customer" : "new_customer",
         customer: {
           id_num: personalInfo.id_num || personalInfo.ic_num || "",
@@ -172,8 +174,6 @@ export default function SavingsMalaysianAccountCreation() {
         },
       };
 
-      console.log("Sending Malaysian application payload verification: ", JSON.stringify(payload));
-
       const response = await fetch("/api/application/msian_savings_account", {
         method: "POST",
         headers: {
@@ -195,9 +195,6 @@ export default function SavingsMalaysianAccountCreation() {
         throw new Error(result.error || "Failed to complete savings account registration.");
       }
 
-      console.log("Malaysian savings account registration successful:", result);
-
-      // Explicitly update current account selection keys so dashboard loads the correct account type
       localStorage.setItem("currentAccount", username.trim());
       localStorage.setItem("currentUsername", username.trim());
       localStorage.setItem("currentAccountType", "Savings Account");
@@ -373,6 +370,7 @@ export default function SavingsMalaysianAccountCreation() {
                         className="w-full h-full object-cover" 
                         alt="Profile" 
                       />
+
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         <span className="text-white text-[10px] font-bold uppercase bg-white/20 backdrop-blur-sm px-2 py-1 rounded">Change</span>
                       </div>
@@ -392,9 +390,11 @@ export default function SavingsMalaysianAccountCreation() {
                           d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" 
                         />
                       </svg>
+
                       <span className="text-[10px] text-gray-400 uppercase font-bold">Upload</span>
                     </div>
                   )}
+                  
                   <input 
                     type="file" 
                     ref={fileInputRef} 
@@ -438,7 +438,7 @@ export default function SavingsMalaysianAccountCreation() {
                 </Label>
 
                 <input
-                  className="w-full px-4 py-2.5 text-sm transition-all bg-white border-2 rounded-xl outline-none border-gray-200 focus:border-[#F0CA8E]"
+                  className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
                   placeholder="Enter your username"
                   value={username}
                   onChange={(e) => {
@@ -452,9 +452,13 @@ export default function SavingsMalaysianAccountCreation() {
                 type="button"
                 onClick={handleNext}
                 disabled={username.length < 5 || !profilePreview || isValidatingUsername}
-                className="w-full px-4 py-3 text-sm font-bold text-white transition rounded-lg bg-[#3D405B] hover:bg-[#2c2f42] disabled:bg-gray-200 disabled:text-gray-400"
+                className={`inline-flex items-center justify-center w-full max-w-md px-4 py-3 text-sm font-bold transition rounded-lg shadow-theme-xs ${
+                  username.length >= 5 && profilePreview && !isValidatingUsername
+                    ? "bg-[#3D405B] text-white hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d]"
+                    : "bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600"
+                }`}
               >
-                {isValidatingUsername ? "Checking Availability..." : "Continue"}
+                {isValidatingUsername ? "Loading..." : "Continue"}
               </button>
             </div>
           </div>
@@ -479,7 +483,7 @@ export default function SavingsMalaysianAccountCreation() {
                 </Label>
 
                 <input
-                  className="w-full px-4 py-2.5 text-sm transition-all bg-white border-2 rounded-xl outline-none border-gray-200 focus:border-[#F0CA8E]"
+                  className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
                   placeholder="Enter your security phrase"
                   value={securityPhrase}
                   onChange={(e) => setSecurityPhrase(e.target.value.replace(/[^a-zA-Z!,.\s]/g, ""))}
@@ -491,7 +495,7 @@ export default function SavingsMalaysianAccountCreation() {
                       key={idx}
                       type="button"
                       onClick={() => setSecurityPhrase(phrase)}
-                      className="px-3 py-1.5 text-[11px] font-medium rounded-md border-2 text-gray-600 hover:border-[#3D405B]"
+                      className="px-3 py-1.5 text-[11px] font-medium rounded-md border-2 border-gray-300 hover:border-[#3D405B] dark:border-[#3D405B] dark:hover:border-[#F0CA8E] text-gray-600 dark:text-gray-200"
                     >
                       {phrase}
                     </button>
@@ -507,7 +511,7 @@ export default function SavingsMalaysianAccountCreation() {
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
-                    className="w-full px-4 py-2.5 text-sm transition-all bg-white border-2 rounded-xl outline-none border-gray-200"
+                    className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
                     placeholder="Enter your password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value.replace(/\s/g, ""))}
@@ -571,7 +575,7 @@ export default function SavingsMalaysianAccountCreation() {
 
                 <input
                   type="password"
-                  className="w-full px-4 py-2.5 text-sm transition-all bg-white border-2 rounded-xl outline-none border-gray-200"
+                  className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
                   placeholder="Confirm your password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value.replace(/\s/g, ""))}
@@ -588,7 +592,11 @@ export default function SavingsMalaysianAccountCreation() {
                 type="button"
                 onClick={handleFinalSubmit}
                 disabled={!password || !securityPhrase || password !== confirmPassword || !isPasswordValid || isSubmitting}
-                className="w-full px-4 py-3 text-sm font-bold text-white transition rounded-lg bg-[#3D405B] hover:bg-[#2c2f42] disabled:bg-gray-200 disabled:text-gray-400"
+                className={`inline-flex items-center justify-center w-full max-w-md px-4 py-3 text-sm font-bold transition rounded-lg shadow-theme-xs ${
+                  (!password || !securityPhrase || password !== confirmPassword || !isPasswordValid || isSubmitting)
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600"
+                    : "bg-[#3D405B] text-white hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d]"
+                }`}
               >
                 {isSubmitting ? "Creating Account..." : "Create Account"}
               </button>

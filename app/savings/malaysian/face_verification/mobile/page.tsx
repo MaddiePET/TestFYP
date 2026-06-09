@@ -47,6 +47,7 @@ function SavingsMalaysianMobileFaceCapture() {
   const base64ToBlob = (base64: string, mimeType = 'image/jpeg') => {
     const byteCharacters = atob(base64);
     const byteArrays = [];
+
     for (let i = 0; i < byteCharacters.length; i += 512) {
       const slice = byteCharacters.slice(i, i + 512);
       const byteNumbers = new Array(slice.length);
@@ -107,21 +108,21 @@ function SavingsMalaysianMobileFaceCapture() {
 
       const scorecardResult = await scorecardRes.json();
 
-        console.log("Scorecard result:", scorecardResult);
+      console.log("Scorecard result:", scorecardResult);
 
-        if (!scorecardRes.ok || scorecardResult.status !== "success") {
-           throw new Error(scorecardResult.error || "Scorecard check failed");
-        }
+      if (!scorecardRes.ok || scorecardResult.status !== "success") {
+        throw new Error(scorecardResult.error || "Scorecard check failed");
+      }
 
       const scorecardList = scorecardResult.scorecardResultList as any[] | undefined;
 
       const hasFailedFacialVerification = scorecardList?.some((item) =>
         item.checkResultList?.some(
-         (check: any) =>
-           check.checkType === "facialVerification" &&
-           check.checkStatus === "F"
-         )
-        );
+          (check: any) =>
+          check.checkType === "facialVerification" &&
+          check.checkStatus === "F"
+        )
+      );
 
       if (hasFailedFacialVerification) {
         throw new Error("Face does not match the MyKad photo");
@@ -137,7 +138,8 @@ function SavingsMalaysianMobileFaceCapture() {
           status: "face_verified",
           scorecard: scorecardResult,
         }),
-      });        
+      });  
+            
       setSuccess(true);
 
       } else {
@@ -366,10 +368,10 @@ function SavingsMalaysianMobileFaceCapture() {
                 </p>
                 
                 <ul className="list-disc ml-4 space-y-1">
-                  <li>Ensure your entire face is visible and in focus.</li>
-                  <li>Ensure you are not wearing a hat, glasses, or a mask for the best accuracy.</li>
                   <li>Ensure mobile and desktop tabs are open.</li>
                   <li>Ensure your internet connection is fast and stable.</li>
+                  <li>Ensure your entire face is clearly within the frame and in focus.</li>
+                  <li>Ensure you are not wearing a hat, glasses, or a mask for the best accuracy.</li>
                 </ul>
               </div>
             </div>
