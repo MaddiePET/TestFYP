@@ -212,8 +212,8 @@ export default function CurrentMalaysianSupportingDocuments() {
                   draggingId === doc.id
                     ? "border-[#F0CA8E] bg-white shadow-lg ring-4 ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#F0CA8E]"
                     : doc.preview
-                    ? "border-[#F0CA8E] bg-white dark:bg-gray-900/90 dark:border-[#F0CA8E]"
-                    : "border-2 border-dashed border-gray-200 bg-white hover:border-[#F0CA8E]/50 dark:border-gray-800 dark:bg-gray-900"
+                    ? "border-[#F0CA8E]"
+                    : "border-2 border-dashed border-gray-200 bg-white hover:border-[#F0CA8E]/50 dark:border-gray-500 dark:hover:border-[#F0CA8E] dark:bg-gray-900 "
                 }`}
               >
                 <input
@@ -309,7 +309,7 @@ export default function CurrentMalaysianSupportingDocuments() {
               type="button"
               onClick={handleNext}
               disabled={documents.some((d) => !d.name || !d.fileBase64)}
-              className="inline-flex items-center justify-center w-full px-4 py-3 text-sm font-bold transition rounded-lg bg-[#3D405B] text-white hover:bg-[#2c2f42] disabled:bg-gray-200 disabled:text-gray-400"
+                  className="inline-flex items-center justify-center w-full px-4 py-3 text-sm font-bold transition rounded-lg bg-[#3D405B] text-white hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d] disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed dark:disabled:bg-gray-800 dark:disabled:text-gray-600 shadow-lg"
             >
               Continue
             </button>

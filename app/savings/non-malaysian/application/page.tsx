@@ -1,12 +1,11 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter} from "next/navigation";
 import ChevronLeftIcon from "@/icons/chevron-left.svg";
 import { BRANCHES } from "@/data/branches";
-import { QRCodeSVG } from "qrcode.react";
 import { 
   non_malaysian_occupations, 
   non_malaysian_employment_types, 
@@ -120,9 +119,11 @@ export default function SavingsNonMalaysianApplication() {
       const nonMsianInfoStr = localStorage.getItem("nonMsianInfo");
       if (nonMsianInfoStr) {
         const nonMsianInfo = JSON.parse(nonMsianInfoStr);
+
         if (nonMsianInfo.dob) {
           const dobDate = new Date(nonMsianInfo.dob);
           const today = new Date();
+
           let age = today.getFullYear() - dobDate.getFullYear();
           const m = today.getMonth() - dobDate.getMonth();
           
@@ -144,6 +145,7 @@ export default function SavingsNonMalaysianApplication() {
 
   const handleRequestLocation = () => {
     setIsLocating(true);
+
     if (!navigator.geolocation) {
       alert("Geolocation not supported");
       setIsLocating(false);
@@ -154,6 +156,7 @@ export default function SavingsNonMalaysianApplication() {
       async (position) => {
         const { latitude, longitude } = position.coords;
         setUserLocation({ lat: latitude, lng: longitude });
+
         try {
           const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
           const data = await res.json();
@@ -163,6 +166,7 @@ export default function SavingsNonMalaysianApplication() {
         }
         setIsLocating(false);
       },
+
       () => {
         alert("Location access denied.");
         setIsLocating(false);
@@ -522,7 +526,7 @@ export default function SavingsNonMalaysianApplication() {
                         ? 'border-[#F0CA8E] bg-white shadow-lg ring-4 ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#F0CA8E]' 
                         : doc.preview 
                         ? 'border-[#F0CA8E] bg-white dark:bg-gray-900/90 dark:border-[#F0CA8E]' 
-                        : 'border-2 border-dashed border-gray-200 bg-white hover:border-[#F0CA8E]/50 dark:border-gray-800 dark:bg-gray-900'
+                        : "border-2 border-dashed border-gray-200 bg-white hover:border-[#F0CA8E]/50 dark:border-gray-500 dark:hover:border-[#F0CA8E] dark:bg-gray-900 "
                     }`}
                   >
                     <input 
@@ -630,7 +634,7 @@ export default function SavingsNonMalaysianApplication() {
           <div className="animate-in fade-in slide-in-from-right-4 duration-500">
             <div className="mb-10 text-center">
               <h1 className="mb-3 font-bold text-gray-800 text-title-sm dark:text-white sm:text-title-md">
-                Choose Your Preferred Branch
+                Select Your Preferred Branch
               </h1>
 
               <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -684,13 +688,15 @@ export default function SavingsNonMalaysianApplication() {
                    <div className="flex-shrink-0 w-8 h-8 bg-[#3D405B] text-white rounded-lg flex items-center justify-center">
                     <svg 
                       className="w-4 h-4" 
-                      fill="none" stroke="currentColor" 
+                      fill="none" 
+                      stroke="currentColor" 
                       viewBox="0 0 24 24"
                     >
                       <path 
                         strokeLinecap="round" 
                         strokeLinejoin="round" 
-                        strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                        strokeWidth="2" 
+                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
                       />
                     </svg>
                    </div>

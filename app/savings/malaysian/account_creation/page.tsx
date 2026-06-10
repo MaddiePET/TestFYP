@@ -50,19 +50,6 @@ export default function SavingsMalaysianAccountCreation() {
     }
 
     if (!email) {
-      const savedPersonalInfo = localStorage.getItem("personalInfo");
-
-      if (savedPersonalInfo) {
-        try {
-          const parsed = JSON.parse(savedPersonalInfo);
-          email = parsed.email || parsed.email_address || "";
-        } catch (e) {
-          console.error("Failed to parse personalInfo from localStorage", e);
-        }
-      }
-    }
-
-    if (!email) {
       email = localStorage.getItem("currentUserEmail") || "";
     }
 

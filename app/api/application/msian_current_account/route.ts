@@ -26,23 +26,14 @@ function hash(value: any) {
     : null;
 }
 
-function mapGender(frontendGender: string) {
-  switch (frontendGender) {
-    case "M":
-      return "M";
-    case "F":
-      return "F";
-    case "NB":
-      return "NB";
-    case "Non-binary":
-      return "NB";
-    case "NONE":
-      return "NONE";
-    case "Prefer not to say":
-      return "NONE";
-    default:
-      return "NONE";
-  }
+function mapGender(frontendGender: any) {
+  if (!frontendGender) return "NONE";
+  const normalized = String(frontendGender).trim().toUpperCase();
+  if (normalized === "M" || normalized === "MALE") return "M";
+  if (normalized === "F" || normalized === "FEMALE") return "F";
+  if (normalized === "NB" || normalized === "NON-BINARY" || normalized === "NON_BINARY") return "NB";
+  if (normalized === "NONE" || normalized === "PREFER NOT TO SAY" || normalized === "PREFER_NOT_TO_SAY") return "NONE";
+  return "NONE";
 }
 
 export async function POST(req: Request) {
@@ -74,15 +65,8 @@ export async function POST(req: Request) {
     const businessAddressData = data.businessAddress || {};
     const account = data.account || {};
     const phoneVerification = data.phoneVerification || {};
-
-    const customerIdNum =
-      personalInfo.id_num ||
-      personalInfo.idNumber ||
-      personalInfo.ic_num;
-
-    const customerFullName =
-      personalInfo.fullName ||
-      personalInfo.full_name;
+    const customerIdNum = personalInfo.id_num || personalInfo.idNumber || personalInfo.ic_num;
+    const customerFullName = personalInfo.fullName || personalInfo.full_name;
 
     if (!customerIdNum || !customerFullName || !personalInfo.dob) {
       console.error("Missing required submission sections.", {
@@ -180,21 +164,8 @@ export async function POST(req: Request) {
 
     const identityLookupHash = hashLookup(cleanIdNum);
 
-    const customerPhone =
-      personalInfo.ph_no ||
-      phoneVerification.phoneNumber ||
-      personalInfo.ph_no_1 ||
-      businessContact.bus_ph_no ||
-      businessContact.phoneNumber ||
-      "";
-
-    const customerEmail =
-      personalInfo.email ||
-      contactInfo.email ||
-      businessContact.bus_email ||
-      businessContact.email ||
-      "";
-
+    const customerPhone = personalInfo.ph_no || phoneVerification.phoneNumber || personalInfo.ph_no_1 || businessContact.bus_ph_no || businessContact.phoneNumber || "";
+    const customerEmail = personalInfo.email || contactInfo.email ||  businessContact.bus_email ||  businessContact.email ||  "";
     const customerGender = mapGender(personalInfo.gender);
 
     const existingCustomerCheck = await client.query(
@@ -665,24 +636,6 @@ export async function POST(req: Request) {
       );
     }
 
-    await client.query(
-      `
-      INSERT INTO banka."Journey" (
-        journey_id,
-        cust_id,
-        application_date,
-        approval_date,
-        scorecard_result
-      )
-      VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, $3)
-      `,
-      [
-        journeyId,
-        custId,
-        scorecardResult,
-      ]
-    );
-
     await client.query("COMMIT");
 
     try {
@@ -701,7 +654,7 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         message:
-          "Malaysian corporate current account application created successfully",
+          "Malaysian business current account application created successfully",
         cust_id: custId,
         user_id: userId,
         account_no: accountNo,
@@ -720,7 +673,7 @@ export async function POST(req: Request) {
       {
         error:
           error.message ||
-          "Failed to create Malaysian corporate current account application",
+          "Failed to create Malaysian business current account application",
       },
       { status: 500 }
     );

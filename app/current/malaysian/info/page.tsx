@@ -82,12 +82,22 @@ export default function CurrentMalaysianInfo() {
     return { day: "", month: "", year: "" };
   };
 
+  const normalizeGender = (raw: any) => {
+    if (!raw) return "";
+    const val = String(raw).trim().toUpperCase();
+    if (val === "M" || val === "MALE") return "M";
+    if (val === "F" || val === "FEMALE") return "F";
+    if (val === "NB" || val === "NON-BINARY" || val === "NON_BINARY") return "NB";
+    if (val === "NONE" || val === "PREFER NOT TO SAY" || val === "PREFER_NOT_TO_SAY") return "NONE";
+    return "";
+  };
+
   const normalizeIdentity = (identity: any, idType: string, idNum: string) => {
     const dob = identity.dob || identity.birth_date || identity.date_of_birth || identity.dob_date || identity.dobDate || "";
     const { day, month, year } = formatDateForFields(dob);
     
     return {
-      gender: identity.gender || identity.sex || "", // Changed from title to gender
+      gender: normalizeGender(identity.gender || identity.sex),
       fullName: identity.full_name || identity.name || identity.fullName || "",
       nric: identity.ic_number || identity.nric || identity.id_num || idNum,
       dobDay: day || "",
@@ -130,73 +140,72 @@ export default function CurrentMalaysianInfo() {
     }
   };
 
-
   useEffect(() => {
-  setMounted(true);
+    setMounted(true);
 
-  if (typeof window === "undefined") return;
+    if (typeof window === "undefined") return;
 
-  if (mode) localStorage.setItem("mode", mode);
-  if (journeyId) localStorage.setItem("journeyId", journeyId);
-  if (idNumFromParams) localStorage.setItem("id_num", idNumFromParams);
-  localStorage.setItem("id_type", "ic");
+    if (mode) localStorage.setItem("mode", mode);
+    if (journeyId) localStorage.setItem("journeyId", journeyId);
+    if (idNumFromParams) localStorage.setItem("id_num", idNumFromParams);
+    localStorage.setItem("id_type", "ic");
 
-  if (mode === "new_user") {
-    fetchIdentity("ic", idNumFromParams);
-  }
-}, [mode, journeyId, idNumFromParams]);
-
-  useEffect(() => {
-  async function loadExistingCustomer() {
-    if (mode !== "existing_customer") return;
-
-    if (!custIdFromParams && !idNumFromParams) return;
-
-    try {
-      const lookupUrl = custIdFromParams
-        ? `/api/customer/lookup?cust_id=${encodeURIComponent(custIdFromParams)}`
-        : `/api/customer/lookup?id_num=${encodeURIComponent(idNumFromParams)}`;
-
-      console.log("INFO PAGE MODE:", mode);
-      console.log("INFO PAGE CUSTOMER LOOKUP URL:", lookupUrl);
-      const res = await fetch(lookupUrl);
-      const data = await res.json();
-
-      if (!data.success) {
-        alert("Unable to load your existing customer details. Please log in again.");
-        router.push("/login");
-        return;
-      }
-
-      const customer = data.customer;
-      const { day, month, year } = formatDateForFields(customer.dob);
-
-      setFormData((prev) => ({
-        ...prev,
-        gender: customer.gender || "",
-        nric: customer.id_num || "",
-        fullName: customer.full_name || "",
-        dobDay: day || "",
-        dobMonth: month || "",
-        dobYear: year || "",
-        phoneNumber: (customer.ph_no || "").replace(/^\+?60/, ""),
-        add1: customer.add_1 || "",
-        add2: customer.add_2 || "",
-        postal: customer.postcode || "",
-        state: customer.state || "",
-        country: customer.country || "Malaysia",
-      }));
-    } catch (error) {
-      console.error("Existing customer load error:", error);
-      alert("Unable to load existing customer details.");
+    if (mode === "new_user") {
+      fetchIdentity("ic", idNumFromParams);
     }
-  }
+  }, [mode, journeyId, idNumFromParams]);
 
-  loadExistingCustomer();
-}, [mode, custIdFromParams, idNumFromParams]);
+  useEffect(() => {
+    async function loadExistingCustomer() {
+      if (mode !== "existing_customer") return;
+
+      if (!custIdFromParams && !idNumFromParams) return;
+
+      try {
+        const lookupUrl = custIdFromParams
+          ? `/api/customer/lookup?cust_id=${encodeURIComponent(custIdFromParams)}`
+          : `/api/customer/lookup?id_num=${encodeURIComponent(idNumFromParams)}`;
+
+        console.log("INFO PAGE MODE:", mode);
+        console.log("INFO PAGE CUSTOMER LOOKUP URL:", lookupUrl);
+        const res = await fetch(lookupUrl);
+        const data = await res.json();
+
+        if (!data.success) {
+          alert("Unable to load your existing customer details. Please log in again.");
+          router.push("/login");
+          return;
+        }
+
+        const customer = data.customer;
+        const { day, month, year } = formatDateForFields(customer.dob);
+
+        setFormData((prev) => ({
+          ...prev,
+          gender: normalizeGender(customer.gender),
+          nric: customer.id_num || "",
+          fullName: customer.full_name || "",
+          dobDay: day || "",
+          dobMonth: month || "",
+          dobYear: year || "",
+          phoneNumber: (customer.ph_no || "").replace(/^\+?60/, ""),
+          add1: customer.add_1 || "",
+          add2: customer.add_2 || "",
+          postal: customer.postcode || "",
+          state: customer.state || "",
+          country: customer.country || "Malaysia",
+        }));
+      } catch (error) {
+        console.error("Existing customer load error:", error);
+        alert("Unable to load existing customer details.");
+      }
+    }
+
+    loadExistingCustomer();
+  }, [mode, custIdFromParams, idNumFromParams]);
 
   const handleNext = async () => {
-   if (isSubmitting) return;
+    if (isSubmitting) return;
 
     try {
       setIsSubmitting(true);
@@ -221,59 +230,60 @@ export default function CurrentMalaysianInfo() {
       const fullPhone = `${formData.phoneCode}${formData.phoneNumber}`;
 
       const personalInfo = {
-      gender: formData.gender,
-      id_num: formData.nric,
-      full_name: formData.fullName,
-      id_type: "NRIC",
-      dob,
-      ph_no: fullPhone,
-      country: formData.country,
-    };
-
-    const homeAddress = {
-      add_type: "Home",
-      add_1: formData.add1,
-      add_2: formData.add2,
-      postcode: formData.postal,
-      state: formData.state,
-      country: formData.country,
-    };
-
-    saveToStorage("personalInfo", personalInfo);
-    saveToStorage("homeAddress", homeAddress);
-    saveToStorage("id_num", formData.nric);
-    saveToStorage("id_type", "ic");
-
-    setGlobalFormData({
-      ...globalFormData,
-      applicationMode: mode,
-      journeyId,
-      idType: "ic",
-      idNum: formData.nric,
-      personalInfo: {
-        ...personalInfo,
-        fullName: formData.fullName,
+        gender: formData.gender,
+        id_num: formData.nric,
         full_name: formData.fullName,
-        id_type: "IC",
-        add1: formData.add1,
-        add2: formData.add2,
-        postal: formData.postal,
+        id_type: "NRIC",
+        dob,
+        ph_no: fullPhone,
+        country: formData.country,
+      };
+
+      const homeAddress = {
+        add_type: "Home",
+        add_1: formData.add1,
+        add_2: formData.add2,
+        postcode: formData.postal,
         state: formData.state,
         country: formData.country,
-      },
-      homeAddress,
-    });
+      };
 
-    router.push(
-      `/current/malaysian/business_particulars?id_type=ic&id_num=${encodeURIComponent(
-        formData.nric
-      )}&journeyId=${encodeURIComponent(journeyId)}&mode=${encodeURIComponent(mode)}`
-    );} catch (error) { 
-          console.error("Submission error:", error);
-          setSubmitError("Failed to save application data.");
-        } finally {
-          setIsSubmitting(false);
-        }
+      saveToStorage("personalInfo", personalInfo);
+      saveToStorage("homeAddress", homeAddress);
+      saveToStorage("id_num", formData.nric);
+      saveToStorage("id_type", "ic");
+
+      setGlobalFormData({
+        ...globalFormData,
+        applicationMode: mode,
+        journeyId,
+        idType: "ic",
+        idNum: formData.nric,
+        personalInfo: {
+          ...personalInfo,
+          fullName: formData.fullName,
+          full_name: formData.fullName,
+          id_type: "IC",
+          add1: formData.add1,
+          add2: formData.add2,
+          postal: formData.postal,
+          state: formData.state,
+          country: formData.country,
+        },
+        homeAddress,
+      });
+
+      router.push(
+        `/current/malaysian/business_particulars?id_type=ic&id_num=${encodeURIComponent(
+          formData.nric
+        )}&journeyId=${encodeURIComponent(journeyId)}&mode=${encodeURIComponent(mode)}`
+      );
+    } catch (error) { 
+      console.error("Submission error:", error);
+      setSubmitError("Failed to save application data.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const isFormValid = 
@@ -410,35 +420,51 @@ export default function CurrentMalaysianInfo() {
                     Gender<span className="text-red-500">*</span>
                   </label>
 
-                  <div className="relative">
-                    <select 
-                      value={formData.gender} 
-                      onChange={(e) => setFormData({ ...formData, gender: e.target.value })} 
-                      className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
-                    >
-                      <option value="" disabled>Select</option>
-                      <option value="M">M</option>
-                      <option value="F">F</option>
-                      <option value="NB">Non-binary</option>
-                      <option value="NONE">Prefer not to say</option>
-                    </select>
-
-                    <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
-                      <svg 
-                        className="w-4 h-4 text-gray-400" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
-                      >
-                        <path 
-                          strokeLinecap="round" 
-                          strokeLinejoin="round" 
-                          strokeWidth="2" 
-                          d="M19 9l-7 7-7-7" 
-                        />
-                      </svg>
+                  {mode === "existing_customer" ? (
+                    <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
+                      <input
+                        type="text"
+                        readOnly
+                        className="w-full text-sm font-bold text-gray-700 dark:text-gray-200 bg-transparent outline-none cursor-not-allowed"
+                        value={
+                          formData.gender === "M" ? "M" :
+                          formData.gender === "F" ? "F" :
+                          formData.gender === "NB" ? "Non-binary" :
+                          formData.gender === "NONE" ? "Prefer not to say" : formData.gender
+                        }
+                      />
                     </div>
-                  </div>
+                  ) : (
+                    <div className="relative">
+                      <select 
+                        value={formData.gender} 
+                        onChange={(e) => setFormData({ ...formData, gender: e.target.value })} 
+                        className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
+                      >
+                        <option value="" disabled>Select</option>
+                        <option value="M">M</option>
+                        <option value="F">F</option>
+                        <option value="NB">Non-binary</option>
+                        <option value="NONE">Prefer not to say</option>
+                      </select>
+
+                      <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
+                        <svg 
+                          className="w-4 h-4 text-gray-400" 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round" 
+                            strokeWidth="2" 
+                            d="M19 9l-7 7-7-7" 
+                          />
+                        </svg>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 

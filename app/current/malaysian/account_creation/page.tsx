@@ -37,10 +37,8 @@ export default function CurrentMalaysianAccountCreation() {
   useEffect(() => {
     setMounted(true);
     
-    // Attempt to get contact info from local storage
     const savedContactData = loadFromStorage("contactInfo", {} as any);
     
-    // Fallback chain just like the personal page
     const emailToSet = 
       formData?.businessContact?.bus_email || 
       formData?.personalInfo?.email || 
@@ -84,160 +82,170 @@ export default function CurrentMalaysianAccountCreation() {
   };
 
   const handleFinalSubmit = async () => {
-    try {
-      setIsSubmitting(true);
-      setSubmitError(null);
+  try {
+    setIsSubmitting(true);
+    setSubmitError(null);
 
-      const storedPersonalInfo = loadFromStorage("personalInfo", {} as any);
-      const storedContactInfo = loadFromStorage("contactInfo", {} as any);
-      const storedBusinessContact = loadFromStorage("businessContact", {} as any); 
-      const storedBusinessParticulars = loadFromStorage("businessParticulars", {} as any);
-      const storedHomeAddress = loadFromStorage("homeAddress", {} as any);
-      const selectedBusiness = loadFromStorage("selectedBusiness", {} as any);
-      const ssmData = loadFromStorage("ssmCompanyData", loadFromStorage("companyData", {} as any));
+    const storedPersonalInfo = loadFromStorage("personalInfo", {} as any);
+    const storedContactInfo = loadFromStorage("contactInfo", {} as any);
+    const storedBusinessContact = loadFromStorage("businessContact", {} as any); 
+    const storedBusinessParticulars = loadFromStorage("businessParticulars", {} as any);
+    const storedHomeAddress = loadFromStorage("homeAddress", {} as any);
+    const selectedBusiness = loadFromStorage("selectedBusiness", {} as any);
+    const ssmData = loadFromStorage("ssmCompanyData", loadFromStorage("companyData", {} as any));
 
-      const normalizedBusiness = {
-        registration_number:
-          formData.businessParticulars?.reg_no ||
-          storedBusinessParticulars.reg_no ||
-          selectedBusiness.brn ||
-          ssmData.registration_number || "",
-        business_name:
-          formData.businessParticulars?.bus_name ||
-          storedBusinessParticulars.bus_name ||
-          selectedBusiness.name ||
-          ssmData.business_name || "",
-        start_date:
-          formData.businessParticulars?.start_date ||
-          storedBusinessParticulars.start_date ||
-          selectedBusiness.start_date ||
-          ssmData.start_date || null,
-        business_type:
-          formData.businessParticulars?.bus_type ||
-          storedBusinessParticulars.bus_type ||
-          selectedBusiness.type ||
-          ssmData.business_type || "",
-        role: formData.businessParticulars?.role || storedBusinessParticulars.role || "Owner",
-        msic_code:
-          formData.businessParticulars?.msic_code ||
-          storedBusinessParticulars.msic_code ||
-          selectedBusiness.msicCode ||
-          ssmData.msic_code || "",
-        msic_name:
-          formData.businessParticulars?.msic_name ||
-          storedBusinessParticulars.msic_name ||
-          selectedBusiness.msicName ||
-          ssmData.msic_name || "",
-      };
+    const normalizedBusiness = {
+      registration_number:
+        formData.businessParticulars?.reg_no ||
+        storedBusinessParticulars.reg_no ||
+        selectedBusiness.brn ||
+        ssmData.registration_number || "",
+      business_name:
+        formData.businessParticulars?.bus_name ||
+        storedBusinessParticulars.bus_name ||
+        selectedBusiness.name ||
+        ssmData.business_name || "",
+      start_date:
+        formData.businessParticulars?.start_date ||
+        storedBusinessParticulars.start_date ||
+        selectedBusiness.start_date ||
+        ssmData.start_date || null,
+      business_type:
+        formData.businessParticulars?.bus_type ||
+        storedBusinessParticulars.bus_type ||
+        selectedBusiness.type ||
+        ssmData.business_type || "",
+      role: formData.businessParticulars?.role || storedBusinessParticulars.role || "Owner",
+      msic_code:
+        formData.businessParticulars?.msic_code ||
+        storedBusinessParticulars.msic_code ||
+        selectedBusiness.msicCode ||
+        ssmData.msic_code || "",
+      msic_name:
+        formData.businessParticulars?.msic_name ||
+        storedBusinessParticulars.msic_name ||
+        selectedBusiness.msicName ||
+        ssmData.msic_name || "",
+    };
 
-      const rawBusAddr = formData.businessAddress?.businessAddress || {};
-      const rawMailAddr = formData.businessAddress?.mailingAddress || {};
-      const storedBiz = selectedBusiness?.address || ssmData?.address || {};
+    const rawBusAddr = formData.businessAddress?.businessAddress || {};
+    const rawMailAddr = formData.businessAddress?.mailingAddress || {};
+    const storedBiz = selectedBusiness?.address || ssmData?.address || {};
 
-      const addressLine1 = rawBusAddr.addressLine1 || storedBiz.addressLine1 || storedBusinessParticulars.bus_add1 || ssmData.bus_add1 || "";
-      const addressLine2 = rawBusAddr.addressLine2 || storedBiz.addressLine2 || storedBusinessParticulars.bus_addr2 || ssmData.bus_addr2 || "";
-      const postcode = rawBusAddr.postcode || storedBiz.postcode || storedBusinessParticulars.bus_postcode || ssmData.bus_postcode || "";
-      const state = rawBusAddr.state || storedBiz.state || storedBusinessParticulars.bus_state || ssmData.bus_state || "";
-      const country = rawBusAddr.country || storedBiz.country || ssmData.country || "Malaysia";
+    const addressLine1 = rawBusAddr.addressLine1 || storedBiz.addressLine1 || storedBusinessParticulars.bus_add1 || ssmData.bus_add1 || "";
+    const addressLine2 = rawBusAddr.addressLine2 || storedBiz.addressLine2 || storedBusinessParticulars.bus_addr2 || ssmData.bus_addr2 || "";
+    const postcode = rawBusAddr.postcode || storedBiz.postcode || storedBusinessParticulars.bus_postcode || ssmData.bus_postcode || "";
+    const state = rawBusAddr.state || storedBiz.state || storedBusinessParticulars.bus_state || ssmData.bus_state || "";
+    const country = rawBusAddr.country || storedBiz.country || ssmData.country || "Malaysia";
+    
+    const storedMode = localStorage.getItem("mode");
+    const storedCurrentCustId = localStorage.getItem("currentCustId");
+
+    const applicationMode = formData.applicationMode || storedMode || (storedCurrentCustId ? "existing_customer" : "new_user");
+
+    console.log("ACCOUNT CREATION applicationMode:", applicationMode);
+    console.log("ACCOUNT CREATION storedMode:", storedMode);
+    console.log("ACCOUNT CREATION currentCustId:", storedCurrentCustId);
+
+    const finalResolvedEmail = 
+      formData.businessContact?.bus_email || 
+      storedBusinessContact.bus_email || 
+      storedBusinessContact.email || 
+      storedContactInfo.email || 
+      storedContactInfo.email_address || 
+      storedPersonalInfo.email || 
+      storedPersonalInfo.email_address || 
+      userEmail || 
+      localStorage.getItem("currentUserEmail") || 
+      "";
       
-      const storedMode = localStorage.getItem("mode");
-      const storedCurrentCustId = localStorage.getItem("currentCustId");
+    const finalPayload = {
+      journeyId: formData.journeyId || localStorage.getItem("journeyId") || "",
+      applicationMode,
 
-      const applicationMode =
-        formData.applicationMode ||
-        storedMode ||
-        (storedCurrentCustId ? "existing_customer" : "new_user");
+      personalInfo: {
+        id_num: formData.idNum || storedPersonalInfo.id_num || storedPersonalInfo.idNumber || "",
+        full_name: storedPersonalInfo.full_name || storedPersonalInfo.fullName || "",
+        dob: storedPersonalInfo.dob || storedPersonalInfo.dateOfBirth || "",
+        id_type: "IC",
+        streetAddress: storedHomeAddress.add_1 || storedHomeAddress.streetAddress || "",
+        city: storedHomeAddress.add_2 || storedHomeAddress.city || "",
+        postal: storedHomeAddress.postcode || storedHomeAddress.postal || "",
+        state: storedHomeAddress.state || "",
+        country: "Malaysia",
+      },
 
-      console.log("ACCOUNT CREATION applicationMode:", applicationMode);
-      console.log("ACCOUNT CREATION storedMode:", storedMode);
-      console.log("ACCOUNT CREATION currentCustId:", storedCurrentCustId);
+      businessParticulars: normalizedBusiness,
+      businessContact: {
+        bus_ph_no: formData.businessContact?.bus_ph_no || storedPersonalInfo.ph_no || "",
+        phoneNumber: formData.businessContact?.bus_ph_no || storedPersonalInfo.ph_no || "",
+        bus_email: formData.businessContact?.bus_email || storedBusinessContact.bus_email || storedContactInfo.email || userEmail || "",
+        email: formData.businessContact?.bus_email || storedBusinessContact.bus_email || storedContactInfo.email || userEmail || "",
+      },
 
-      const finalPayload = {
-        journeyId: formData.journeyId || localStorage.getItem("journeyId") || "",
-        applicationMode,
-
-        personalInfo: {
-          id_num: formData.idNum || storedPersonalInfo.id_num || storedPersonalInfo.idNumber || "",
-          full_name: storedPersonalInfo.full_name || storedPersonalInfo.fullName || "",
-          dob: storedPersonalInfo.dob || storedPersonalInfo.dateOfBirth || "",
-          id_type: "IC",
-          streetAddress: storedHomeAddress.add_1 || storedHomeAddress.streetAddress || "",
-          city: storedHomeAddress.add_2 || storedHomeAddress.city || "",
-          postal: storedHomeAddress.postcode || storedHomeAddress.postal || "",
-          state: storedHomeAddress.state || "",
-          country: "Malaysia",
-        },
-
-        businessParticulars: normalizedBusiness,
-        businessContact: {
-          bus_ph_no: formData.businessContact?.bus_ph_no || storedPersonalInfo.ph_no || "",
-          phoneNumber: formData.businessContact?.bus_ph_no || storedPersonalInfo.ph_no || "",
-          bus_email: formData.businessContact?.bus_email || storedBusinessContact.bus_email || storedContactInfo.email || userEmail || "",
-          email: formData.businessContact?.bus_email || storedBusinessContact.bus_email || storedContactInfo.email || userEmail || "",
-        },
-
+      businessAddress: {
+        preferredBranch: formData.businessAddress?.preferredBranch || "Main Corporate Branch",
+        isMailingSameAsBusiness: formData.businessAddress?.isMailingSameAsBusiness ?? true,
         businessAddress: {
-          preferredBranch: formData.businessAddress?.preferredBranch || "Main Corporate Branch",
-          isMailingSameAsBusiness: formData.businessAddress?.isMailingSameAsBusiness ?? true,
-          businessAddress: {
-            addressLine1: addressLine1,
-            addressLine2: addressLine2,
-            postcode: postcode,
-            state: state,
-            country: country,
-          },
-          mailingAddress: {
-            addressLine1: rawMailAddr.addressLine1 || addressLine1,
-            addressLine2: rawMailAddr.addressLine2 || addressLine2,
-            postcode: rawMailAddr.postcode || postcode,
-            state: rawMailAddr.state || state,
-            country: rawMailAddr.country || country,
-          },
+          addressLine1: addressLine1,
+          addressLine2: addressLine2,
+          postcode: postcode,
+          state: state,
+          country: country,
         },
-
-        account: {
-          username: username.trim(),
-          password: password,
-          securityPhrase: securityPhrase,
-          profilePreview: profilePreview || "",
+        mailingAddress: {
+          addressLine1: rawMailAddr.addressLine1 || addressLine1,
+          addressLine2: rawMailAddr.addressLine2 || addressLine2,
+          postcode: rawMailAddr.postcode || postcode,
+          state: rawMailAddr.state || state,
+          country: rawMailAddr.country || country,
         },
-      };
+      },
 
-      console.log("Sending Malaysian application payload verification: ", finalPayload);
+      account: {
+        username: username.trim(),
+        password: password,
+        securityPhrase: securityPhrase,
+        profilePreview: profilePreview || "",
+      },
+    };
 
-      const res = await fetch("/api/application/msian_current_account", {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json" 
-        },
-        body: JSON.stringify(finalPayload),
-      });
+    console.log("Sending Malaysian application payload verification: ", finalPayload);
 
-      const result = await res.json();
-      if (!res.ok) {
-        throw new Error(result.error || "Failed to complete current account registration.");
-      }
+    const res = await fetch("/api/application/msian_current_account", {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json" 
+      },
+      body: JSON.stringify(finalPayload),
+    });
 
-      setFormData((prev) => ({
-        ...prev,
-        account: {
-          username: username.trim(),
-          securityPhrase: securityPhrase,
-          profilePreview: profilePreview || "",
-        },
-      }));
-
-      setStep("pending");
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setSubmitError(err.message);
-      } else {
-        setSubmitError("An unhandled database tracking runtime exception occurred.");
-      }
-    } finally {
-      setIsSubmitting(false);
+    const result = await res.json();
+    if (!res.ok) {
+      throw new Error(result.error || "Failed to complete current account registration.");
     }
-  };
+
+    setFormData((prev) => ({
+      ...prev,
+      account: {
+        username: username.trim(),
+        securityPhrase: securityPhrase,
+        profilePreview: profilePreview || "",
+      },
+    }));
+
+    setUserEmail(finalResolvedEmail);
+    setStep("pending");
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      setSubmitError(err.message);
+    } else {
+      setSubmitError("An unhandled database tracking runtime exception occurred.");
+    }
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   const handleNext = async () => {
     if (step === "profile") {
@@ -430,7 +438,7 @@ export default function CurrentMalaysianAccountCreation() {
                 </Label>
 
                 <input
-                  className="w-full px-4 py-2.5 text-sm transition-all bg-white border-2 rounded-xl outline-none border-gray-200 focus:border-[#F0CA8E]"
+                  className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
                   placeholder="Enter your username"
                   value={username}
                   onChange={(e) => {
@@ -444,9 +452,13 @@ export default function CurrentMalaysianAccountCreation() {
                 type="button"
                 onClick={handleNext}
                 disabled={username.length < 5 || !profilePreview || isValidatingUsername}
-                className="w-full px-4 py-3 text-sm font-bold text-white transition rounded-lg bg-[#3D405B] hover:bg-[#2c2f42] disabled:bg-gray-200 disabled:text-gray-400"
-              >
-                {isValidatingUsername ? "Checking Availability..." : "Continue"}
+                className={`inline-flex items-center justify-center w-full max-w-md px-4 py-3 text-sm font-bold transition rounded-lg shadow-theme-xs ${
+                  username.length >= 5 && profilePreview && !isValidatingUsername
+                    ? "bg-[#3D405B] text-white hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d]"
+                    : "bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600"
+                }`}              
+                >
+                {isValidatingUsername ? "Loading..." : "Continue"}
               </button>            
             </div>
           </div>
@@ -471,7 +483,7 @@ export default function CurrentMalaysianAccountCreation() {
                 </Label>
 
                 <input
-                  className="w-full px-4 py-2.5 text-sm transition-all bg-white border-2 rounded-xl outline-none border-gray-200 focus:border-[#F0CA8E]"
+                  className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
                   placeholder="Enter your security phrase"
                   value={securityPhrase}
                   onChange={(e) => setSecurityPhrase(e.target.value.replace(/[^a-zA-Z!,.\s]/g, ""))}
@@ -483,7 +495,7 @@ export default function CurrentMalaysianAccountCreation() {
                       key={idx}
                       type="button"
                       onClick={() => setSecurityPhrase(phrase)}
-                      className="px-3 py-1.5 text-[11px] font-medium rounded-md border-2 text-gray-600 hover:border-[#3D405B]"
+                      className="px-3 py-1.5 text-[11px] font-medium rounded-md border-2 border-gray-300 hover:border-[#3D405B] dark:border-[#3D405B] dark:hover:border-[#F0CA8E] text-gray-600 dark:text-gray-200"
                     >
                       {phrase}
                     </button>
@@ -499,7 +511,7 @@ export default function CurrentMalaysianAccountCreation() {
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
-                    className="w-full px-4 py-2.5 text-sm transition-all bg-white border-2 rounded-xl outline-none border-gray-200"
+                    className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
                     placeholder="Enter your password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value.replace(/\s/g, ""))}
@@ -563,7 +575,7 @@ export default function CurrentMalaysianAccountCreation() {
 
                 <input
                   type="password"
-                  className="w-full px-4 py-2.5 text-sm transition-all bg-white border-2 rounded-xl outline-none border-gray-200"
+                  className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
                   placeholder="Confirm your password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value.replace(/\s/g, ""))}
@@ -580,9 +592,13 @@ export default function CurrentMalaysianAccountCreation() {
                 type="button"
                 onClick={handleFinalSubmit}
                 disabled={!password || !securityPhrase || password !== confirmPassword || !isPasswordValid || isSubmitting}
-                className="w-full px-4 py-3 text-sm font-bold text-white transition rounded-lg bg-[#3D405B] hover:bg-[#2c2f42] disabled:bg-gray-200 disabled:text-gray-400"
-              >
-                {isSubmitting ? "Creating..." : "Create Account"}
+                className={`inline-flex items-center justify-center w-full max-w-md px-4 py-3 text-sm font-bold transition rounded-lg shadow-theme-xs ${
+                  (!password || !securityPhrase || password !== confirmPassword || !isPasswordValid || isSubmitting)
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600"
+                    : "bg-[#3D405B] text-white hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d]"
+                }`}                  
+                >
+                {isSubmitting ? "Creating Account..." : "Create Account"}
               </button>
             </div>
           </div>

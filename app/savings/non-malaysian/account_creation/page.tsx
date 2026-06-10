@@ -35,6 +35,7 @@ export default function SavingsNonMalaysianAccountCreation() {
     setMounted(true);
 
     const savedEmailData = localStorage.getItem("nonMsianEmail") || localStorage.getItem("contactInfo");
+    
     if (savedEmailData) {
       const parsed = JSON.parse(savedEmailData);
       setUserEmail(parsed.email || parsed.email_address || "");
@@ -62,9 +63,11 @@ export default function SavingsNonMalaysianAccountCreation() {
   
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+
     if (file) {
       setProfileFile(file);
       const reader = new FileReader();
+
       reader.onloadend = () => {
         const dataUrl = reader.result as string;
         setProfilePreview(dataUrl); 
@@ -94,6 +97,7 @@ export default function SavingsNonMalaysianAccountCreation() {
         add_type: "Home",
         add_1: (storedHomeAddress.add_1 || "").trim(),
         add_2: (storedHomeAddress.add_2 || "").trim(),
+        city: (storedHomeAddress.city || "").trim(), 
         postcode: (storedHomeAddress.postcode || "").trim() || "00000",
         state: (storedHomeAddress.state || "").trim() || "Overseas",
         country: (storedHomeAddress.country || personalInfo.country || "International").trim(),
@@ -103,6 +107,7 @@ export default function SavingsNonMalaysianAccountCreation() {
         add_type: "Mailing",
         add_1: (storedMailingAddress.add_1 || "").trim() || homeAddress.add_1,
         add_2: (storedMailingAddress.add_2 || "").trim() || homeAddress.add_2,
+        city: (storedMailingAddress.city || "").trim() || homeAddress.city,
         postcode: (storedMailingAddress.postcode || "").trim() || homeAddress.postcode,
         state: (storedMailingAddress.state || "").trim() || homeAddress.state,
         country: (storedMailingAddress.country || "").trim() || homeAddress.country || "Malaysia",
@@ -124,6 +129,7 @@ export default function SavingsNonMalaysianAccountCreation() {
           gender: personalInfo.non_msian_details?.gender || personalInfo.gender || "",
           country: homeAddress.country,
         },
+
         homeAddress,
         mailingAddress,
         savingsAccount: {
@@ -133,6 +139,7 @@ export default function SavingsNonMalaysianAccountCreation() {
           employment_type: savings_account.employment_type || "",
           is18: savings_account.is18 !== undefined ? savings_account.is18 : true,
         },
+
         user: {
           username: username.trim(),
           password,
@@ -153,6 +160,7 @@ export default function SavingsNonMalaysianAccountCreation() {
       });
 
       const result = await response.json();
+
       if (!response.ok) {
         throw new Error(result.error || "Failed to complete account registration.");
       }
@@ -222,6 +230,7 @@ export default function SavingsNonMalaysianAccountCreation() {
             className="fill-[#3D405B]/80"
             d="M0,192L48,197.3C96,203,192,213,288,192C384,171,480,117,576,117.3C672,117,768,171,864,192C960,213,1056,203,1152,176C1248,149,1344,107,1392,85.3L1440,64L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"
           />
+
           <path
             className="fill-[#3D405B]"
             d="M0,128L48,138.7C96,149,192,171,288,176C384,181,480,171,576,144C672,117,768,75,864,69.3C960,64,1056,96,1152,112C1248,128,1344,128,1392,128L1440,128L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"
@@ -250,6 +259,7 @@ export default function SavingsNonMalaysianAccountCreation() {
           className="inline-flex items-center text-sm text-gray-600 dark:text-white/80 transition-colors hover:text-gray-900 dark:hover:text-white"
         >
           <ChevronLeftIcon className="w-5 h-5" />
+
           Back
         </button>
 
@@ -261,6 +271,7 @@ export default function SavingsNonMalaysianAccountCreation() {
             height={40} 
             className="block dark:invert-0 invert" 
           />
+
           <h1 className="text-lg sm:text-2xl font-bold uppercase tracking-tight text-gray-800 dark:text-white truncate">
             DTCOB
           </h1>
@@ -274,6 +285,7 @@ export default function SavingsNonMalaysianAccountCreation() {
               <h1 className="mb-3 font-bold text-gray-800 text-title-sm dark:text-white sm:text-title-md">
                 Create Your Account
               </h1>
+
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 Choose your profile photo and username to get started.
               </p>
@@ -313,9 +325,11 @@ export default function SavingsNonMalaysianAccountCreation() {
                           d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" 
                         />                      
                       </svg>
+
                       <span className="text-[10px] text-gray-400 uppercase font-bold">Upload</span>
                     </div>
                   )}
+
                   <input 
                     type="file" 
                     ref={fileInputRef} 
@@ -357,8 +371,9 @@ export default function SavingsNonMalaysianAccountCreation() {
                 <Label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
                   Username<span className="text-error-500">*</span>
                 </Label>
+
                 <input
-                  className="w-full px-4 py-2.5 text-sm transition-all bg-white border-2 rounded-xl outline-none border-gray-200 focus:border-[#F0CA8E] dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white"
+                  className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
                   placeholder="Enter your username"
                   value={username}
                   onChange={(e) => {
@@ -368,13 +383,17 @@ export default function SavingsNonMalaysianAccountCreation() {
                 />
               </div>
 
-              <button 
-                type="button" 
-                onClick={handleNext} 
-                disabled={username.length < 5 || !profilePreview || isValidatingUsername} 
-                className="w-full px-4 py-3 text-sm font-bold text-white transition rounded-lg bg-[#3D405B] hover:bg-[#2c2f42] disabled:bg-gray-200 disabled:text-gray-400"
+              <button
+                type="button"
+                onClick={handleNext}
+                disabled={username.length < 5 || !profilePreview || isValidatingUsername}
+                className={`inline-flex items-center justify-center w-full max-w-md px-4 py-3 text-sm font-bold transition rounded-lg shadow-theme-xs ${
+                  username.length >= 5 && profilePreview && !isValidatingUsername
+                    ? "bg-[#3D405B] text-white hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d]"
+                    : "bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600"
+                }`}
               >
-                {isValidatingUsername ? "Checking Availability..." : "Continue"}
+                {isValidatingUsername ? "Loading..." : "Continue"}
               </button>
             </div>
           </div>
@@ -386,6 +405,7 @@ export default function SavingsNonMalaysianAccountCreation() {
               <h1 className="mb-3 font-bold text-gray-800 text-title-sm dark:text-white sm:text-title-md">
                 Secure Your Account
               </h1>
+
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 Set a strong password and a security phrase.
               </p>
@@ -396,8 +416,9 @@ export default function SavingsNonMalaysianAccountCreation() {
                 <Label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
                   Security Phrase<span className="text-error-500">*</span>
                 </Label>
+
                 <input
-                  className="w-full px-4 py-2.5 text-sm transition-all bg-white border-2 rounded-xl outline-none border-gray-200 focus:border-[#F0CA8E] dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white"
+                  className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
                   placeholder="Enter your security phrase"
                   value={securityPhrase}
                   onChange={(e) => setSecurityPhrase(e.target.value.replace(/[^a-zA-Z!,.\s]/g, ""))}
@@ -409,7 +430,7 @@ export default function SavingsNonMalaysianAccountCreation() {
                       key={idx}
                       type="button"
                       onClick={() => setSecurityPhrase(phrase)}
-                      className="px-3 py-1.5 text-[11px] font-medium rounded-md border-2 text-gray-600 hover:border-[#3D405B] dark:text-gray-300 dark:border-gray-800"
+                      className="px-3 py-1.5 text-[11px] font-medium rounded-md border-2 border-gray-300 hover:border-[#3D405B] dark:border-[#3D405B] dark:hover:border-[#F0CA8E] text-gray-600 dark:text-gray-200"
                     >
                       {phrase}
                     </button>
@@ -421,14 +442,16 @@ export default function SavingsNonMalaysianAccountCreation() {
                 <Label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
                   Password<span className="text-error-500">*</span>
                 </Label>
+
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
-                    className="w-full px-4 py-2.5 text-sm transition-all bg-white border-2 rounded-xl outline-none border-gray-200 focus:border-[#F0CA8E] dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white"
+                    className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
                     placeholder="Enter your password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value.replace(/\s/g, ""))}
                   />
+
                   <button 
                     type="button" 
                     onClick={() => setShowPassword(!showPassword)} 
@@ -484,9 +507,10 @@ export default function SavingsNonMalaysianAccountCreation() {
                 <Label className="block mb-2 text-sm font-semibold text-gray-800 dark:text-white/90">
                   Confirm Password<span className="text-error-500">*</span>
                 </Label>
+
                 <input
                   type="password"
-                  className="w-full px-4 py-2.5 text-sm transition-all bg-white border-2 rounded-xl outline-none border-gray-200 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:placeholder-gray-400 dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40"
+                  className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
                   placeholder="Confirm your password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value.replace(/\s/g, ""))}
@@ -503,7 +527,11 @@ export default function SavingsNonMalaysianAccountCreation() {
                 type="button"
                 onClick={handleNext} 
                 disabled={!password || !securityPhrase || password !== confirmPassword || !isPasswordValid || isSubmitting}  
-                className="w-full px-4 py-3 text-sm font-bold text-white transition rounded-lg bg-[#3D405B] hover:bg-[#2c2f42] disabled:bg-gray-200 disabled:text-gray-400"
+                className={`inline-flex items-center justify-center w-full max-w-md px-4 py-3 text-sm font-bold transition rounded-lg shadow-theme-xs ${
+                  (!password || !securityPhrase || password !== confirmPassword || !isPasswordValid || isSubmitting)
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600"
+                    : "bg-[#3D405B] text-white hover:bg-[#2c2f42] dark:bg-[#3D405B] dark:hover:bg-[#4a4e6d]"
+                }`}           
               >
                 {isSubmitting ? "Creating Account..." : "Create Account"}
               </button>
@@ -534,9 +562,11 @@ export default function SavingsNonMalaysianAccountCreation() {
             <h1 className="mb-4 font-bold text-gray-800 text-title-sm dark:text-white">
               Verification Pending
             </h1>
+
             <p className="mb-2 text-sm text-gray-500">
               We've sent a confirmation email to
             </p>
+            
             <p className="mb-6 font-bold text-blue-700 dark:text-blue-400">
               {userEmail}
             </p>

@@ -13,6 +13,10 @@ function generateAccountNumber() {
   return accountNo;
 }
 
+function enc(value: any) {
+  return value ? encrypt(String(value), "banka") : null;
+}
+
 function mapGender(frontendGender: string) {
   switch (frontendGender) {
     case "M": return "M";
@@ -189,10 +193,8 @@ export async function POST(req: Request) {
           { status: 409 }
         );
       }
-
-      // No write operations or updates are performed on banka."Customer" for existing customer journeys.
     } else {
-      // Create home address
+      // Create home address with encrypted values
       const homeAddressResult = await client.query(
         `
         INSERT INTO banka."Address" (add_1, add_2, postcode, state, country)
@@ -200,11 +202,11 @@ export async function POST(req: Request) {
         RETURNING add_id
         `,
         [
-          cleanHomeAddress.add_1,
-          cleanHomeAddress.add_2,
-          cleanHomeAddress.postcode,
-          cleanHomeAddress.state,
-          cleanHomeAddress.country,
+          enc(cleanHomeAddress.add_1),
+          enc(cleanHomeAddress.add_2),
+          enc(cleanHomeAddress.postcode),
+          enc(cleanHomeAddress.state),
+          enc(cleanHomeAddress.country),
         ]
       );
 
@@ -219,6 +221,7 @@ export async function POST(req: Request) {
           country: mailingAddress.country || "Malaysia",
         };
 
+        // Create mailing address with encrypted values
         const mailingAddressResult = await client.query(
           `
           INSERT INTO banka."Address" (add_1, add_2, postcode, state, country)
@@ -226,11 +229,11 @@ export async function POST(req: Request) {
           RETURNING add_id
           `,
           [
-            cleanMailingAddress.add_1,
-            cleanMailingAddress.add_2,
-            cleanMailingAddress.postcode,
-            cleanMailingAddress.state,
-            cleanMailingAddress.country,
+            enc(cleanMailingAddress.add_1),
+            enc(cleanMailingAddress.add_2),
+            enc(cleanMailingAddress.postcode),
+            enc(cleanMailingAddress.state),
+            enc(cleanMailingAddress.country),
           ]
         );
 
@@ -343,28 +346,26 @@ export async function POST(req: Request) {
       ]
     );
 
-    // The update statement setting account_no on banka."Customer" has been completely removed.
-
-    if (!isExisting) {
-      await client.query(
-        `
-        INSERT INTO banka."Journey" (
-          journey_id,
-          cust_id,
-          application_date,
-          approval_date,
-          scorecard_result
-        )
-        VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, $3)
-        ON CONFLICT (journey_id) DO NOTHING
-        `,
-        [
-          journeyId || `BYPASS-${custId}-${Date.now()}`,
-          custId,
-          scorecardResult,
-        ]
-      );
-    }
+    // Save journey registration unconditionally using unique fallback keys with ON CONFLICT resolution
+    const finalJourneyId = journeyId || `BYPASS-${custId}-${Date.now()}`;
+    await client.query(
+      `
+      INSERT INTO banka."Journey" (
+        journey_id,
+        cust_id,
+        application_date,
+        approval_date,
+        scorecard_result
+      )
+      VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, $3)
+      ON CONFLICT (journey_id) DO NOTHING
+      `,
+      [
+        finalJourneyId,
+        custId,
+        scorecardResult,
+      ]
+    );
 
     await client.query("COMMIT");
 

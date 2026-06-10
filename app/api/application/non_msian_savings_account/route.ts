@@ -13,6 +13,10 @@ function generateAccountNumber() {
   return accountNo;
 }
 
+function enc(value: any) {
+  return value ? encrypt(String(value), "banka") : null;
+}
+
 function mapGender(frontendGender: string) {
   switch (frontendGender) {
     case "M": return "M";
@@ -108,9 +112,14 @@ export async function POST(req: Request) {
       );
     }
 
+    // Combine Address 2 and City into one string separated by a comma
+    const homeAdd2Str = homeAddress.add_2 ? homeAddress.add_2.trim() : "";
+    const homeCityStr = homeAddress.city ? homeAddress.city.trim() : "";
+    const combinedHomeAdd2 = [homeAdd2Str, homeCityStr].filter(Boolean).join(", ");
+
     const cleanHomeAddress = {
       add_1: homeAddress.add_1 || "",
-      add_2: homeAddress.add_2 || "",
+      add_2: combinedHomeAdd2, // Saves "Street Name, City" to the database
       postcode: homeAddress.postcode || "",
       state: homeAddress.state || "",
       country: homeAddress.country || "",
@@ -125,7 +134,7 @@ export async function POST(req: Request) {
       dob: customer.dob,
       ph_no: customer.ph_no || "",
       email: customer.email || "",
-      gender: mapGender(rawGender), // <-- MAP GENDER HERE
+      gender: mapGender(rawGender),
     };
 
     const idNumHash = hashLookup(cleanCustomer.id_num);
@@ -147,6 +156,7 @@ export async function POST(req: Request) {
 
     await client.query("BEGIN");
 
+    // Create home address with encrypted values
     const homeAddressResult = await client.query(
       `
       INSERT INTO banka."Address" (add_1, add_2, postcode, state, country)
@@ -154,11 +164,11 @@ export async function POST(req: Request) {
       RETURNING add_id
       `,
       [
-        cleanHomeAddress.add_1,
-        cleanHomeAddress.add_2,
-        cleanHomeAddress.postcode,
-        cleanHomeAddress.state,
-        cleanHomeAddress.country,
+        enc(cleanHomeAddress.add_1),
+        enc(cleanHomeAddress.add_2),
+        enc(cleanHomeAddress.postcode),
+        enc(cleanHomeAddress.state),
+        enc(cleanHomeAddress.country),
       ]
     );
 
@@ -166,14 +176,19 @@ export async function POST(req: Request) {
     let mailingAddId = null;
 
     if (mailingAddress) {
+      const mailAdd2Str = mailingAddress.add_2 ? mailingAddress.add_2.trim() : "";
+      const mailCityStr = mailingAddress.city ? mailingAddress.city.trim() : "";
+      const combinedMailAdd2 = [mailAdd2Str, mailCityStr].filter(Boolean).join(", ");
+
       const cleanMailingAddress = {
         add_1: mailingAddress.add_1 || "",
-        add_2: mailingAddress.add_2 || "",
+        add_2: combinedMailAdd2, // Saves "Street Name, City" to the database
         postcode: mailingAddress.postcode || "",
         state: mailingAddress.state || "",
         country: mailingAddress.country || "",
       };
 
+      // Create mailing address with encrypted values
       const mailingAddressResult = await client.query(
         `
         INSERT INTO banka."Address" (add_1, add_2, postcode, state, country)
@@ -181,11 +196,11 @@ export async function POST(req: Request) {
         RETURNING add_id
         `,
         [
-          cleanMailingAddress.add_1,
-          cleanMailingAddress.add_2,
-          cleanMailingAddress.postcode,
-          cleanMailingAddress.state,
-          cleanMailingAddress.country,
+          enc(cleanMailingAddress.add_1),
+          enc(cleanMailingAddress.add_2),
+          enc(cleanMailingAddress.postcode),
+          enc(cleanMailingAddress.state),
+          enc(cleanMailingAddress.country),
         ]
       );
       mailingAddId = mailingAddressResult.rows[0].add_id;
@@ -332,16 +347,9 @@ export async function POST(req: Request) {
         cleanSavings.is18,
       ]
     );
-
-     await client.query(
-      `
-      UPDATE banka."Customer"
-      SET account_no = $1
-      WHERE cust_id = $2
-      `,
-      [encrypt(accountNo, "banka"), custId]
-    );
     
+    // Save journey registration unconditionally using unique fallback keys with ON CONFLICT resolution
+    const finalJourneyId = journeyId || `BYPASS-${custId}-${Date.now()}`;
     await client.query(
        `
        INSERT INTO banka."Journey" (
@@ -352,9 +360,10 @@ export async function POST(req: Request) {
          scorecard_result
       )
       VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, $3)
+      ON CONFLICT (journey_id) DO NOTHING
       `,
       [
-        journeyId,
+        finalJourneyId,
         custId,
         scorecardResult,
       ]

@@ -97,11 +97,11 @@ export default function SavingsMalaysianApplication() {
   const [preferredBranch, setPreferredBranch] = useState("");
 
   const isFormValid = 
-    formData.occupation !== "" &&
-    formData.incomeRange !== "" &&
-    formData.employmentType !== "" &&
-    formData.sourceOfIncome !== "" &&
-    formData.isOfAge === true;
+  formData.occupation !== "" &&
+  formData.incomeRange !== "" &&
+  formData.employmentType !== "" &&
+  formData.sourceOfIncome !== "" &&
+  formData.isOfAge === true;
 
   useEffect(() => {
     setMounted(true);
@@ -114,6 +114,7 @@ export default function SavingsMalaysianApplication() {
         if (personalInfo.dob) {
           const dobDate = new Date(personalInfo.dob);
           const today = new Date();
+
           let age = today.getFullYear() - dobDate.getFullYear();
           const m = today.getMonth() - dobDate.getMonth();
           
@@ -146,6 +147,7 @@ export default function SavingsMalaysianApplication() {
       async (position) => {
         const { latitude, longitude } = position.coords;
         setUserLocation({ lat: latitude, lng: longitude });
+
         try {
           const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
           const data = await res.json();
@@ -170,9 +172,7 @@ export default function SavingsMalaysianApplication() {
     return distA - distB;
   });
 
-  const handleNext = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const handleNext = () => {
     try {
       localStorage.setItem(
         "savingsApplication",
@@ -195,9 +195,7 @@ export default function SavingsMalaysianApplication() {
     (branch) => branch.id === preferredBranch
   );
 
-  const handleFinalSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const handleFinalSubmit = () => {
     if (!selectedBranchDetails) {
       alert("Please select a branch before continuing.");
       return;

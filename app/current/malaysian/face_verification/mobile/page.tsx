@@ -365,10 +365,10 @@ function CurrentMalaysianMobileFaceCapture() {
                 </p>
                 
                 <ul className="list-disc ml-4 space-y-1">
-                  <li>Ensure your entire face is visible and in focus.</li>
-                  <li>Ensure you are not wearing a hat, glasses, or a mask for the best accuracy.</li>
                   <li>Ensure mobile and desktop tabs are open.</li>
                   <li>Ensure your internet connection is fast and stable.</li>
+                  <li>Ensure your entire face is clearly within the frame and in focus.</li>
+                  <li>Ensure you are not wearing a hat, glasses, or a mask for the best accuracy.</li>
                 </ul>
               </div>
             </div>

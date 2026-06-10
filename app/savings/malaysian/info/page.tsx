@@ -34,6 +34,11 @@ export default function SavingsMalaysianInfo() {
 
   const journeyId = searchParams.get("journeyId") || "";
 
+  const mode =
+  searchParams.get("mode") ||
+  (typeof window !== "undefined" ? localStorage.getItem("mode") : "") ||
+  "new_user";
+
   const formatDateForFields = (value: unknown) => {
     if (!value) return { day: "", month: "January", year: "" };
     const date = new Date(String(value));
@@ -256,19 +261,23 @@ export default function SavingsMalaysianInfo() {
       </div>
 
       <div className="absolute top-6 left-4 right-4 flex justify-between items-center max-w-7xl mx-auto z-20 overflow-hidden">
-        <button
-          type="button"
-          onClick={() => 
-            router.push(
-              `/savings/malaysian/otp?journeyId=${encodeURIComponent(journeyId)}`
-            )
-          }          
-          className="inline-flex items-center text-sm text-gray-600 dark:text-white/80 transition-colors hover:text-gray-900 dark:hover:text-white"
-        >
-          <ChevronLeftIcon className="w-5 h-5" />
-          
-          Back
-        </button>
+        {mode !== "existing_customer" ? (
+          <button
+            type="button"
+            onClick={() => 
+              router.push(
+                `/savings/malaysian/otp?journeyId=${encodeURIComponent(journeyId)}`
+              )
+            }          
+            className="inline-flex items-center text-sm text-gray-600 dark:text-white/80 transition-colors hover:text-gray-900 dark:hover:text-white"
+          >
+            <ChevronLeftIcon className="w-5 h-5" />
+            
+            Back
+          </button>
+        ) : (
+          <div />
+        )}
 
         <Link   
           href="/" 
@@ -339,35 +348,51 @@ export default function SavingsMalaysianInfo() {
                     Gender<span className="text-red-500">*</span>
                   </label>
 
-                  <div className="relative">
-                    <select 
-                      value={formData.gender} 
-                      onChange={(e) => setFormData({ ...formData, gender: e.target.value })} 
-                      className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
-                    >
-                      <option value="" disabled>Select</option>
-                      <option value="M">M</option>
-                      <option value="F">F</option>
-                      <option value="Non-binary">Non-binary</option>
-                      <option value="Prefer not to say">Prefer not to say</option>
-                    </select>
-
-                    <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
-                      <svg 
-                        className="w-4 h-4 text-gray-400" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
-                      >
-                        <path 
-                          strokeLinecap="round" 
-                          strokeLinejoin="round" 
-                          strokeWidth="2" 
-                          d="M19 9l-7 7-7-7" 
-                        />
-                      </svg>
+                  {mode === "existing_customer" ? (
+                    <div className="flex items-center gap-2 px-4 py-2.5 border-2 rounded-xl bg-gray-50 border-gray-200 dark:bg-gray-900/90 dark:border-[#5c6185]/20 text-gray-500 dark:text-gray-400 cursor-not-allowed">
+                      <input
+                        type="text"
+                        readOnly
+                        className="w-full text-sm font-bold text-gray-700 dark:text-gray-200 bg-transparent outline-none cursor-not-allowed"
+                        value={
+                          formData.gender === "M" ? "M" :
+                          formData.gender === "F" ? "F" :
+                          formData.gender === "NB" || formData.gender === "Non-binary" ? "Non-binary" :
+                          formData.gender === "NONE" || formData.gender === "Prefer not to say" ? "Prefer not to say" : formData.gender
+                        }
+                      />
                     </div>
-                  </div>
+                  ) : (
+                    <div className="relative">
+                      <select 
+                        value={formData.gender} 
+                        onChange={(e) => setFormData({ ...formData, gender: e.target.value })} 
+                        className="w-full px-4 py-2.5 text-sm font-medium transition-all border-2 rounded-xl outline-none bg-white border-gray-200 text-gray-800 focus:border-[#F0CA8E] focus:ring-4 focus:ring-[#F0CA8E]/20 dark:bg-gray-900/90 dark:border-[#5c6185] dark:text-white dark:focus:border-[#F0CA8E] dark:focus:ring-[#3D405B]/40 appearance-none"
+                      >
+                        <option value="" disabled>Select</option>
+                        <option value="M">M</option>
+                        <option value="F">F</option>
+                        <option value="Non-binary">Non-binary</option>
+                        <option value="Prefer not to say">Prefer not to say</option>
+                      </select>
+
+                      <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
+                        <svg 
+                          className="w-4 h-4 text-gray-400" 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round" 
+                            strokeWidth="2" 
+                            d="M19 9l-7 7-7-7" 
+                          />
+                        </svg>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
