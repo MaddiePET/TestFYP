@@ -18,7 +18,10 @@ function initializeJIM() {
     } else {
       let serviceAccount;
       console.log("[JIM] initializeJIM called");
-      console.log("[JIM] Existing Firebase apps:", admin.apps.map(a => a.name));
+      console.log(
+        "[JIM] Existing Firebase apps:",
+        admin.apps.map((a) => (a ? a.name : "<null app>"))
+      );
 
       if (process.env.FIREBASE_JIM_SERVICE_ACCOUNT_B64) {
         console.log("[JIM] Using FIREBASE_JIM_SERVICE_ACCOUNT_B64");
