@@ -73,7 +73,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json(
       {
-        success: true,
+        status: "success",
         extracted: {
           passport_no: passportNo,
         },
