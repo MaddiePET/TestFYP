@@ -80,11 +80,13 @@ function initializeJIM() {
         console.error("[JIM] Failed to initialize Firebase app:", err);
         throw err;
       }
-
+    }
     jimDb = jimApp.firestore();
     console.log("[JIM] Firestore ready");
     if (!jimDb) {
-      throw new Error("[JIM] Firestore initialization failed");
+      throw new Error(
+        "[JIM] Firestore initialization failed"
+      );
     }
   }
 
