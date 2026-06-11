@@ -44,6 +44,9 @@ export async function POST(req: Request) {
       savingsAccount,
     } = body;
 
+    console.log("[non_msian_savings_account] journeyId:", journeyId);
+    console.log("[non_msian_savings_account] customer id present:", !!(customer && (customer.passport_num || customer.id_num || customer.ic_num)));
+
     if (!customer || !homeAddress || !user || !savingsAccount) {
       return NextResponse.json(
         { error: "Missing required submission sections." },
@@ -69,11 +72,32 @@ export async function POST(req: Request) {
 
     const normalizedPassportNum = customerPassportNum.replace(/\s/g, "").toUpperCase().trim();
 
-    const statusRes = await fetch(
-      `${req.headers.get("origin") || "http://localhost:3000"}/api/ekyc/status?journeyId=${encodeURIComponent(journeyId)}`
-    );
+    const statusUrl = `${req.headers.get("origin") || "http://localhost:3000"}/api/ekyc/status?journeyId=${encodeURIComponent(journeyId)}`;
+    console.log("[non_msian_savings_account] Fetching eKYC status from:", statusUrl);
+
+    let statusRes;
+    try {
+      statusRes = await fetch(statusUrl);
+    } catch (fetchErr: any) {
+      console.error("[non_msian_savings_account] eKYC status fetch error:", fetchErr?.message || fetchErr);
+      throw new Error("Failed to fetch eKYC status (network error)");
+    }
+
+    console.log("[non_msian_savings_account] eKYC status HTTP:", statusRes.status);
+
+    if (!statusRes.ok) {
+      let text = "";
+      try {
+        text = await statusRes.text();
+      } catch (e) {
+        text = "<unreadable response body>";
+      }
+      console.error("[non_msian_savings_account] eKYC status non-ok response:", statusRes.status, text.substring(0, 100));
+      throw new Error("Failed to fetch eKYC status");
+    }
 
     const statusData = await statusRes.json();
+    console.log("[non_msian_savings_account] eKYC status keys:", Object.keys(statusData || {}));
 
     const scorecardLists = statusData.scorecard?.scorecardResultList || [];
 
@@ -101,6 +125,9 @@ export async function POST(req: Request) {
 
     const statusIdType = statusData.id_type?.toLowerCase();
     const statusIdNum = statusData.id_num?.replace(/\s/g, "").toUpperCase().trim();
+    
+    console.log("EKYC STATUS DATA:", statusData);
+    
     if (
       statusData.status !== "face_verified" ||
       !["passport", "international_passport"].includes(statusIdType) ||
@@ -395,8 +422,14 @@ export async function POST(req: Request) {
     );
     
   } catch (error: any) {
-    await client.query("ROLLBACK");
     console.error("Non-Malaysian savings account error:", error);
+
+    try {
+      await client.query("ROLLBACK");
+    } catch (rollbackError) {
+      console.error("Rollback failed:", rollbackError);
+    }
+
     return NextResponse.json(
       { error: error.message || "Failed to create account application" },
       { status: 500 }
